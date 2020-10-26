@@ -15,53 +15,58 @@ def read_module(buffer):
 
     # attempt to read sections
     upto = 0
-    while upto < 23:
-        id = buffer.read(1)[0]
-        assert id < 12
-        length = read_uint(buffer, 32)
+    try:
+        while upto < 23:
+            id = buffer.read(1)[0]
+            assert id < 12
+            length = read_uint(buffer, 32)
 
-        while sects[upto] != id:
-            upto += 1
-            if upto == 22:
+            while sects[upto] != id:
+                upto += 1
+                if upto == 22:
+                    break
+
+            if sects[upto] != id:
                 break
 
-        if sects[upto] != id:
-            break
+            if not id:
+                CustomSection.read(buffer, length)
 
-        if not id:
-            CustomSection.read(buffer, length)
+            if id == 1:
+                module["types"] = TypeSection.read(buffer)
 
-        if id == 1:
-            module["types"] = TypeSection.read(buffer)
+            if id == 2:
+                module["imports"] = ImportSection.read(buffer)
 
-        if id == 2:
-            module["imports"] = ImportSection.read(buffer)
+            if id == 3:
+                FunctionSection.read(buffer)
 
-        if id == 3:
-            FunctionSection.read(buffer)
+            if id == 4:
+                module["tables"] = TableSection.read(buffer)
 
-        if id == 4:
-            module["tables"] = TableSection.read(buffer)
+            if id == 5:
+                module["mems"] = MemorySection.read(buffer)
 
-        if id == 5:
-            module["mems"] = MemorySection.read(buffer)
+            if id == 6:
+                module["globals"] = GlobalSection.read(buffer)
 
-        if id == 6:
-            module["globals"] = GlobalSection.read(buffer)
+            if id == 7:
+                module["exports"] = ExportSection.read(buffer)
 
-        if id == 7:
-            module["exports"] = ExportSection.read(buffer)
+            if id == 8:
+                module["start"] = StartSection.read(buffer)
 
-        if id == 8:
-            module["start"] = StartSection.read(buffer)
+            if id == 9:
+                module["elem"] = ElementSection.read(buffer)
 
-        if id == 9:
-            module["elem"] = ElementSection.read(buffer)
+            if id == 10:
+                CodeSection.read(buffer)
 
-        if id == 10:
-            CodeSection.read(buffer)
+            if id == 11:
+                DataSection.read(buffer)
 
-        if id == 11:
-            DataSection.read(buffer)
+    except IndexError:
+        # eof
+        pass
 
     return module
