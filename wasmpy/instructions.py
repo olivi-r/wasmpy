@@ -4,9 +4,9 @@ from .values import get_vec_len, read_sint, read_uint, read_f32, read_f64
 
 def read_expr(buffer: object) -> tuple:
     """Read an expression from buffer."""
-    in_ = []
+    in_ = ()
     while (instruction := read_instruction(buffer)) != "end":
-        in_.append(instruction)
+        in_ += (instruction,)
 
     return (in_, "end")
 
