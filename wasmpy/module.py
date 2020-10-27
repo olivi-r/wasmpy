@@ -1,5 +1,5 @@
 import io, os, struct, sys
-from .utils import read_uint
+from .values import read_uint
 from .sections import *
 
 # extend to add future binary formats

@@ -1,4 +1,4 @@
-from .utils import get_vec_len, read_uint
+from .values import get_vec_len, read_uint
 
 
 class Type(object):

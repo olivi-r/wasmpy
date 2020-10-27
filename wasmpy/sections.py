@@ -1,5 +1,5 @@
 from .instructions import read_expr
-from .utils import get_vec_len, read_name, read_uint
+from .values import get_vec_len, read_name, read_uint
 from .types import GlobalType, MemoryType, TableType, Type, FunctionType
 
 
