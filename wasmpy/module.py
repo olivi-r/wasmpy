@@ -7,11 +7,16 @@ preamble = [b"\0asm\x01\0\0\0"]
 
 sects = [i for j in range(1, 12) for i in (0, j)] + [0]
 
+empty_module_lists = ["types", "tables", "mems", "globals", "elem", "data", "imports", "exports"]
+
 
 def read_module(buffer):
     assert preamble[0] == buffer.read(8), "Invalid magic number or version."
 
     module = {}
+
+    typeidx = None
+    code = ()
 
     # attempt to read sections
     upto = 0
@@ -30,43 +35,54 @@ def read_module(buffer):
                 break
 
             if not id:
-                CustomSection.read(buffer, length)
+                read_customsec(buffer, length)
 
             if id == 1:
-                module["types"] = TypeSection.read(buffer)
+                module["types"] = read_typesec(buffer)
 
             if id == 2:
-                module["imports"] = ImportSection.read(buffer)
+                module["imports"] = read_importsec(buffer)
 
             if id == 3:
-                FunctionSection.read(buffer)
+                typeidx = read_funcsec(buffer)
 
             if id == 4:
-                module["tables"] = TableSection.read(buffer)
+                module["tables"] = read_tablesec(buffer)
 
             if id == 5:
-                module["mems"] = MemorySection.read(buffer)
+                module["mems"] = read_memsec(buffer)
 
             if id == 6:
-                module["globals"] = GlobalSection.read(buffer)
+                module["globals"] = read_globalsec(buffer)
 
             if id == 7:
-                module["exports"] = ExportSection.read(buffer)
+                module["exports"] = read_exportsec(buffer)
 
             if id == 8:
-                module["start"] = StartSection.read(buffer)
+                module["start"] = read_startsec(buffer)
 
             if id == 9:
-                module["elem"] = ElementSection.read(buffer)
+                module["elem"] = read_elemsec(buffer)
 
             if id == 10:
-                CodeSection.read(buffer)
+                code = read_codesec(buffer)
 
             if id == 11:
-                DataSection.read(buffer)
+                module["data"] = read_datasec(buffer)
 
-    except IndexError:
-        # eof
+
+    except IndexError as i:
         pass
+
+    module["funcs"] = tuple(
+        {"type": typeidx[i], "locals": t, "body": e} for i, (t, e) in enumerate(code)
+    )
+
+    for section in empty_module_lists:
+        if section not in module.keys():
+            module[section] = ()
+
+    if "start" not in module.keys():
+        module["start"] = None
 
     return module

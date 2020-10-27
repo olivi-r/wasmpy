@@ -13,6 +13,7 @@ class Type(object):
 
 class ValueType(Type):
     """Object representing WebAssembly value types.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#value-types%E2%91%A2"""
 
     type_map = {b"\x7f": "i32", b"\x7e": "i64", b"\x7d": "f32", b"\x7c": "f64"}
@@ -32,6 +33,7 @@ class ValueType(Type):
 
 class ResultType(Type):
     """Object representing WebAssembly result types.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#result-types%E2%91%A2"""
 
     def __init__(self, t: ValueType):
@@ -54,6 +56,7 @@ class ResultType(Type):
 
 class FunctionType(Type):
     """Object representing WebAssembly function types.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#function-types%E2%91%A4"""
 
     def __init__(self, rt1: tuple, rt2: tuple):
@@ -70,6 +73,7 @@ class FunctionType(Type):
 
 class Limits(Type):
     """Object representing WebAssembly limits.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#limits%E2%91%A6"""
 
     def __init__(self, n: int, m: int = None):
@@ -93,6 +97,7 @@ class Limits(Type):
 
 class MemoryType(Type):
     """Object representing WebAssembly memory types.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#memory-types%E2%91%A4"""
 
     def __init__(self, lim: Limits):
@@ -106,6 +111,7 @@ class MemoryType(Type):
 
 class TableType(Type):
     """Object representing WebAssembly table types.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#table-types%E2%91%A4"""
 
     def __init__(self, lim: Limits):
@@ -123,6 +129,7 @@ class TableType(Type):
 
 class GlobalType(Type):
     """Object representing WebAssembly global types.\n\n"""
+
     """https://www.w3.org/TR/wasm-core-1/#global-types%E2%91%A4"""
 
     def __init__(self, m: str, t: ValueType):
