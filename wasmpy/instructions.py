@@ -1,4 +1,4 @@
-from .types import ResultType, ValueType
+from .types import ResultType
 from .values import get_vec_len, read_sint, read_uint, read_f32, read_f64
 
 
