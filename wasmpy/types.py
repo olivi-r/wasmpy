@@ -12,6 +12,9 @@ class Type(object):
 
 
 class ValueType(Type):
+    """Object representing WebAssembly value types.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#value-types%E2%91%A2"""
+
     type_map = {b"\x7f": "i32", b"\x7e": "i64", b"\x7d": "f32", b"\x7c": "f64"}
 
     def __init__(self, type: str):
@@ -28,45 +31,53 @@ class ValueType(Type):
 
 
 class ResultType(Type):
-    def __init__(self, t: list):
+    """Object representing WebAssembly result types.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#result-types%E2%91%A2"""
+
+    def __init__(self, t: ValueType):
         self.data = t
 
     @classmethod
     def read(cls, buffer: object) -> object:
         """Attempt to read a result type from buffer."""
-        t = []
+        if buffer.read(1) == b"\x40":
+            # no result type
+            return cls(ValueType(None))
+
+        buffer.seek(-1, 1)
         try:
-            for _ in range(get_vec_len(buffer)):
-                t.append(ValueType.read(buffer))
+            return cls(ValueType.read(buffer))
 
-            return cls(t)
-
-        except (IndexError, AssertionError):
+        except TypeError:
             raise TypeError("Invalid result type.")
 
 
 class FunctionType(Type):
-    def __init__(self, rt1: ResultType, rt2: ResultType):
+    """Object representing WebAssembly function types.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#function-types%E2%91%A4"""
+
+    def __init__(self, rt1: tuple, rt2: tuple):
         self.data = {rt1: rt2}
 
     @classmethod
     def read(cls, buffer: object) -> object:
-        # try:
+        """Attempt to read a function type from buffer."""
         assert buffer.read(1) == b"\x60"
-        rt1 = ResultType.read(buffer)
-        rt2 = ResultType.read(buffer)
-        return cls(rt1, rt2)
-
-        # except AssertionError:
-        #     raise TypeError("Invalid function type.")
+        t1 = tuple([ValueType.read(buffer) for _ in range(get_vec_len(buffer))])
+        t2 = tuple([ValueType.read(buffer) for _ in range(get_vec_len(buffer))])
+        return cls(t1, t2)
 
 
 class Limits(Type):
+    """Object representing WebAssembly limits.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#limits%E2%91%A6"""
+
     def __init__(self, n: int, m: int = None):
         self.data = {"min": n, "max": m}
 
     @classmethod
     def read(cls, buffer: object) -> object:
+        """Attempt to read limits from buffer."""
         try:
             flag = buffer.read(1)[0]
             assert flag in range(2)
@@ -81,21 +92,29 @@ class Limits(Type):
 
 
 class MemoryType(Type):
+    """Object representing WebAssembly memory types.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#memory-types%E2%91%A4"""
+
     def __init__(self, lim: Limits):
         self.data = lim
 
     @classmethod
     def read(cls, buffer: object) -> object:
+        """Attempt to read a memory type from buffer."""
         return cls(Limits.read(buffer))
 
 
 class TableType(Type):
+    """Object representing WebAssembly table types.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#table-types%E2%91%A4"""
+
     def __init__(self, lim: Limits):
         # only currently supported elemtype (et) if funcref
         self.data = {"lim": lim, "et": "funcref"}
 
     @classmethod
     def read(cls, buffer: object) -> object:
+        """Attempt to read a table type from buffer."""
         if buffer.read(1) != b"\x70":
             raise TypeError("Invalid element type.")
 
@@ -103,11 +122,15 @@ class TableType(Type):
 
 
 class GlobalType(Type):
+    """Object representing WebAssembly global types.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#global-types%E2%91%A4"""
+
     def __init__(self, m: str, t: ValueType):
         self.data = {"m": m, "t": t}
 
     @classmethod
     def read(cls, buffer: object) -> object:
+        """Attempt to read a global type from buffer."""
         t = ValueType.read(buffer)
         try:
             mut = buffer.read(1)[0]
