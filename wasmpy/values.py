@@ -17,15 +17,19 @@ def read_uint(buffer, bits):
     result = 0
     shift = 0
 
-    while True:
-        byte = buffer.read(1)[0]
-        consumed_bytes += 1
-        assert consumed_bytes <= math.ceil(bits / 7), "Invalid integer"
-        result |= (byte & 127) << shift
-        if not byte >> 7:
-            break
+    try:
+        while True:
+            byte = buffer.read(1)[0]
+            consumed_bytes += 1
+            assert consumed_bytes <= math.ceil(bits / 7)
+            result |= (byte & 127) << shift
+            if not byte >> 7:
+                break
 
-        shift += 7
+            shift += 7
+
+    except (AssertionError, IndexError):
+        raise TypeError("Invalid integer.")
 
     return result
 
