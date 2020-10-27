@@ -1,180 +1,162 @@
 from .instructions import read_expr
 from .values import get_vec_len, read_name, read_uint
-from .types import GlobalType, MemoryType, TableType, Type, FunctionType
+from .types import GlobalType, MemoryType, TableType, FunctionType, ValueType
 
 
-class CustomSection(Type):
-    @classmethod
-    def read(cls, buffer: object, length: int) -> None:
-        """Read a custom section from buffer."""
-        """Does not return anything as custom sections are dropped."""
-        buffer.read(length)
+def read_customsec(buffer: object, length: int) -> None:
+    """Read a custom section from buffer.\n"""
+    """Does not return anything as custom sections are dropped.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0"""
+    buffer.read(length)
 
 
-class TypeSection(Type):
-    def __init__(self, ft: list):
-        self.data = ft
+def read_typesec(buffer: object) -> tuple:
+    """Read a type section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#type-section%E2%91%A0"""
+    return tuple(FunctionType.read(buffer) for _ in range(get_vec_len(buffer)))
 
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        ft = []
+
+def read_importsec(buffer: object) -> tuple:
+    """Read an import section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#import-section%E2%91%A0"""
+    im = ()
+    try:
         for _ in range(get_vec_len(buffer)):
-            ft.append(FunctionType.read(buffer))
+            import_ = {"module": read_name(buffer), "name": read_name(buffer)}
+            flag = buffer.read(1)[0]
+            assert flag in range(4)
+            if not flag:
+                import_["desc"] = ("func", read_uint(buffer, 32))
 
-        return cls(ft)
+            elif flag == 1:
+                import_["desc"] = ("table", TableType.read(buffer))
+
+            elif flag == 2:
+                import_["desc"] = ("mem", MemoryType.read(buffer))
+
+            elif flag == 3:
+                import_["desc"] = ("global", GlobalType.read(buffer))
+
+            im += (import_,)
+
+    except (IndexError, AssertionError):
+        raise TypeError("Invalid import section.")
+
+    return im
 
 
-class ImportSection(Type):
-    def __init__(self, im: list):
-        self.data = im
+def read_funcsec(buffer: object) -> tuple:
+    """Read a function section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#function-section%E2%91%A0"""
+    return tuple(read_uint(buffer, 32) for _ in range(get_vec_len(buffer)))
 
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        im = []
-        try:
+
+def read_tablesec(buffer: object) -> tuple:
+    """Read a table section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#table-section%E2%91%A0"""
+    return tuple({"type": TableType.read(buffer)} for _ in range(get_vec_len(buffer)))
+
+
+def read_memsec(buffer: object) -> tuple:
+    """Read a memory section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#memory-section%E2%91%A0"""
+    return tuple({"type": MemoryType.read(buffer)} for _ in range(get_vec_len(buffer)))
+
+
+def read_globalsec(buffer: object) -> tuple:
+    """Read a global section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#global-section%E2%91%A0"""
+    return tuple(
+        {"gt": GlobalType.read(buffer), "e": read_expr(buffer)}
+        for _ in range(get_vec_len(buffer))
+    )
+
+
+def read_exportsec(buffer: object) -> tuple:
+    """Read an export section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#export-section%E2%91%A0"""
+    ex = ()
+    for _ in range(get_vec_len(buffer)):
+        export = {"name": read_name(buffer)}
+        desc = buffer.read(1)[0]
+        assert desc in range(4)
+        if not desc:
+            export["desc"] = "func", read_uint(buffer, 32)
+
+        if desc == 1:
+            export["desc"] = "table", read_uint(buffer, 32)
+
+        if desc == 2:
+            export["desc"] = "mem", read_uint(buffer, 32)
+
+        if desc == 3:
+            export["desc"] = "global", read_uint(buffer, 32)
+
+        ex += (export,)
+
+    return ex
+
+
+def read_startsec(buffer: object) -> dict:
+    """Read a start section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#start-section%E2%91%A0"""
+    return {"func": read_uint(buffer, 32)}
+
+
+def read_elemsec(buffer: object) -> tuple:
+    """Read an element section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#element-section%E2%91%A0"""
+    seg = ()
+    for _ in range(get_vec_len(buffer)):
+        seg += (
+            {
+                "table": read_uint(buffer, 32),
+                "offset": read_expr(buffer),
+                "init": tuple(
+                    read_uint(buffer, 32) for _ in range(get_vec_len(buffer))
+                ),
+            },
+        )
+
+    return seg
+
+
+def read_codesec(buffer: object) -> tuple:
+    """Read a code section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#code-section%E2%91%A0"""
+    code = ()
+    try:
+        for _ in range(get_vec_len(buffer)):
+            size = read_uint(buffer, 32)
+            start = buffer.tell()
+
+            t = ()
             for _ in range(get_vec_len(buffer)):
-                import_ = {"mod": read_name(buffer), "nm": read_name(buffer)}
-                flag = buffer.read(1)[0]
-                assert flag in range(4)
-                if not flag:
-                    import_["d"] = ["func", read_uint(buffer, 32)]
+                n = read_uint(buffer, 32)
+                t += tuple(ValueType.read(buffer) for _ in range(n))
 
-                elif flag == 1:
-                    import_["d"] = ["table", TableType.read(buffer)]
+            concat_t = ()
+            for locals in t:
+                concat_t += locals
 
-                elif flag == 2:
-                    import_["d"] = ["mem", MemoryType.read(buffer)]
+            code += ((concat_t, read_expr(buffer)),)
+            end = buffer.tell()
+            assert size == end - start
 
-                elif flag == 3:
-                    import_["d"] = ["global", GlobalType.read(buffer)]
+    except AssertionError:
+        raise TypeError("Invalid code section.")
 
-                im.append(import_)
-
-        except (IndexError, AssertionError):
-            raise TypeError("Invalid import section.")
-
-        return cls(im)
+    return code
 
 
-class FunctionSection(Type):
-    def __init__(self, x: list):
-        self.data = x
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        x = []
-        for _ in range(get_vec_len(buffer)):
-            x.append(read_uint(buffer, 32))
-
-        return cls(x)
-
-
-class TableSection(Type):
-    def __init__(self, tab: list):
-        self.data = tab
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        tab = []
-        for _ in range(get_vec_len(buffer)):
-            tab.append({"type": TableType.read(buffer)})
-
-        return cls(tab)
-
-
-class MemorySection(Type):
-    def __init__(self, mem: list):
-        self.data = mem
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        mem = []
-        for _ in range(get_vec_len(buffer)):
-            mem.append({"type": MemoryType.read(buffer)})
-
-        return cls(mem)
-
-
-class GlobalSection(Type):
-    def __init__(self, glob: list):
-        self.data = glob
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        glob = []
-        for _ in range(get_vec_len(buffer)):
-            glob.append({"gt": GlobalType.read(buffer), "e": read_expr(buffer)})
-
-        return cls(glob)
-
-
-class ExportSection(Type):
-    def __init__(self, ex: list):
-        self.data = ex
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        ex = []
-        for _ in range(get_vec_len(buffer)):
-            export = {"nm": read_name(buffer)}
-            desc = buffer.read(1)[0]
-            assert desc in range(4)
-            if not desc:
-                export["d"] = ["func", read_uint(buffer, 32)]
-
-            if desc == 1:
-                export["d"] = ["table", read_uint(buffer, 32)]
-
-            if desc == 2:
-                export["d"] = ["mem", read_uint(buffer, 32)]
-
-            if desc == 3:
-                export["d"] = ["global", read_uint(buffer, 32)]
-
-            ex.append(export)
-
-        return cls(ex)
-
-
-class StartSection(Type):
-    def __init__(self, x: int):
-        self.data = x
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        return cls(read_uint(buffer, 32))
-
-
-class ElementSection(Type):
-    def __init__(self, seg: list):
-        self.data = seg
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        seg = []
-        for _ in range(get_vec_len(buffer)):
-            elem = {"table": read_uint(buffer, 32), "e": read_expr(buffer), "y": []}
-            for _ in range(get_vec_len(buffer)):
-                elem["y"].append(read_uint(buffer, 32))
-
-            seg.append(elem)
-
-        return cls(seg)
-
-
-class CodeSection(Type):
-    def __init__(self):
-        self.data
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        pass
-
-
-class DataSection(Type):
-    def __init__(self):
-        self.data
-
-    @classmethod
-    def read(cls, buffer: object) -> object:
-        pass
+def read_datasec(buffer: object) -> tuple:
+    """Read a data section from buffer.\n\n"""
+    """https://www.w3.org/TR/wasm-core-1/#data-section%E2%91%A0"""
+    return tuple(
+        {
+            "data": read_uint(buffer, 32),
+            "offset": read_expr(buffer),
+            "init": tuple(buffer.read(1)[0] for _ in range(get_vec_len(buffer))),
+        }
+        for _ in range(get_vec_len(buffer))
+    )
