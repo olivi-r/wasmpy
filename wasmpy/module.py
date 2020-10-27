@@ -7,7 +7,16 @@ preamble = [b"\0asm\x01\0\0\0"]
 
 sects = [i for j in range(1, 12) for i in (0, j)] + [0]
 
-empty_module_lists = ["types", "tables", "mems", "globals", "elem", "data", "imports", "exports"]
+empty_module_lists = [
+    "types",
+    "tables",
+    "mems",
+    "globals",
+    "elem",
+    "data",
+    "imports",
+    "exports",
+]
 
 
 def read_module(buffer):
@@ -69,7 +78,6 @@ def read_module(buffer):
 
             if id == 11:
                 module["data"] = read_datasec(buffer)
-
 
     except IndexError as i:
         pass
