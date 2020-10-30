@@ -1,24 +1,30 @@
-from .instructions import read_expr
+from .types import (
+    read_functype,
+    read_globaltype,
+    read_memtype,
+    read_tabletype,
+    read_valtype,
+)
 from .values import get_vec_len, read_name, read_uint
-from .types import GlobalType, MemoryType, TableType, FunctionType, ValueType
+from .instructions import read_expr
 
 
 def read_customsec(buffer: object, length: int) -> None:
-    """Read a custom section from buffer.\n"""
-    """Does not return anything as custom sections are dropped.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0"""
+    """Read a custom section from buffer."""
+    # Does not return anything as custom sections are dropped.
+    # https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0
     buffer.read(length)
 
 
 def read_typesec(buffer: object) -> tuple:
-    """Read a type section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#type-section%E2%91%A0"""
-    return tuple(FunctionType.read(buffer) for _ in range(get_vec_len(buffer)))
+    """Read a type section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#type-section%E2%91%A0
+    return tuple(read_functype(buffer) for _ in range(get_vec_len(buffer)))
 
 
 def read_importsec(buffer: object) -> tuple:
-    """Read an import section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#import-section%E2%91%A0"""
+    """Read an import section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#import-section%E2%91%A0
     im = ()
     try:
         for _ in range(get_vec_len(buffer)):
@@ -29,13 +35,13 @@ def read_importsec(buffer: object) -> tuple:
                 import_["desc"] = ("func", read_uint(buffer, 32))
 
             elif flag == 1:
-                import_["desc"] = ("table", TableType.read(buffer))
+                import_["desc"] = ("table", read_tabletype(buffer))
 
             elif flag == 2:
-                import_["desc"] = ("mem", MemoryType.read(buffer))
+                import_["desc"] = ("mem", read_memtype(buffer))
 
             elif flag == 3:
-                import_["desc"] = ("global", GlobalType.read(buffer))
+                import_["desc"] = ("global", read_globaltype(buffer))
 
             im += (import_,)
 
@@ -46,35 +52,35 @@ def read_importsec(buffer: object) -> tuple:
 
 
 def read_funcsec(buffer: object) -> tuple:
-    """Read a function section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#function-section%E2%91%A0"""
+    """Read a function section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#function-section%E2%91%A0
     return tuple(read_uint(buffer, 32) for _ in range(get_vec_len(buffer)))
 
 
 def read_tablesec(buffer: object) -> tuple:
-    """Read a table section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#table-section%E2%91%A0"""
-    return tuple({"type": TableType.read(buffer)} for _ in range(get_vec_len(buffer)))
+    """Read a table section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#table-section%E2%91%A0
+    return tuple({"type": read_tabletype(buffer)} for _ in range(get_vec_len(buffer)))
 
 
 def read_memsec(buffer: object) -> tuple:
-    """Read a memory section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#memory-section%E2%91%A0"""
-    return tuple({"type": MemoryType.read(buffer)} for _ in range(get_vec_len(buffer)))
+    """Read a memory section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#memory-section%E2%91%A0
+    return tuple({"type": read_memtype(buffer)} for _ in range(get_vec_len(buffer)))
 
 
 def read_globalsec(buffer: object) -> tuple:
-    """Read a global section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#global-section%E2%91%A0"""
+    """Read a global section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#global-section%E2%91%A0
     return tuple(
-        {"gt": GlobalType.read(buffer), "e": read_expr(buffer)}
+        {"gt": read_globaltype(buffer), "e": read_expr(buffer)}
         for _ in range(get_vec_len(buffer))
     )
 
 
 def read_exportsec(buffer: object) -> tuple:
-    """Read an export section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#export-section%E2%91%A0"""
+    """Read an export section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#export-section%E2%91%A0
     ex = ()
     for _ in range(get_vec_len(buffer)):
         export = {"name": read_name(buffer)}
@@ -98,14 +104,14 @@ def read_exportsec(buffer: object) -> tuple:
 
 
 def read_startsec(buffer: object) -> dict:
-    """Read a start section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#start-section%E2%91%A0"""
+    """Read a start section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#start-section%E2%91%A0
     return {"func": read_uint(buffer, 32)}
 
 
 def read_elemsec(buffer: object) -> tuple:
-    """Read an element section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#element-section%E2%91%A0"""
+    """Read an element section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#element-section%E2%91%A0
     seg = ()
     for _ in range(get_vec_len(buffer)):
         seg += (
@@ -122,8 +128,8 @@ def read_elemsec(buffer: object) -> tuple:
 
 
 def read_codesec(buffer: object) -> tuple:
-    """Read a code section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#code-section%E2%91%A0"""
+    """Read a code section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#code-section%E2%91%A0
     code = ()
     try:
         for _ in range(get_vec_len(buffer)):
@@ -133,7 +139,7 @@ def read_codesec(buffer: object) -> tuple:
             t = ()
             for _ in range(get_vec_len(buffer)):
                 n = read_uint(buffer, 32)
-                t += tuple(ValueType.read(buffer) for _ in range(n))
+                t += tuple(read_valtype(buffer) for _ in range(n))
 
             concat_t = ()
             for locals in t:
@@ -150,8 +156,8 @@ def read_codesec(buffer: object) -> tuple:
 
 
 def read_datasec(buffer: object) -> tuple:
-    """Read a data section from buffer.\n\n"""
-    """https://www.w3.org/TR/wasm-core-1/#data-section%E2%91%A0"""
+    """Read a data section from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#data-section%E2%91%A0
     return tuple(
         {
             "data": read_uint(buffer, 32),
