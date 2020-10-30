@@ -1,9 +1,10 @@
-from .types import ResultType
 from .values import get_vec_len, read_sint, read_uint, read_f32, read_f64
+from .types import read_valtype
 
 
 def read_expr(buffer: object) -> tuple:
     """Read an expression from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#expressions%E2%91%A6
     in_ = ()
     while (instruction := read_instruction(buffer)) != "end":
         in_ += (instruction,)
@@ -13,6 +14,7 @@ def read_expr(buffer: object) -> tuple:
 
 def read_memarg(buffer: object) -> dict:
     """Read a memory arg from buffer."""
+    # https://www.w3.org/TR/wasm-core-1/#binary-memarg
     a = read_uint(buffer, 32)
     o = read_uint(buffer, 32)
     return {"align": a, "offset": o}
@@ -37,7 +39,7 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "nop"
 
     if data == b"\x02":
-        rt = ResultType.read(buffer)
+        rt = read_valtype(buffer)
         in_ = []
         while (instruction := read_instruction(buffer)) != "end":
             in_.append(instruction)
@@ -45,7 +47,7 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "block", rt, tuple(in_), "end"
 
     if data == b"\x03":
-        rt = ResultType.read(buffer)
+        rt = read_valtype(buffer)
         in_ = []
         while (instruction := read_instruction(buffer)) != "end":
             in_.append(instruction)
@@ -53,7 +55,7 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "loop", rt, tuple(in_), "end"
 
     if data == b"\x04":
-        rt = ResultType.read(buffer)
+        rt = read_valtype(buffer)
         in1 = []
         while (instruction := read_instruction(buffer)) not in ["end", "else"]:
             in1.append(instruction)

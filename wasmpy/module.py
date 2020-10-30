@@ -1,4 +1,3 @@
-import io, os, struct, sys
 from .values import read_uint
 from .sections import *
 
