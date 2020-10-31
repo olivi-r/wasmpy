@@ -39,7 +39,7 @@ def read_sint(buffer, bits):
     # https://www.w3.org/TR/wasm-core-1/#integers%E2%91%A4
     shift = 0
     byte = buffer.read(1)[0]
-    result = (byte & 127) << shift
+    result = byte & 127
     consumed_bytes = 1
 
     byte = buffer.read(1)[0]
