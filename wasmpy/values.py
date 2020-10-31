@@ -45,7 +45,7 @@ def read_sint(buffer, bits):
     byte = buffer.read(1)[0]
     while byte >> 7:
         consumed_bytes += 1
-        assert consumed_bytes < math.ceil(bits / 7), "Invalid integer"
+        assert consumed_bytes <= math.ceil(bits / 7), "Invalid integer"
         result |= (byte & 127) << shift
         shift += 7
         byte = buffer.read(1)[0]
