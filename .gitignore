@@ -1,3 +1,6 @@
 __pycache__
+wasmpy.egg-info
+build
+dist
 .env
 .vscode
