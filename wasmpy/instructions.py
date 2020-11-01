@@ -6,8 +6,10 @@ def read_expr(buffer: object) -> tuple:
     """Read an expression from buffer."""
     # https://www.w3.org/TR/wasm-core-1/#expressions%E2%91%A6
     in_ = ()
-    while (instruction := read_instruction(buffer)) != "end":
+    instruction = read_instruction(buffer)
+    while instruction != "end":
         in_ += (instruction,)
+        instruction = read_instruction(buffer)
 
     return (in_, "end")
 
@@ -41,24 +43,30 @@ def read_instruction(buffer: object) -> "str or tuple":
     if data == b"\x02":
         rt = read_valtype(buffer)
         in_ = []
-        while (instruction := read_instruction(buffer)) != "end":
+        instruction = read_instruction(buffer)
+        while instruction != "end":
             in_.append(instruction)
+            instruction = read_instruction(buffer)
 
         return "block", rt, tuple(in_), "end"
 
     if data == b"\x03":
         rt = read_valtype(buffer)
         in_ = []
-        while (instruction := read_instruction(buffer)) != "end":
+        instruction = read_instruction(buffer)
+        while instruction != "end":
             in_.append(instruction)
+            instruction = read_instruction(buffer)
 
         return "loop", rt, tuple(in_), "end"
 
     if data == b"\x04":
         rt = read_valtype(buffer)
         in1 = []
-        while (instruction := read_instruction(buffer)) not in ["end", "else"]:
+        instruction = read_instruction(buffer)
+        while instruction not in ["end", "else"]:
             in1.append(instruction)
+            instruction = read_instruction(buffer)
 
         in1 = tuple(in1)
         if instruction == "end":
@@ -66,8 +74,10 @@ def read_instruction(buffer: object) -> "str or tuple":
 
         # "else"
         in2 = []
-        while (instruction := read_instruction(buffer)) != "end":
+        instruction = read_instruction(buffer)
+        while instruction != "end":
             in2.append(instruction)
+            instruction = read_instruction(buffer)
 
         return "if", rt, in1, "else", tuple(in2), "end"
 
