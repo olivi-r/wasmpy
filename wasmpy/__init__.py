@@ -1,9 +1,4 @@
-from .module import read_module
+from .hooks import WebAssemblyBinaryLoader
+import sys
 
-
-def load_binary(filepath):
-    """Load a WebAssembly binary from file."""
-    with open(filepath, "rb") as fp:
-        mod = read_module(fp)
-
-    return mod
+sys.meta_path.append(WebAssemblyBinaryLoader())
