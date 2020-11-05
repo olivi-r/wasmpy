@@ -5,7 +5,7 @@ with open("README.md", "r") as fp:
 
 setuptools.setup(
     name="wasmpy",
-    version="0.1.0a1",
+    version="0.1.0a2",
     author="Jay Ryan",
     author_email="jay.p.ryan.2003@gmail.com",
     description="Interactions between WebAssembly and Python",
