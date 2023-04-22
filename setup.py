@@ -6,12 +6,12 @@ with open("README.md", "r") as fp:
 setuptools.setup(
     name="wasmpy",
     version="0.1.0a3",
-    author="Jay Ryan",
-    author_email="jay.p.ryan.2003@gmail.com",
+    author="Olivia Ryan",
+    author_email="olivia.r.dev@gmail.com",
     description="Interactions between WebAssembly and Python",
     long_description=description,
     long_description_content_type="text/markdown",
-    url="https://github.com/r-jay-dev/wasmpy",
+    url="https://github.com/olivi-r/wasmpy",
     packages=["wasmpy"],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

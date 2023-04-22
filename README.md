@@ -12,7 +12,7 @@ $ python -m pip install wasmpy
 Or build and install from source:
 
 ```
-$ git clone https://github.com/r-jay-dev/wasmpy.git
+$ git clone https://github.com/olivi-r/wasmpy.git
 $ cd wasmpy
 $ python setup.py install
 ```
