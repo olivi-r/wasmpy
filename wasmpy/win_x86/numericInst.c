@@ -185,20 +185,20 @@ uint8_t *i32_add()
 
 uint8_t *i32_sub()
 {
-    // pop ax
-    // pop ax
-    // shl eax, 16
-    // pop ax
     // pop cx
     // pop cx
     // shl ecx, 16
     // pop cx
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
     // sub eax, ecx
     // push ax
     // shr eax, 16
     // push ax
     // push 2
-    uint8_t *buf = malloc(27);
-    memcpy(buf, (uint8_t[]){POP_EAX, POP_ECX, 0x29, 0xC8, PUSH_AX, SHR_EAX, V32}, 27);
+    uint8_t *buf = malloc(29);
+    memcpy(buf, (uint8_t[]){POP_ECX, POP_EAX, 0x29, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
     return buf;
 }
