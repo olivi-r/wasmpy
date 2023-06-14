@@ -66,7 +66,7 @@ uint8_t *i32_eqz()
     // push 0
     // push 2
     uint8_t *buf = malloc(24);
-    memcpy(buf, (uint8_t[]){POP_EAX, 0x83, 0xF8, 0, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32}, 24);
+    memcpy(buf, (uint8_t[]){POP_V32A, 0x83, 0xF8, 0, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32}, 24);
     return buf;
 }
 
@@ -90,7 +90,7 @@ uint8_t *i32_eq()
     // push 0
     // push 2
     uint8_t *buf = malloc(32);
-    memcpy(buf, (uint8_t[]){POP_EAX, POP_ECX, 0x39, 0xC8, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32}, 32);
+    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32}, 32);
     return buf;
 }
 
@@ -114,7 +114,7 @@ uint8_t *i32_ne()
     // push 0
     // push 2
     uint8_t *buf = malloc(32);
-    memcpy(buf, (uint8_t[]){POP_EAX, POP_ECX, 0x39, 0xC8, 0x74, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 32);
+    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 32);
     return buf;
 }
 
@@ -129,7 +129,7 @@ uint8_t *i32_clz()
     // push 0
     // push 2
     uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_EAX, 0xF3, 0x0F, 0xBD, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
+    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xBD, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
     return buf;
 }
 
@@ -144,7 +144,7 @@ uint8_t *i32_ctz()
     // push 0
     // push 2
     uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_EAX, 0xF3, 0x0F, 0xBC, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
+    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xBC, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
     return buf;
 }
 
@@ -159,7 +159,7 @@ uint8_t *i32_popcnt()
     // push 0
     // push 2
     uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_EAX, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), PUSH(2)}, 19);
+    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), PUSH(2)}, 19);
     return buf;
 }
 
@@ -179,7 +179,7 @@ uint8_t *i32_add()
     // push ax
     // push 2
     uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_EAX, POP_ECX, 0x01, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
+    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x01, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
     return buf;
 }
 
@@ -199,6 +199,78 @@ uint8_t *i32_sub()
     // push ax
     // push 2
     uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_ECX, POP_EAX, 0x29, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
+    memcpy(buf, (uint8_t[]){POP_V32B, POP_V32A, 0x29, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
+    return buf;
+}
+
+uint8_t *i64_clz()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // lzcnt eax, eax
+    // cmp eax, 32
+    // jne false
+    // lzcnt ecx, ecx
+    // add eax, ecx
+    // false:
+    // push ax
+    // push 0
+    // push 0
+    // push 0
+    // push 4
+    uint8_t *buf = malloc(41);
+    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, 0x75, 6, 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64}, 41);
+    return buf;
+}
+
+uint8_t *i64_ctz()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // tzcnt ecx, ecx
+    // cmp ecx, 32
+    // jne false
+    // tzcnt eax, eax
+    // add ecx, eax
+    // false:
+    // push cx
+    // push 0
+    // push 0
+    // push 0
+    // push 4
+    uint8_t *buf = malloc(41);
+    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, 0x75, 6, 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64}, 41);
+    return buf;
+}
+
+uint8_t *i64_popcnt()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // popcnt eax, eax
+    // popcnt ecx, ecx
+    // add eax, ecx
+    // push ax
+    // push 0
+    // push 0
+    // push 0
+    // push 4
+    uint8_t *buf = malloc(36);
+    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), PUSH(4)}, 36);
     return buf;
 }
