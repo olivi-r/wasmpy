@@ -118,6 +118,96 @@ uint8_t *i32_ne()
     return buf;
 }
 
+uint8_t *i64_eqz()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // cmp eax, ecx
+    // jne false
+    // cmp eax, 0
+    // jne false
+    // push 1
+    // jmp end
+    // false:
+    // push 0
+    // end:
+    // push 0
+    // push 2
+    uint8_t *buf = malloc(35);
+    memcpy(buf, (uint8_t[]){POP_V64A, 0x39, 0xC8, 0x75, 9, 0x83, 0xF8, 0, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 35);
+    return buf;
+}
+
+uint8_t *i64_eq()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // cmp eax, edx
+    // jne false
+    // cmp ecx, ebx
+    // jne false
+    // push 1
+    // jmp end
+    // false:
+    // push 0
+    // end:
+    // push 0
+    // push 2
+    uint8_t *buf = malloc(50);
+    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x39, 0xD0, 0x75, 8, 0x39, 0xD9, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 50);
+    return buf;
+}
+
+uint8_t *i64_ne()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // cmp eax, edx
+    // je equal
+    // true:
+    // push 1
+    // jmp end
+    // equal:
+    // cmp ecx, edx
+    // jne true
+    // push 0
+    // end:
+    // push 0
+    // push 2
+    uint8_t *buf = malloc(50);
+    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x39, 0xD0, 0x74, 4, PUSH(1), 0xEB, 6, 0x39, 0xD1, 0x75, -8, PUSH(0), PUSH(0), V32}, 50);
+    return buf;
+}
+
 uint8_t *i32_clz()
 {
     // pop ax
@@ -159,7 +249,7 @@ uint8_t *i32_popcnt()
     // push 0
     // push 2
     uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), PUSH(2)}, 19);
+    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
     return buf;
 }
 
