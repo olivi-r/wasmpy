@@ -1,6 +1,10 @@
 # WasmPy
 Interacting with WebAssembly code from python.
 
+Wasmpy is a fairly lightweight layer that sits between Python and the WebAssembly code. When attempting to import a WebAssembly file, the file is read and it is converted into native machine code for native speeds.
+
+This project is intended to be used in conjunction with [wasmpy-build](https://github.com/olivi-r/wasmpy-build), although it does support regular WebAssembly files too.
+
 ## Installing
 
 Install the latest version:
