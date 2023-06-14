@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <Windows.h>
+#include <vector>
 
 #define PUSH(x) 0x6A, x
 
@@ -32,3 +33,5 @@
 #define POP_V32B POP_CX, POP_ECX
 #define POP_V64A POP_AX, POP_EAX, POP_ECX
 #define POP_V64B POP_DX, POP_EDX, POP_EBX
+
+typedef std::vector<uint8_t> bytes;

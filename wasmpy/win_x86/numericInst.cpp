@@ -2,7 +2,7 @@
 
 // constants pushed to stack in 16 bit blocks with length appended
 
-uint8_t *i32_const(uint32_t n)
+bytes i32_const(uint32_t n)
 {
     // mov ax, n[15:0]
     // push ax
@@ -11,12 +11,10 @@ uint8_t *i32_const(uint32_t n)
     // push 2
     uint16_t hi = n >> 16;
     uint16_t lo = n & 0xFFFF;
-    uint8_t *buf = malloc(14);
-    memcpy(buf, (uint8_t[]){MOV_AX, lo & 255, lo >> 8, PUSH_AX, MOV_AX, hi & 255, hi >> 8, PUSH_AX, V32}, 14);
-    return buf;
+    return {MOV_AX, (uint8_t)(lo & 255), (uint8_t)(lo >> 8), PUSH_AX, MOV_AX, (uint8_t)(hi & 255), (uint8_t)(hi >> 8), PUSH_AX, V32};
 }
 
-uint8_t *i64_const(uint64_t n)
+bytes i64_const(uint64_t n)
 {
     // mov ax, n[15:0]
     // push ax
@@ -31,26 +29,24 @@ uint8_t *i64_const(uint64_t n)
     uint16_t hl = n >> 32 & 0xFFFF;
     uint16_t lh = n >> 16 & 0xFFFF;
     uint16_t ll = n & 0xFFFF;
-    uint8_t *buf = malloc(26);
-    memcpy(buf, (uint8_t[]){MOV_AX, ll & 255, ll >> 8, PUSH_AX, MOV_AX, lh & 255, lh >> 8, PUSH_AX, MOV_AX, hl & 255, hl >> 8, PUSH_AX, MOV_AX, hh & 255, hh >> 8, PUSH_AX, V64}, 26);
-    return buf;
+    return {MOV_AX, (uint8_t)(ll & 255), (uint8_t)(ll >> 8), PUSH_AX, MOV_AX, (uint8_t)(lh & 255), (uint8_t)(lh >> 8), PUSH_AX, MOV_AX, (uint8_t)(hl & 255), (uint8_t)(hl >> 8), PUSH_AX, MOV_AX, (uint8_t)(hh & 255), (uint8_t)(hh >> 8), PUSH_AX, V64};
 }
 
-uint8_t *f32_const(float z)
+bytes f32_const(float z)
 {
     uint32_t n;
     memcpy(&n, &z, 4);
     return i32_const(n);
 }
 
-uint8_t *f64_const(double z)
+bytes f64_const(double z)
 {
     uint64_t n;
     memcpy(&n, &z, 8);
     return i64_const(n);
 }
 
-uint8_t *i32_eqz()
+bytes i32_eqz()
 {
     // pop ax
     // pop ax
@@ -65,12 +61,10 @@ uint8_t *i32_eqz()
     // end:
     // push 0
     // push 2
-    uint8_t *buf = malloc(24);
-    memcpy(buf, (uint8_t[]){POP_V32A, 0x83, 0xF8, 0, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32}, 24);
-    return buf;
+    return {POP_V32A, 0x83, 0xF8, 0, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32};
 }
 
-uint8_t *i32_eq()
+bytes i32_eq()
 {
     // pop ax
     // pop ax
@@ -89,12 +83,10 @@ uint8_t *i32_eq()
     // end:
     // push 0
     // push 2
-    uint8_t *buf = malloc(32);
-    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32}, 32);
-    return buf;
+    return {POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32};
 }
 
-uint8_t *i32_ne()
+bytes i32_ne()
 {
     // pop ax
     // pop ax
@@ -113,12 +105,10 @@ uint8_t *i32_ne()
     // end:
     // push 0
     // push 2
-    uint8_t *buf = malloc(32);
-    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 32);
-    return buf;
+    return {POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32};
 }
 
-uint8_t *i64_eqz()
+bytes i64_eqz()
 {
     // pop ax
     // pop ax
@@ -138,12 +128,10 @@ uint8_t *i64_eqz()
     // end:
     // push 0
     // push 2
-    uint8_t *buf = malloc(35);
-    memcpy(buf, (uint8_t[]){POP_V64A, 0x39, 0xC8, 0x75, 9, 0x83, 0xF8, 0, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 35);
-    return buf;
+    return {POP_V64A, 0x39, 0xC8, 0x75, 9, 0x83, 0xF8, 0, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32};
 }
 
-uint8_t *i64_eq()
+bytes i64_eq()
 {
     // pop ax
     // pop ax
@@ -170,12 +158,10 @@ uint8_t *i64_eq()
     // end:
     // push 0
     // push 2
-    uint8_t *buf = malloc(50);
-    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x39, 0xD0, 0x75, 8, 0x39, 0xD9, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32}, 50);
-    return buf;
+    return {POP_V64A, POP_V64B, 0x39, 0xD0, 0x75, 8, 0x39, 0xD9, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32};
 }
 
-uint8_t *i64_ne()
+bytes i64_ne()
 {
     // pop ax
     // pop ax
@@ -203,12 +189,10 @@ uint8_t *i64_ne()
     // end:
     // push 0
     // push 2
-    uint8_t *buf = malloc(50);
-    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x39, 0xD0, 0x74, 4, PUSH(1), 0xEB, 6, 0x39, 0xD1, 0x75, -8, PUSH(0), PUSH(0), V32}, 50);
-    return buf;
+    return {POP_V64A, POP_V64B, 0x39, 0xD0, 0x74, 4, PUSH(1), 0xEB, 6, 0x39, 0xD1, 0x75, (uint8_t)-8, PUSH(0), PUSH(0), V32};
 }
 
-uint8_t *i32_clz()
+bytes i32_clz()
 {
     // pop ax
     // pop ax
@@ -218,12 +202,10 @@ uint8_t *i32_clz()
     // push ax
     // push 0
     // push 2
-    uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xBD, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
-    return buf;
+    return {POP_V32A, 0xF3, 0x0F, 0xBD, 0xC0, PUSH_AX, PUSH(0), V32};
 }
 
-uint8_t *i32_ctz()
+bytes i32_ctz()
 {
     // pop ax
     // pop ax
@@ -233,12 +215,10 @@ uint8_t *i32_ctz()
     // push ax
     // push 0
     // push 2
-    uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xBC, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
-    return buf;
+    return {POP_V32A, 0xF3, 0x0F, 0xBC, 0xC0, PUSH_AX, PUSH(0), V32};
 }
 
-uint8_t *i32_popcnt()
+bytes i32_popcnt()
 {
     // pop ax
     // pop ax
@@ -248,12 +228,10 @@ uint8_t *i32_popcnt()
     // push ax
     // push 0
     // push 2
-    uint8_t *buf = malloc(19);
-    memcpy(buf, (uint8_t[]){POP_V32A, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), V32}, 19);
-    return buf;
+    return {POP_V32A, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), V32};
 }
 
-uint8_t *i32_add()
+bytes i32_add()
 {
     // pop ax
     // pop ax
@@ -268,12 +246,10 @@ uint8_t *i32_add()
     // shr eax, 16
     // push ax
     // push 2
-    uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x01, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
-    return buf;
+    return {POP_V32A, POP_V32B, 0x01, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
 }
 
-uint8_t *i32_sub()
+bytes i32_sub()
 {
     // pop cx
     // pop cx
@@ -288,12 +264,10 @@ uint8_t *i32_sub()
     // shr eax, 16
     // push ax
     // push 2
-    uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_V32B, POP_V32A, 0x29, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
-    return buf;
+    return {POP_V32B, POP_V32A, 0x29, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
 }
 
-uint8_t *i32_and()
+bytes i32_and()
 {
     // pop ax
     // pop ax
@@ -308,12 +282,10 @@ uint8_t *i32_and()
     // shr eax, 16
     // push ax
     // push 2
-    uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x21, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
-    return buf;
+    return {POP_V32A, POP_V32B, 0x21, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
 }
 
-uint8_t *i32_or()
+bytes i32_or()
 {
     // pop ax
     // pop ax
@@ -328,12 +300,10 @@ uint8_t *i32_or()
     // shr eax, 16
     // push ax
     // push 2
-    uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x09, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
-    return buf;
+    return {POP_V32A, POP_V32B, 0x09, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
 }
 
-uint8_t *i32_xor()
+bytes i32_xor()
 {
     // pop ax
     // pop ax
@@ -348,12 +318,10 @@ uint8_t *i32_xor()
     // shr eax, 16
     // push ax
     // push 2
-    uint8_t *buf = malloc(29);
-    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x31, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
-    return buf;
+    return {POP_V32A, POP_V32B, 0x31, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
 }
 
-uint8_t *i64_clz()
+bytes i64_clz()
 {
     // pop ax
     // pop ax
@@ -373,12 +341,10 @@ uint8_t *i64_clz()
     // push 0
     // push 0
     // push 4
-    uint8_t *buf = malloc(41);
-    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, 0x75, 6, 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64}, 41);
-    return buf;
+    return {POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, 0x75, 6, 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
-uint8_t *i64_ctz()
+bytes i64_ctz()
 {
     // pop ax
     // pop ax
@@ -398,12 +364,10 @@ uint8_t *i64_ctz()
     // push 0
     // push 0
     // push 4
-    uint8_t *buf = malloc(41);
-    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, 0x75, 6, 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64}, 41);
-    return buf;
+    return {POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, 0x75, 6, 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
-uint8_t *i64_popcnt()
+bytes i64_popcnt()
 {
     // pop ax
     // pop ax
@@ -420,12 +384,10 @@ uint8_t *i64_popcnt()
     // push 0
     // push 0
     // push 4
-    uint8_t *buf = malloc(36);
-    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64}, 36);
-    return buf;
+    return {POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
-uint8_t *i64_and()
+bytes i64_and()
 {
     // pop ax
     // pop ax
@@ -450,12 +412,10 @@ uint8_t *i64_and()
     // shr eax, 16
     // push ax
     // push 4
-    uint8_t *buf = malloc(52);
-    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x21, 0xD0, 0x21, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64}, 52);
-    return buf;
+    return {POP_V64A, POP_V64B, 0x21, 0xD0, 0x21, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64};
 }
 
-uint8_t *i64_or()
+bytes i64_or()
 {
     // pop ax
     // pop ax
@@ -480,12 +440,10 @@ uint8_t *i64_or()
     // shr eax, 16
     // push ax
     // push 4
-    uint8_t *buf = malloc(52);
-    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x09, 0xD0, 0x09, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64}, 52);
-    return buf;
+    return {POP_V64A, POP_V64B, 0x09, 0xD0, 0x09, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64};
 }
 
-uint8_t *i64_xor()
+bytes i64_xor()
 {
     // pop ax
     // pop ax
@@ -510,7 +468,5 @@ uint8_t *i64_xor()
     // shr eax, 16
     // push ax
     // push 4
-    uint8_t *buf = malloc(52);
-    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x31, 0xD0, 0x31, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64}, 52);
-    return buf;
+    return {POP_V64A, POP_V64B, 0x31, 0xD0, 0x31, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64};
 }

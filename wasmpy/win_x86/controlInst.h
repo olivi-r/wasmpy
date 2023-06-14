@@ -1,3 +1,3 @@
 #include "common.h"
 
-inline uint8_t *nop() { return NULL; }
+inline bytes nop() { return {}; }
