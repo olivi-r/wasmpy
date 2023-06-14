@@ -21,6 +21,7 @@
 #define SHL_EBX 0xC1, 0xE3, 16
 
 #define SHR_EAX 0xC1, 0xE8, 16
+#define SHR_ECX 0xC1, 0xE9, 16
 
 #define POP_EAX POP_AX, SHL_EAX, POP_AX
 #define POP_ECX POP_CX, SHL_ECX, POP_CX

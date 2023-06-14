@@ -293,6 +293,66 @@ uint8_t *i32_sub()
     return buf;
 }
 
+uint8_t *i32_and()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // and eax, ecx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 2
+    uint8_t *buf = malloc(29);
+    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x21, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
+    return buf;
+}
+
+uint8_t *i32_or()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // or eax, ecx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 2
+    uint8_t *buf = malloc(29);
+    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x09, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
+    return buf;
+}
+
+uint8_t *i32_xor()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // xor eax, ecx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 2
+    uint8_t *buf = malloc(29);
+    memcpy(buf, (uint8_t[]){POP_V32A, POP_V32B, 0x31, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32}, 29);
+    return buf;
+}
+
 uint8_t *i64_clz()
 {
     // pop ax
@@ -361,6 +421,96 @@ uint8_t *i64_popcnt()
     // push 0
     // push 4
     uint8_t *buf = malloc(36);
-    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), PUSH(4)}, 36);
+    memcpy(buf, (uint8_t[]){POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64}, 36);
+    return buf;
+}
+
+uint8_t *i64_and()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // and eax, edx
+    // and ecx, ebx
+    // push cx
+    // shr ecx, 16
+    // push cx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 4
+    uint8_t *buf = malloc(52);
+    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x21, 0xD0, 0x21, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64}, 52);
+    return buf;
+}
+
+uint8_t *i64_or()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // or eax, edx
+    // or ecx, ebx
+    // push cx
+    // shr ecx, 16
+    // push cx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 4
+    uint8_t *buf = malloc(52);
+    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x09, 0xD0, 0x09, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64}, 52);
+    return buf;
+}
+
+uint8_t *i64_xor()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // xor eax, edx
+    // xor ecx, ebx
+    // push cx
+    // shr ecx, 16
+    // push cx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 4
+    uint8_t *buf = malloc(52);
+    memcpy(buf, (uint8_t[]){POP_V64A, POP_V64B, 0x31, 0xD0, 0x31, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64}, 52);
     return buf;
 }
