@@ -472,6 +472,34 @@ bytes i64_add()
     return {POP_V64A, POP_V64B, 0x01, 0xD9, 0x11, 0xD0, PUSH_V64};
 }
 
+bytes i64_sub()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // sub ecx, ebx
+    // sbb eax, edx
+    // push cx
+    // shr ecx, 16
+    // push cx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push word 4
+    return {POP_V64A, POP_V64B, 0x29, 0xD9, 0x19, 0xD0, PUSH_V64};
+}
+
 bytes i64_and()
 {
     // pop ax
