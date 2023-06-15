@@ -2,12 +2,17 @@
 #include <Windows.h>
 #include <vector>
 
-#define PUSH(x) 0x6A, x
+#define PUSH(x) 0x6A, (uint8_t)x
+
+#define JMP(x) 0xEB, (uint8_t)x
+#define JE(x) 0x74, (uint8_t)x
+#define JNE(x) 0x75, (uint8_t)x
 
 #define V32 PUSH(2)
 #define V64 PUSH(4)
 
 #define MOV_AX 0x66, 0xB8
+
 #define PUSH_AX 0x66, 0x50
 #define PUSH_CX 0x66, 0x51
 
@@ -33,5 +38,8 @@
 #define POP_V32B POP_CX, POP_ECX
 #define POP_V64A POP_AX, POP_EAX, POP_ECX
 #define POP_V64B POP_DX, POP_EDX, POP_EBX
+
+#define PUSH_V32 PUSH_AX, SHR_EAX, PUSH_AX, V32
+#define PUSH_V64 PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64
 
 typedef std::vector<uint8_t> bytes;

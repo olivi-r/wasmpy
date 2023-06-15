@@ -61,7 +61,7 @@ bytes i32_eqz()
     // end:
     // push 0
     // push 2
-    return {POP_V32A, 0x83, 0xF8, 0, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32};
+    return {POP_V32A, 0x83, 0xF8, 0, JE(4), PUSH(0), JMP(2), PUSH(1), PUSH(0), V32};
 }
 
 bytes i32_eq()
@@ -83,7 +83,7 @@ bytes i32_eq()
     // end:
     // push 0
     // push 2
-    return {POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(0), 0xEB, 2, PUSH(1), PUSH(0), V32};
+    return {POP_V32A, POP_V32B, 0x39, 0xC8, JE(4), PUSH(0), JMP(2), PUSH(1), PUSH(0), V32};
 }
 
 bytes i32_ne()
@@ -105,7 +105,7 @@ bytes i32_ne()
     // end:
     // push 0
     // push 2
-    return {POP_V32A, POP_V32B, 0x39, 0xC8, 0x74, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32};
+    return {POP_V32A, POP_V32B, 0x39, 0xC8, JE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32};
 }
 
 bytes i64_eqz()
@@ -128,7 +128,7 @@ bytes i64_eqz()
     // end:
     // push 0
     // push 2
-    return {POP_V64A, 0x39, 0xC8, 0x75, 9, 0x83, 0xF8, 0, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32};
+    return {POP_V64A, 0x39, 0xC8, JNE(9), 0x83, 0xF8, 0, JNE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32};
 }
 
 bytes i64_eq()
@@ -158,7 +158,7 @@ bytes i64_eq()
     // end:
     // push 0
     // push 2
-    return {POP_V64A, POP_V64B, 0x39, 0xD0, 0x75, 8, 0x39, 0xD9, 0x75, 4, PUSH(1), 0xEB, 2, PUSH(0), PUSH(0), V32};
+    return {POP_V64A, POP_V64B, 0x39, 0xD0, JNE(8), 0x39, 0xD9, JNE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32};
 }
 
 bytes i64_ne()
@@ -189,7 +189,7 @@ bytes i64_ne()
     // end:
     // push 0
     // push 2
-    return {POP_V64A, POP_V64B, 0x39, 0xD0, 0x74, 4, PUSH(1), 0xEB, 6, 0x39, 0xD1, 0x75, (uint8_t)-8, PUSH(0), PUSH(0), V32};
+    return {POP_V64A, POP_V64B, 0x39, 0xD0, JE(4), PUSH(1), JMP(6), 0x39, 0xD1, JNE(-8), PUSH(0), PUSH(0), V32};
 }
 
 bytes i32_clz()
@@ -246,7 +246,7 @@ bytes i32_add()
     // shr eax, 16
     // push ax
     // push 2
-    return {POP_V32A, POP_V32B, 0x01, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
+    return {POP_V32A, POP_V32B, 0x01, 0xC8, PUSH_V32};
 }
 
 bytes i32_sub()
@@ -264,7 +264,7 @@ bytes i32_sub()
     // shr eax, 16
     // push ax
     // push 2
-    return {POP_V32B, POP_V32A, 0x29, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
+    return {POP_V32B, POP_V32A, 0x29, 0xC8, PUSH_V32};
 }
 
 bytes i32_and()
@@ -282,7 +282,7 @@ bytes i32_and()
     // shr eax, 16
     // push ax
     // push 2
-    return {POP_V32A, POP_V32B, 0x21, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
+    return {POP_V32A, POP_V32B, 0x21, 0xC8, PUSH_V32};
 }
 
 bytes i32_or()
@@ -300,7 +300,7 @@ bytes i32_or()
     // shr eax, 16
     // push ax
     // push 2
-    return {POP_V32A, POP_V32B, 0x09, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
+    return {POP_V32A, POP_V32B, 0x09, 0xC8, PUSH_V32};
 }
 
 bytes i32_xor()
@@ -318,7 +318,26 @@ bytes i32_xor()
     // shr eax, 16
     // push ax
     // push 2
-    return {POP_V32A, POP_V32B, 0x31, 0xC8, PUSH_AX, SHR_EAX, PUSH_AX, V32};
+    return {POP_V32A, POP_V32B, 0x31, 0xC8, PUSH_V32};
+}
+
+bytes i32_shl()
+{
+    // mov cx, 32
+    // pop ax
+    // pop ax
+    // pop dx
+    // idiv cx
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // mov cl, dl
+    // shl eax, cl
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 2
+    return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE0, PUSH_V32};
 }
 
 bytes i64_clz()
@@ -341,7 +360,7 @@ bytes i64_clz()
     // push 0
     // push 0
     // push 4
-    return {POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, 0x75, 6, 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
+    return {POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, JNE(6), 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
 bytes i64_ctz()
@@ -364,7 +383,7 @@ bytes i64_ctz()
     // push 0
     // push 0
     // push 4
-    return {POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, 0x75, 6, 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64};
+    return {POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, JNE(6), 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
 bytes i64_popcnt()
@@ -412,7 +431,7 @@ bytes i64_and()
     // shr eax, 16
     // push ax
     // push 4
-    return {POP_V64A, POP_V64B, 0x21, 0xD0, 0x21, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64};
+    return {POP_V64A, POP_V64B, 0x21, 0xD0, 0x21, 0xD9, PUSH_V64};
 }
 
 bytes i64_or()
@@ -440,7 +459,7 @@ bytes i64_or()
     // shr eax, 16
     // push ax
     // push 4
-    return {POP_V64A, POP_V64B, 0x09, 0xD0, 0x09, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64};
+    return {POP_V64A, POP_V64B, 0x09, 0xD0, 0x09, 0xD9, PUSH_V64};
 }
 
 bytes i64_xor()
@@ -468,5 +487,5 @@ bytes i64_xor()
     // shr eax, 16
     // push ax
     // push 4
-    return {POP_V64A, POP_V64B, 0x31, 0xD0, 0x31, 0xD9, PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64};
+    return {POP_V64A, POP_V64B, 0x31, 0xD0, 0x31, 0xD9, PUSH_V64};
 }
