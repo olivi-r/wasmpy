@@ -340,6 +340,44 @@ bytes i32_shl()
     return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE0, PUSH_V32};
 }
 
+bytes i32_shr_s()
+{
+    // mov cx, 32
+    // pop ax
+    // pop ax
+    // pop dx
+    // idiv cx
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // mov cl, dl
+    // sar eax, cl
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 2
+    return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xF8, PUSH_V32};
+}
+
+bytes i32_shr_u()
+{
+    // mov cx, 32
+    // pop ax
+    // pop ax
+    // pop dx
+    // idiv cx
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // mov cl, dl
+    // shr eax, cl
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push 2
+    return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE8, PUSH_V32};
+}
+
 bytes i64_clz()
 {
     // pop ax
