@@ -8,7 +8,7 @@ bytes i32_const(uint32_t n)
     // push ax
     // mov ax, n[31:16]
     // push ax
-    // push 2
+    // push word 2
     uint16_t hi = n >> 16;
     uint16_t lo = n & 0xFFFF;
     return {MOV_AX, (uint8_t)(lo & 255), (uint8_t)(lo >> 8), PUSH_AX, MOV_AX, (uint8_t)(hi & 255), (uint8_t)(hi >> 8), PUSH_AX, V32};
@@ -24,7 +24,7 @@ bytes i64_const(uint64_t n)
     // push ax
     // mov ax, n[63:48]
     // push ax
-    // push 4
+    // push word 4
     uint16_t hh = n >> 48;
     uint16_t hl = n >> 32 & 0xFFFF;
     uint16_t lh = n >> 16 & 0xFFFF;
@@ -54,13 +54,13 @@ bytes i32_eqz()
     // pop ax
     // cmp eax, 0
     // je true
-    // push 0
+    // push word 0
     // jmp end
     // true:
-    // push 1
+    // push word 1
     // end:
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V32A, 0x83, 0xF8, 0, JE(4), PUSH(0), JMP(2), PUSH(1), PUSH(0), V32};
 }
 
@@ -76,13 +76,13 @@ bytes i32_eq()
     // pop cx
     // cmp eax, ecx
     // je true
-    // push 0
+    // push word 0
     // jmp end
     // true:
-    // push 1
+    // push word 1
     // end:
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V32A, POP_V32B, 0x39, 0xC8, JE(4), PUSH(0), JMP(2), PUSH(1), PUSH(0), V32};
 }
 
@@ -98,13 +98,13 @@ bytes i32_ne()
     // pop cx
     // cmp eax, ecx
     // je false
-    // push 1
+    // push word 1
     // jmp end
     // false:
-    // push 0
+    // push word 0
     // end:
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V32A, POP_V32B, 0x39, 0xC8, JE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32};
 }
 
@@ -121,13 +121,13 @@ bytes i64_eqz()
     // jne false
     // cmp eax, 0
     // jne false
-    // push 1
+    // push word 1
     // jmp end
     // false:
-    // push 0
+    // push word 0
     // end:
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V64A, 0x39, 0xC8, JNE(9), 0x83, 0xF8, 0, JNE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32};
 }
 
@@ -151,13 +151,13 @@ bytes i64_eq()
     // jne false
     // cmp ecx, ebx
     // jne false
-    // push 1
+    // push word 1
     // jmp end
     // false:
-    // push 0
+    // push word 0
     // end:
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V64A, POP_V64B, 0x39, 0xD0, JNE(8), 0x39, 0xD9, JNE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32};
 }
 
@@ -180,15 +180,15 @@ bytes i64_ne()
     // cmp eax, edx
     // je equal
     // true:
-    // push 1
+    // push word 1
     // jmp end
     // equal:
     // cmp ecx, edx
     // jne true
-    // push 0
+    // push word 0
     // end:
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V64A, POP_V64B, 0x39, 0xD0, JE(4), PUSH(1), JMP(6), 0x39, 0xD1, JNE(-8), PUSH(0), PUSH(0), V32};
 }
 
@@ -200,8 +200,8 @@ bytes i32_clz()
     // pop ax
     // lzcnt eax, eax
     // push ax
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V32A, 0xF3, 0x0F, 0xBD, 0xC0, PUSH_AX, PUSH(0), V32};
 }
 
@@ -213,8 +213,8 @@ bytes i32_ctz()
     // pop ax
     // tzcnt eax, eax
     // push ax
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V32A, 0xF3, 0x0F, 0xBC, 0xC0, PUSH_AX, PUSH(0), V32};
 }
 
@@ -226,8 +226,8 @@ bytes i32_popcnt()
     // pop ax
     // popcnt eax, eax
     // push ax
-    // push 0
-    // push 2
+    // push word 0
+    // push word 2
     return {POP_V32A, 0xF3, 0x0F, 0xB8, 0xC0, PUSH_AX, PUSH(0), V32};
 }
 
@@ -245,7 +245,7 @@ bytes i32_add()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {POP_V32A, POP_V32B, 0x01, 0xC8, PUSH_V32};
 }
 
@@ -263,7 +263,7 @@ bytes i32_sub()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {POP_V32B, POP_V32A, 0x29, 0xC8, PUSH_V32};
 }
 
@@ -281,7 +281,7 @@ bytes i32_and()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {POP_V32A, POP_V32B, 0x21, 0xC8, PUSH_V32};
 }
 
@@ -299,7 +299,7 @@ bytes i32_or()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {POP_V32A, POP_V32B, 0x09, 0xC8, PUSH_V32};
 }
 
@@ -317,7 +317,7 @@ bytes i32_xor()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {POP_V32A, POP_V32B, 0x31, 0xC8, PUSH_V32};
 }
 
@@ -336,7 +336,7 @@ bytes i32_shl()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE0, PUSH_V32};
 }
 
@@ -355,7 +355,7 @@ bytes i32_shr_s()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xF8, PUSH_V32};
 }
 
@@ -374,7 +374,7 @@ bytes i32_shr_u()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     return {0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE8, PUSH_V32};
 }
 
@@ -394,10 +394,10 @@ bytes i64_clz()
     // add eax, ecx
     // false:
     // push ax
-    // push 0
-    // push 0
-    // push 0
-    // push 4
+    // push word 0
+    // push word 0
+    // push word 0
+    // push word 4
     return {POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, JNE(6), 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
@@ -417,10 +417,10 @@ bytes i64_ctz()
     // add ecx, eax
     // false:
     // push cx
-    // push 0
-    // push 0
-    // push 0
-    // push 4
+    // push word 0
+    // push word 0
+    // push word 0
+    // push word 4
     return {POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, JNE(6), 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
@@ -437,10 +437,10 @@ bytes i64_popcnt()
     // popcnt ecx, ecx
     // add eax, ecx
     // push ax
-    // push 0
-    // push 0
-    // push 0
-    // push 4
+    // push word 0
+    // push word 0
+    // push word 0
+    // push word 4
     return {POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
@@ -468,7 +468,7 @@ bytes i64_and()
     // push ax
     // shr eax, 16
     // push ax
-    // push 4
+    // push word 4
     return {POP_V64A, POP_V64B, 0x21, 0xD0, 0x21, 0xD9, PUSH_V64};
 }
 
@@ -496,7 +496,7 @@ bytes i64_or()
     // push ax
     // shr eax, 16
     // push ax
-    // push 4
+    // push word 4
     return {POP_V64A, POP_V64B, 0x09, 0xD0, 0x09, 0xD9, PUSH_V64};
 }
 
@@ -524,6 +524,6 @@ bytes i64_xor()
     // push ax
     // shr eax, 16
     // push ax
-    // push 4
+    // push word 4
     return {POP_V64A, POP_V64B, 0x31, 0xD0, 0x31, 0xD9, PUSH_V64};
 }

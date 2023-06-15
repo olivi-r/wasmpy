@@ -51,7 +51,7 @@ bytes select()
     // push ax
     // shr eax, 16
     // push ax
-    // push 4
+    // push word 4
     // jmp end
     // zerox32:
     // pop ax
@@ -63,7 +63,7 @@ bytes select()
     // push ax
     // shr eax, 16
     // push ax
-    // push 2
+    // push word 2
     // end:
     return {POP_V32A, 0x66, 0x83, 0xF8, 0, JE(18), POP_AX, 0x66, 0x83, 0xF8, 2, JE(4), POP_AX, POP_AX, POP_AX, POP_AX, JMP(72), POP_AX, 0x66, 0x83, 0xF8, 2, JE(42), POP_EAX, POP_ECX, POP_DX, POP_DX, POP_DX, POP_DX, POP_DX, PUSH_V64, JMP(22), POP_EAX, POP_CX, POP_CX, POP_CX, PUSH_V32};
 }

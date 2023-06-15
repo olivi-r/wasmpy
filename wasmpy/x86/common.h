@@ -1,8 +1,7 @@
 #include <stdint.h>
-#include <Windows.h>
 #include <vector>
 
-#define PUSH(x) 0x6A, (uint8_t)x
+#define PUSH(x) 0x66, 0x68, (uint8_t)(x & 255), (uint8_t)(x >> 8)
 
 #define JMP(x) 0xEB, (uint8_t)x
 #define JE(x) 0x74, (uint8_t)x
