@@ -444,6 +444,34 @@ bytes i64_popcnt()
     return {POP_V64A, 0xF3, 0x0F, 0xB8, 0xC0, 0xF3, 0x0F, 0xB8, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64};
 }
 
+bytes i64_add()
+{
+    // pop ax
+    // pop ax
+    // shl eax, 16
+    // pop ax
+    // pop cx
+    // shl ecx, 16
+    // pop cx
+    // pop dx
+    // pop dx
+    // shl edx, 16
+    // pop dx
+    // pop bx
+    // shl ebx, 16
+    // pop bx
+    // add ecx, ebx
+    // adc eax, edx
+    // push cx
+    // shr ecx, 16
+    // push cx
+    // push ax
+    // shr eax, 16
+    // push ax
+    // push word 4
+    return {POP_V64A, POP_V64B, 0x01, 0xD9, 0x11, 0xD0, PUSH_V64};
+}
+
 bytes i64_and()
 {
     // pop ax
