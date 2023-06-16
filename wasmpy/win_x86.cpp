@@ -34,7 +34,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     bytes code(codebuf, codelen + codebuf);
 
     bytes cleanupCode = {};
-    char *singleReturnType = NULL;
+    char *returnType = NULL;
 
     if (retlen == 1)
     {
@@ -42,38 +42,37 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         {
         case 0x7F:
             cleanupCode = concat(cleanupCode, {{POP_V32A, 0xC3}});
-            singleReturnType = "i32";
+            returnType = "i32";
             break;
 
         case 0x7E:
             cleanupCode = concat(cleanupCode, {{POP_V64A, 0xC3}});
-            singleReturnType = "i64";
+            returnType = "i64";
             break;
 
         case 0x7D:
             cleanupCode = concat(cleanupCode, {{POP_V32A, 0xC3}});
-            singleReturnType = "f32";
+            returnType = "f32";
             break;
 
         case 0x7C:
             cleanupCode = concat(cleanupCode, {{POP_V64A, 0xC3}});
-            singleReturnType = "f64";
+            returnType = "f64";
             break;
 
         default:
-            singleReturnType = NULL;
             break;
         }
     }
 
-    if (retlen == 1 && singleReturnType == NULL)
+    if (retlen > 1 || returnType == NULL)
         return NULL;
 
     auto func = writeFunction(concat(decodeFunc(code), {cleanupCode}));
     registeredFuncs.push_back(func);
 
     if (retlen == 1)
-        return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), singleReturnType, 3);
+        return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
 
     return Py_BuildValue("OO", PyLong_FromSize_t((size_t)func), Py_None);
 }
@@ -89,7 +88,7 @@ static struct PyModuleDef module = {
     -1,
     methods};
 
-PyMODINIT_FUNC PyInit_x86_win()
+PyMODINIT_FUNC PyInit_win_x86()
 {
     Py_AtExit(&freeFuncs);
     return PyModule_Create(&module);
