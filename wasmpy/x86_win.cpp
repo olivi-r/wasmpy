@@ -2,7 +2,6 @@
 #include <Python.h>
 #include <Windows.h>
 #include "x86/opcodes.h"
-#include <iostream>
 
 std::vector<void (*)()> registeredFuncs = {};
 
