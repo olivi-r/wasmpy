@@ -1,8 +1,9 @@
 from . import win_x86
+import struct
 import ctypes
 
 def create_function(ret, code):
-    func, ret = win_x86.create_function(ret, code)
+    func, ret = win_x86.create_function(struct.calcsize("P"), ret, code)
     if ret == "i32":
         ret = ctypes.c_uint32
     

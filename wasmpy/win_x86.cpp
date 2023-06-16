@@ -26,9 +26,20 @@ auto writeFunction(bytes code)
 
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
-    const char *codebuf, *retbuf;
-    Py_ssize_t codelen, retlen;
-    if (!PyArg_ParseTuple(args, "y#y#", &retbuf, &retlen, &codebuf, &codelen))
+    char plat, ret;
+    const char *codebuf;
+    Py_ssize_t codelen;
+    if (!PyArg_ParseTuple(args, "bby#", &plat, &ret, &codebuf, &codelen))
+        return NULL;
+
+    bytes ret_v64;
+    if (plat == 4)
+        ret_v64 = {POP_AX, POP_EDX, POP_EAX, 0xC3};
+
+    else if (plat == 8)
+        ret_v64 = {POP_V32A, 0x48, 0xC1, 0xE0, 16, POP_AX, 0x48, 0xC1, 0xE0, 16, POP_AX, 0xC3};
+
+    else
         return NULL;
 
     bytes code(codebuf, codelen + codebuf);
@@ -36,45 +47,39 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     bytes cleanupCode = {};
     char *returnType = NULL;
 
-    if (retlen == 1)
+    switch (ret)
     {
-        switch (retbuf[0])
-        {
-        case 0x7F:
-            cleanupCode = concat(cleanupCode, {{POP_V32A, 0xC3}});
-            returnType = "i32";
-            break;
+    case 0x7F:
+        cleanupCode = concat(cleanupCode, {{POP_V32A, 0xC3}});
+        returnType = "i32";
+        break;
 
-        case 0x7E:
-            cleanupCode = concat(cleanupCode, {{POP_V64A, 0xC3}});
-            returnType = "i64";
-            break;
+    case 0x7E:
+        cleanupCode = concat(cleanupCode, {ret_v64});
+        returnType = "i64";
+        break;
 
-        case 0x7D:
-            cleanupCode = concat(cleanupCode, {{POP_V32A, 0xC3}});
-            returnType = "f32";
-            break;
+    case 0x7D:
+        cleanupCode = concat(cleanupCode, {{POP_V32A, 0xC3}});
+        returnType = "f32";
+        break;
 
-        case 0x7C:
-            cleanupCode = concat(cleanupCode, {{POP_V64A, 0xC3}});
-            returnType = "f64";
-            break;
+    case 0x7C:
+        cleanupCode = concat(cleanupCode, {ret_v64});
+        returnType = "f64";
+        break;
 
-        default:
-            break;
-        }
+    default:
+        break;
     }
-
-    if (retlen > 1 || returnType == NULL)
-        return NULL;
 
     auto func = writeFunction(concat(decodeFunc(code), {cleanupCode}));
     registeredFuncs.push_back(func);
 
-    if (retlen == 1)
-        return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
+    if (returnType == NULL)
+        return Py_BuildValue("OO", PyLong_FromSize_t((size_t)func), Py_None);
 
-    return Py_BuildValue("OO", PyLong_FromSize_t((size_t)func), Py_None);
+    return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
 }
 
 static PyMethodDef methods[] = {
