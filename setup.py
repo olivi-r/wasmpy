@@ -13,6 +13,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
     packages=["wasmpy"],
+    ext_modules=[setuptools.Extension("wasmpy.x86_win", sources=[
+        "wasmpy/x86_win.cpp", "wasmpy/x86/opcodes.cpp",
+    ])],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

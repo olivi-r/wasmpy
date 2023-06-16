@@ -42,3 +42,6 @@
 #define PUSH_V64 PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64
 
 typedef std::vector<uint8_t> bytes;
+
+bytes decodeFunc(bytes buf);
+bytes concat(bytes v0, std::vector<bytes> vn);
