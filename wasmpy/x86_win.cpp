@@ -9,7 +9,6 @@ void freeFuncs()
 {
     for (int i = 0; i < registeredFuncs.size(); i++)
     {
-        printf("%d\n", i);
         VirtualFree((LPVOID)registeredFuncs.at(i), 0, MEM_RELEASE);
     }
 }
@@ -92,6 +91,6 @@ static struct PyModuleDef module = {
 
 PyMODINIT_FUNC PyInit_x86_win()
 {
-    Py_AtExit(freeFuncs);
+    Py_AtExit(&freeFuncs);
     return PyModule_Create(&module);
 }
