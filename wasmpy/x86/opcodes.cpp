@@ -471,6 +471,24 @@ bytes decodeFunc(bytes buf)
             break;
 
         case 0x5B: // f32.eq
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // cmp eax, ecx
+            // je true
+            // push word 0
+            // jmp end
+            // true:
+            // push word 1
+            // end:
+            // push word 0
+            // push word 2
+            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(6), PUSH(0), JMP(4), PUSH(1), PUSH(0), PUSH(2)});
             break;
 
         case 0x5C: // f32.ne
