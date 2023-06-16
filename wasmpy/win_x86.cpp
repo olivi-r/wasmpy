@@ -88,7 +88,7 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
-    "x86_win",
+    "win_x86",
     NULL,
     -1,
     methods};
