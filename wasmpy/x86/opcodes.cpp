@@ -1068,6 +1068,11 @@ bytes decodeFunc(bytes buf)
             break;
 
         case 0xA7: // i32.wrap_i64
+            // pop ax
+            // pop ax
+            // pop ax
+            // push word 2
+            insts.push_back({POP_AX, POP_AX, POP_AX, PUSH(2)});
             break;
 
         case 0xA8: // i32.trunc_f32_s
