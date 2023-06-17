@@ -17,6 +17,6 @@ def create_function(ret, code):
         ret = ctypes.c_double
 
     else:
-        ret = ctypes.c_void_p
+        ret = None
 
     return ctypes.CFUNCTYPE(ret)(func)

@@ -70,7 +70,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         break;
 
     case 0x40:
-        cleanupCode = {0xB8, 0, 0, 0, 0, 0xC3};
+        cleanupCode = {0xC3};
         returnType = "void";
         break;
 
