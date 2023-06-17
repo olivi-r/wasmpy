@@ -44,7 +44,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
     bytes code(codebuf, codelen + codebuf);
 
-    bytes cleanupCode = {0xB8, 0, 0, 0, 0, 0xC3}; // void
+    bytes cleanupCode = {};
     char *returnType = NULL;
 
     switch (ret)
@@ -69,14 +69,22 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         returnType = "f64";
         break;
 
+    case 0x40:
+        cleanupCode = {0xB8, 0, 0, 0, 0, 0xC3};
+        returnType = "void";
+        break;
+
     default:
         break;
     }
 
+    if (returnType == NULL)
+        return NULL;
+
     auto func = writeFunction(concat(decodeFunc(code), {cleanupCode}));
     registeredFuncs.push_back(func);
 
-    if (returnType == NULL)
+    if (returnType == "void")
         return Py_BuildValue("OO", PyLong_FromSize_t((size_t)func), Py_None);
 
     return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
