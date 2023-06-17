@@ -7,7 +7,7 @@ std::vector<void (*)()> registeredFuncs = {};
 
 void freeFuncs()
 {
-    for (int i = 0; i < registeredFuncs.size(); i++)
+    for (size_t i = 0; i < registeredFuncs.size(); i++)
     {
         VirtualFree((LPVOID)registeredFuncs.at(i), 0, MEM_RELEASE);
     }

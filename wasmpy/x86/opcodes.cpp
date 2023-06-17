@@ -2,7 +2,7 @@
 
 bytes concat(bytes v0, std::vector<bytes> vn)
 {
-    for (int i = 0; i < vn.size(); i++)
+    for (size_t i = 0; i < vn.size(); i++)
     {
         v0.insert(v0.end(), vn.at(i).begin(), vn.at(i).end());
     }
@@ -13,7 +13,7 @@ bytes concat(bytes v0, std::vector<bytes> vn)
 bytes decodeFunc(bytes buf)
 {
     std::vector<bytes> insts = {};
-    for (int i = 0; i < buf.size(); i++)
+    for (size_t i = 0; i < buf.size(); i++)
     {
         uint8_t opcode = buf.at(i);
         switch (opcode)
@@ -152,7 +152,7 @@ bytes decodeFunc(bytes buf)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V32A, 0x83, 0xF8, 0, JE(4), PUSH(0), JMP(2), PUSH(1), PUSH(0), V32});
+            insts.push_back({POP_V32A, 0x83, 0xF8, 0, JE(6), PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x46: // i32.eq
@@ -173,7 +173,7 @@ bytes decodeFunc(bytes buf)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(4), PUSH(0), JMP(2), PUSH(1), PUSH(0), V32});
+            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(6), PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x47: // i32.ne
@@ -194,7 +194,7 @@ bytes decodeFunc(bytes buf)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32});
+            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(6), PUSH(1), JMP(4), PUSH(0), PUSH(0), V32});
             break;
 
         case 0x48: // i32.lt_s
@@ -384,7 +384,7 @@ bytes decodeFunc(bytes buf)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V64A, 0x39, 0xC8, JNE(9), 0x83, 0xF8, 0, JNE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32});
+            insts.push_back({POP_V64A, 0x39, 0xC8, JNE(11), 0x83, 0xF8, 0, JNE(6), PUSH(1), JMP(4), PUSH(0), PUSH(0), V32});
             break;
 
         case 0x51: // i64.eq
@@ -413,7 +413,7 @@ bytes decodeFunc(bytes buf)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xD0, JNE(8), 0x39, 0xD9, JNE(4), PUSH(1), JMP(2), PUSH(0), PUSH(0), V32});
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xD0, JNE(10), 0x39, 0xD9, JNE(6), PUSH(1), JMP(4), PUSH(0), PUSH(0), V32});
             break;
 
         case 0x52: // i64.ne
@@ -432,18 +432,17 @@ bytes decodeFunc(bytes buf)
             // shl ebx, 16
             // pop bx
             // cmp eax, edx
-            // je equal
-            // true:
-            // push word 1
-            // jmp end
-            // equal:
-            // cmp ecx, edx
+            // jne true
+            // cmp ecx, ebx
             // jne true
             // push word 0
+            // jmp end
+            // true:
+            // push word 1
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xD0, JE(4), PUSH(1), JMP(6), 0x39, 0xD1, JNE(-8), PUSH(0), PUSH(0), V32});
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xD0, JNE(10), 0x39, 0xD9, JNE(6), PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x53: // i64.lt_s
@@ -488,7 +487,7 @@ bytes decodeFunc(bytes buf)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(6), PUSH(0), JMP(4), PUSH(1), PUSH(0), PUSH(2)});
+            insts.push_back({POP_V32A, POP_V32B, 0x39, 0xC8, JE(6), PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x5C: // f32.ne
@@ -529,11 +528,19 @@ bytes decodeFunc(bytes buf)
             // pop ax
             // shl eax, 16
             // pop ax
-            // lzcnt eax, eax
-            // push ax
+            // cmp eax, 0
+            // je true
+            // bsr eax, eax
+            // mov cx, 31
+            // sub cx, ax
+            // push cx
+            // jmp end
+            // true:
+            // push word 32
+            // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V32A, 0xF3, 0x0F, 0xBD, 0xC0, PUSH_AX, PUSH(0), V32});
+            insts.push_back({POP_V32A, 0x83, 0xF8, 0, JE(14), 0x0F, 0xBD, 0xC0, 0x66, 0xB9, 31, 0, 0x66, 0x29, 0xC1, PUSH_CX, JMP(4), PUSH(32), PUSH(0), V32});
             break;
 
         case 0x68: // i32.ctz
@@ -541,11 +548,17 @@ bytes decodeFunc(bytes buf)
             // pop ax
             // shl eax, 16
             // pop ax
-            // tzcnt eax, eax
+            // cmp eax, 0
+            // je true
+            // bsf eax, eax
             // push ax
+            // jmp end
+            // true:
+            // push word 32
+            // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V32A, 0xF3, 0x0F, 0xBC, 0xC0, PUSH_AX, PUSH(0), V32});
+            insts.push_back({POP_V32A, 0x83, 0xF8, 0, JE(7), 0x0F, 0xBC, 0xC0, PUSH_AX, JMP(4), PUSH(32), PUSH(0), V32});
             break;
 
         case 0x69: // i32.popcnt
@@ -662,10 +675,11 @@ bytes decodeFunc(bytes buf)
 
         case 0x74: // i32.shl
             // mov cx, 32
-            // pop ax
-            // pop ax
             // pop dx
+            // pop dx
+            // pop ax
             // idiv cx
+            // pop ax
             // pop ax
             // shl eax, 16
             // pop ax
@@ -675,15 +689,16 @@ bytes decodeFunc(bytes buf)
             // shr eax, 16
             // push ax
             // push word 2
-            insts.push_back({0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE0, PUSH_V32});
+            insts.push_back({0x66, 0xB9, 32, 0, POP_DX, POP_DX, POP_AX, 0x66, 0xF7, 0xF9, POP_V32A, 0x88, 0xD1, 0xD3, 0xE0, PUSH_V32});
             break;
 
         case 0x75: // i32.shr_s
             // mov cx, 32
-            // pop ax
-            // pop ax
             // pop dx
+            // pop dx
+            // pop ax
             // idiv cx
+            // pop ax
             // pop ax
             // shl eax, 16
             // pop ax
@@ -693,15 +708,16 @@ bytes decodeFunc(bytes buf)
             // shr eax, 16
             // push ax
             // push word 2
-            insts.push_back({0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xF8, PUSH_V32});
+            insts.push_back({0x66, 0xB9, 32, 0, POP_DX, POP_DX, POP_AX, 0x66, 0xF7, 0xF9, POP_V32A, 0x88, 0xD1, 0xD3, 0xF8, PUSH_V32});
             break;
 
         case 0x76: // i32.shr_u
             // mov cx, 32
-            // pop ax
-            // pop ax
             // pop dx
+            // pop dx
+            // pop ax
             // idiv cx
+            // pop ax
             // pop ax
             // shl eax, 16
             // pop ax
@@ -711,7 +727,7 @@ bytes decodeFunc(bytes buf)
             // shr eax, 16
             // push ax
             // push word 2
-            insts.push_back({0x66, 0xB9, 32, 0, POP_AX, POP_AX, POP_DX, 0x66, 0xF7, 0xF9, POP_EAX, 0x88, 0xD1, 0xD3, 0xE8, PUSH_V32});
+            insts.push_back({0x66, 0xB9, 32, 0, POP_DX, POP_DX, POP_AX, 0x66, 0xF7, 0xF9, POP_V32A, 0x88, 0xD1, 0xD3, 0xE8, PUSH_V32});
             break;
 
         case 0x77: // i32.rotl
@@ -728,18 +744,29 @@ bytes decodeFunc(bytes buf)
             // pop cx
             // shl ecx, 16
             // pop cx
-            // lzcnt eax, eax
-            // cmp eax, 32
-            // jne false
-            // lzcnt ecx, ecx
-            // add eax, ecx
-            // false:
+            // cmp eax, 0
+            // je highzero
+            // bsr eax, eax
+            // mov cx, 31
+            // sub cx, ax
+            // push cx
+            // jmp end
+            // highzero:
+            // cmp ecx, 0
+            // je lowzero
+            // bsr ecx, ecx
+            // mov ax, 63
+            // sub ax, cx
             // push ax
+            // jmp end
+            // lowzero:
+            // push word 64
+            // end:
             // push word 0
             // push word 0
             // push word 0
             // push word 4
-            insts.push_back({POP_V64A, 0xF3, 0x0F, 0xBD, 0xC0, 0x83, 0xF8, 32, JNE(6), 0xF3, 0x0F, 0xBD, 0xC9, 0x01, 0xC8, PUSH_AX, PUSH(0), PUSH(0), PUSH(0), V64});
+            insts.push_back({POP_V64A, 0x83, 0xF8, 0, JE(14), 0x0F, 0xBD, 0xC0, 0x66, 0xB9, 31, 0, 0x66, 0x29, 0xC1, PUSH_CX, JMP(23), 0x83, 0xF9, 0, JE(14), 0x0F, 0xBD, 0xC9, 0x66, 0xB8, 63, 0, 0x66, 0x29, 0xC8, PUSH_AX, JMP(4), PUSH(64), PUSH(0), PUSH(0), PUSH(0), V64});
             break;
 
         case 0x7A: // i64.ctz
@@ -750,18 +777,26 @@ bytes decodeFunc(bytes buf)
             // pop cx
             // shl ecx, 16
             // pop cx
-            // tzcnt ecx, ecx
-            // cmp ecx, 32
-            // jne false
-            // tzcnt eax, eax
-            // add ecx, eax
-            // false:
+            // cmp eax, 0
+            // je highzero
+            // bsf eax, eax
+            // add ax, 32
+            // push ax
+            // jmp end
+            // highzero:
+            // cmp ecx, 0
+            // je lowzero
+            // bsf ecx, ecx
             // push cx
+            // jmp end
+            // lowzero:
+            // push word 64
+            // end:
             // push word 0
             // push word 0
             // push word 0
             // push word 4
-            insts.push_back({POP_V64A, 0xF3, 0x0F, 0xBC, 0xC9, 0x83, 0xF9, 32, JNE(6), 0xF3, 0x0F, 0xBC, 0xC0, 0x01, 0xC1, PUSH_CX, PUSH(0), PUSH(0), PUSH(0), V64});
+            insts.push_back({POP_V64A, 0x83, 0xF8, 0, JE(11), 0x0F, 0xBC, 0xC0, 0x66, 0x83, 0xC0, 32, PUSH_AX, JMP(16), 0x83, 0xF9, 0, JE(7), 0x0F, 0xBC, 0xC9, PUSH_CX, JMP(4), PUSH(64), PUSH(0), PUSH(0), PUSH(0), V64});
             break;
 
         case 0x7B: // i64.popcnt
