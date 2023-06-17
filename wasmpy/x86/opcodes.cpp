@@ -608,6 +608,20 @@ bytes decodeFunc(bytes buf)
             break;
 
         case 0x6C: // i32.mul
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // imul eax, ecx
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            insts.push_back({POP_V32A, POP_V32B, 0x0F, 0xAF, 0xC1, PUSH_V32});
             break;
 
         case 0x6D: // i32.div_s
