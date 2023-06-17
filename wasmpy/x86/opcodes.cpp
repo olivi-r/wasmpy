@@ -1088,9 +1088,29 @@ bytes decodeFunc(bytes buf)
             break;
 
         case 0xAC: // i64.extend_i32_s
+            // pop ax
+            // pop ax
+            // push ax
+            // and ax, 0x8000
+            // cmp ax, 0
+            // je zero
+            // push word 0xffff
+            // push word 0xffff
+            // jmp end
+            // zero:
+            // push word 0
+            // push word 0
+            // end:
+            // push word 4
+            insts.push_back({POP_AX, POP_AX, PUSH_AX, 0x66, 0x25, 0, 128, 0x66, 0x83, 0xF8, 0, JE(8), 0x66, 0x6A, 0xFF, 0x66, 0x6A, 0xFF, JMP(8), PUSH(0), PUSH(0), V64});
             break;
 
         case 0xAD: // i64.extend_i32_u
+            // pop ax
+            // push word 0
+            // push word 0
+            // push word 4
+            insts.push_back({POP_AX, PUSH(0), PUSH(0), PUSH(4)});
             break;
 
         case 0xAE: // i64.trunc_f32_s
