@@ -44,7 +44,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
     bytes code(codebuf, codelen + codebuf);
 
-    bytes cleanupCode = {};
+    bytes cleanupCode = {0xB8, 0, 0, 0, 0, 0xC3}; // void
     char *returnType = NULL;
 
     switch (ret)

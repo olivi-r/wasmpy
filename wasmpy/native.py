@@ -6,7 +6,7 @@ def create_function(ret, code):
     func, ret = win_x86.create_function(struct.calcsize("P"), ret, code)
     if ret == "i32":
         ret = ctypes.c_uint32
-    
+
     elif ret == "i64":
         ret = ctypes.c_uint64
 
@@ -15,7 +15,7 @@ def create_function(ret, code):
 
     elif ret == "f64":
         ret = ctypes.c_double
-    
+
     else:
         ret = ctypes.c_void_p
 
