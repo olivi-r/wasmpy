@@ -12,6 +12,7 @@ bytes concat(bytes v0, std::vector<bytes> vn)
 
 bytes decodeFunc(bytes buf)
 {
+    int localidx;
     std::vector<bytes> insts = {};
     for (size_t i = 0; i < buf.size(); i++)
     {
@@ -87,6 +88,52 @@ bytes decodeFunc(bytes buf)
             // push word 2
             // end:
             insts.push_back({POP_V32A, 0x66, 0x83, 0xF8, 0, JE(18), POP_AX, 0x66, 0x83, 0xF8, 2, JE(4), POP_AX, POP_AX, POP_AX, POP_AX, JMP(72), POP_AX, 0x66, 0x83, 0xF8, 2, JE(42), POP_EAX, POP_ECX, POP_DX, POP_DX, POP_DX, POP_DX, POP_DX, PUSH_V64, JMP(22), POP_EAX, POP_CX, POP_CX, POP_CX, PUSH_V32});
+            break;
+
+        // variable instructions
+        case 0x20: // local.get
+            // push rbp
+            // mov rax, rsp
+            // mov rsp, rbp
+            // mov rbp, rax
+            // sub rsp, [localidx * 10 + 10]
+            // pop ax
+            // cmp ax, 4
+            // je v64
+            // pop ax
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // mov rsp, rbp
+            // pop rbp
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            // jmp end
+            // v64:
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // mov rsp, rbp
+            // pop rbp
+            // push cx
+            // shr ecx, 16
+            // push cx
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 4
+            // end:
+            localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);
+            localidx *= 10;
+            localidx += 10;
+            insts.push_back({0x55, 0x48, 0x89, 0xE0, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xC5, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), POP_AX, 0x66, 0x83, 0xF8, 4, JE(28), POP_AX, POP_V32A, 0x48, 0x89, 0xEC, 0x5D, PUSH_V32, JMP(36), POP_EAX, POP_ECX, 0x48, 0x89, 0xEC, 0x5D, PUSH_V64});
+            i += 4;
             break;
 
         // numeric instructions
