@@ -4,6 +4,28 @@ import ctypes
 
 def create_function(ret, code, arg=b""):
     func, ret = win_x86.create_function(struct.calcsize("P"), ret, code, arg)
+
+    params = []
+    param_doc = []
+    for i, a in enumerate(arg):
+        if a == 0x7F:
+            params.append(ctypes.c_uint32)
+            param_doc.append(f"p{i}: i32")
+
+        if a == 0x7E:
+            params.append(ctypes.c_uint64)
+            param_doc.append(f"p{i}: i64")
+
+        if a == 0x7D:
+            params.append(ctypes.c_uint32)
+            param_doc.append(f"p{i}: f32")
+
+        if a == 0x7C:
+            params.append(ctypes.c_uint64)
+            param_doc.append(f"p{i}: f64")
+
+    doc = f"({', '.join(param_doc)}) -> {ret}"
+
     if ret == "i32":
         ret = ctypes.c_uint32
 
@@ -19,12 +41,6 @@ def create_function(ret, code, arg=b""):
     else:
         ret = None
 
-    params = []
-    for a in arg:
-        if a in (0x7F, 0x7D):
-            params.append(ctypes.c_uint32)
-
-        if a in (0x7E, 0x7C):
-            params.append(ctypes.c_uint64)
-
-    return ctypes.CFUNCTYPE(ret, *params)(func)
+    func = ctypes.CFUNCTYPE(ret, *params)(func)
+    func.__doc__ = doc
+    return func
