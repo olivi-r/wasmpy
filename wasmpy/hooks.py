@@ -2,7 +2,17 @@ from .module import read_module
 import os, sys, types
 
 
-class WebAssemblyBinaryLoader(object):
+def _call(mod):
+    def call(f: str):
+        nonlocal mod
+        for e in mod["exports"]:
+            if e["name"] == f:
+                return e["obj"]
+
+    return call
+
+
+class WebAssemblyBinaryLoader:
     """WebAssembly binary import hook.
     This hook is registered automatically with `import wasmpy`.
     After the initial import a WebAssembly binary format file (.wasm) can
@@ -42,6 +52,7 @@ class WebAssemblyBinaryLoader(object):
         mod.__loader__ = self
         sys.modules[fullname] = mod
         with open(self.fname, "rb") as fp:
-            mod.module = read_module(fp)
+            mod._module = read_module(fp)
+            mod.call = _call(mod._module)
 
         return mod

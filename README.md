@@ -46,3 +46,14 @@ Then
 import wasmpy
 from my_module import my_wasm_file
 ```
+
+Functions can be called with the call function from the imported module:
+
+```py
+import wasmpy
+import wasm_math
+
+wasm_math.call("add")(...)
+```
+
+This is due to WebAssembly supporting exported names that may not be valid Python names, such as `add two numbers`

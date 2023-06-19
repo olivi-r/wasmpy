@@ -96,6 +96,10 @@ def read_module(buffer):
         for i, (t, e) in enumerate(code)
     )
 
+    for e in module["exports"]:
+        if e["desc"][0] == "func":
+            e["obj"] = module["funcs"][e["desc"][1]]["obj"]
+
     for section in empty_module_lists:
         if section not in module.keys():
             module[section] = ()
