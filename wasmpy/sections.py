@@ -62,13 +62,17 @@ def read_funcsec(buffer: object) -> tuple:
 def read_tablesec(buffer: object) -> tuple:
     """Read a table section from buffer."""
     # https://www.w3.org/TR/wasm-core-1/#table-section%E2%91%A0
-    return tuple({"type": read_tabletype(buffer)} for _ in range(get_vec_len(buffer)))
+    return tuple(
+        {"type": read_tabletype(buffer)} for _ in range(get_vec_len(buffer))
+    )
 
 
 def read_memsec(buffer: object) -> tuple:
     """Read a memory section from buffer."""
     # https://www.w3.org/TR/wasm-core-1/#memory-section%E2%91%A0
-    return tuple({"type": read_memtype(buffer)} for _ in range(get_vec_len(buffer)))
+    return tuple(
+        {"type": read_memtype(buffer)} for _ in range(get_vec_len(buffer))
+    )
 
 
 def read_globalsec(buffer: object) -> tuple:
@@ -164,7 +168,9 @@ def read_datasec(buffer: object) -> tuple:
         {
             "data": read_uint(buffer, 32),
             "offset": read_expr(buffer),
-            "init": tuple(buffer.read(1)[0] for _ in range(get_vec_len(buffer))),
+            "init": tuple(
+                buffer.read(1)[0] for _ in range(get_vec_len(buffer))
+            ),
         }
         for _ in range(get_vec_len(buffer))
     )

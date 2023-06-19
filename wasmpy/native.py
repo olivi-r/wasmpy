@@ -2,6 +2,7 @@ from . import win_x86
 import struct
 import ctypes
 
+
 def create_function(ret, code, arg=b""):
     func, ret = win_x86.create_function(struct.calcsize("P"), ret, code, arg)
 

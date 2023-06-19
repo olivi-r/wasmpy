@@ -1,3 +1,4 @@
+from .native import create_function
 from .values import read_uint
 from .sections import *
 
@@ -82,7 +83,17 @@ def read_module(buffer):
         pass
 
     module["funcs"] = tuple(
-        {"type": typeidx[i], "locals": t, "body": e} for i, (t, e) in enumerate(code)
+        {
+            "type": module["types"][typeidx[i]],
+            "locals": t,
+            "body": e,
+            "obj": create_function(
+                module["types"][typeidx[i]][1][0],
+                bytes(sum((j[1:] for j in e), start=())),
+                bytes(module["types"][typeidx[i]][0]),
+            ),
+        }
+        for i, (t, e) in enumerate(code)
     )
 
     for section in empty_module_lists:

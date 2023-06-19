@@ -27,9 +27,11 @@ def read_resulttype(buffer: object) -> str:
 def read_functype(buffer: object) -> tuple:
     """Read a function type from buffer."""
     # https://www.w3.org/TR/wasm-core-1/#function-types%E2%91%A4
-    assert buffer.read(1) == b"\x60"
-    t1 = tuple([read_valtype(buffer) for _ in range(get_vec_len(buffer))])
-    t2 = tuple([read_valtype(buffer) for _ in range(get_vec_len(buffer))])
+    assert (
+        buffer.read(1) == b"\x60"
+    ), f"Malformed function type at {buffer.tell() - 1}"
+    t1 = tuple([buffer.read(1)[0] for _ in range(get_vec_len(buffer))])
+    t2 = tuple([buffer.read(1)[0] for _ in range(get_vec_len(buffer))])
     return t1, t2
 
 

@@ -1,6 +1,7 @@
 from .module import read_module
 import os, sys, types
 
+
 class WebAssemblyBinaryLoader(object):
     """WebAssembly binary import hook.
     This hook is registered automatically with `import wasmpy`.
@@ -18,6 +19,7 @@ class WebAssemblyBinaryLoader(object):
     from mymodule import mymodule_2
     ``` Will load both binary files.
     """
+
     def find_module(self, fullname, path=None):
         fname = fullname.split(".")[-1] + ".wasm"
         if path is not None and len(path):
