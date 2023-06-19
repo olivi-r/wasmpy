@@ -89,7 +89,9 @@ def read_module(buffer):
             "body": e,
             "obj": create_function(
                 module["types"][typeidx[i]][1][0],
-                bytes(sum((j[1:] for j in e), start=())),
+                "".join("".join(chr(k) for k in j[1:]) for j in e).encode(
+                    "ansi"
+                ),
                 bytes(module["types"][typeidx[i]][0]),
             ),
         }
