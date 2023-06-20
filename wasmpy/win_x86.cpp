@@ -81,12 +81,12 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
     char plat, ret;
-    const char *codebuf, *argbuf;
-    Py_ssize_t codelen, arglen;
-    if (!PyArg_ParseTuple(args, "bby#y#", &plat, &ret, &codebuf, &codelen, &argbuf, &arglen))
+    const char *codebuf, *argbuf, *localbuf;
+    Py_ssize_t codelen, arglen, locallen;
+    if (!PyArg_ParseTuple(args, "bby#y#y#", &plat, &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen))
         return NULL;
 
-    bytes ret_v64, cleanupStack;
+    bytes ret_v64, initStack, loadLocals, cleanupStack;
     if (plat == 4)
     {
         // pop ax
@@ -98,6 +98,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         // pop ax
         ret_v64 = {POP_AX, POP_EDX, POP_EAX};
 
+        initStack = {};
+        loadLocals = {};
         cleanupStack = {};
     }
     else if (plat == 8)
@@ -112,12 +114,27 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         // pop ax
         ret_v64 = {POP_V32A, 0x48, 0xC1, 0xE0, 16, POP_AX, 0x48, 0xC1, 0xE0, 16, POP_AX};
 
+        // push rbp
+        // mov rbp, rsp
+        initStack = {0x55, 0x48, 0x89, 0xE5};
+
+        loadLocals = regParam64(argbuf, arglen);
+
         // mov rsp, rbp
         // pop rbp
         cleanupStack = {0x48, 0x89, 0xEC, 0x5D};
     }
     else
         return NULL;
+
+    for (Py_ssize_t i = 0; i < locallen; i++)
+    {
+        if (localbuf[i] == 0x7F || localbuf[i] == 0x7D)
+            loadLocals = concat(loadLocals, {{PUSH(0), PUSH(0), PUSH(2), PUSH(0), PUSH(0)}});
+
+        if (localbuf[i] == 0x7E || localbuf[i] == 0x7C)
+            loadLocals = concat(loadLocals, {{PUSH(0), PUSH(0), PUSH(0), PUSH(0), PUSH(4)}});
+    }
 
     bytes code(codebuf, codelen + codebuf);
 
@@ -158,11 +175,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     if (returnType == NULL)
         return NULL;
 
-    // push rbp
-    // mov rbp, rsp
-    bytes init = {0x55, 0x48, 0x89, 0xE5};
-
-    auto func = writeFunction(concat(init, {regParam64(argbuf, arglen), decodeFunc(code), cleanupCode}));
+    auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat), cleanupCode}));
     registeredFuncs.push_back(func);
 
     if (returnType == "void")

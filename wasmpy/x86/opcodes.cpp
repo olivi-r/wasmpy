@@ -10,7 +10,7 @@ bytes concat(bytes v0, std::vector<bytes> vn)
     return v0;
 }
 
-bytes decodeFunc(bytes buf)
+bytes decodeFunc(bytes buf, char plat)
 {
     int localidx;
     std::vector<bytes> insts = {};
@@ -92,48 +92,171 @@ bytes decodeFunc(bytes buf)
 
         // variable instructions
         case 0x20: // local.get
-            // push rbp
-            // mov rax, rsp
-            // mov rsp, rbp
-            // mov rbp, rax
-            // sub rsp, [localidx * 10 + 10]
-            // pop ax
-            // cmp ax, 4
-            // je v64
-            // pop ax
-            // pop ax
-            // pop ax
-            // shl eax, 16
-            // pop ax
-            // mov rsp, rbp
-            // pop rbp
-            // push ax
-            // shr eax, 16
-            // push ax
-            // push word 2
-            // jmp end
-            // v64:
-            // pop ax
-            // shl eax, 16
-            // pop ax
-            // pop cx
-            // shl ecx, 16
-            // pop cx
-            // mov rsp, rbp
-            // pop rbp
-            // push cx
-            // shr ecx, 16
-            // push cx
-            // push ax
-            // shr eax, 16
-            // push ax
-            // push word 4
-            // end:
-            localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);
-            localidx *= 10;
-            localidx += 10;
-            insts.push_back({0x55, 0x48, 0x89, 0xE0, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xC5, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), POP_AX, 0x66, 0x83, 0xF8, 4, JE(28), POP_AX, POP_V32A, 0x48, 0x89, 0xEC, 0x5D, PUSH_V32, JMP(36), POP_EAX, POP_ECX, 0x48, 0x89, 0xEC, 0x5D, PUSH_V64});
+            if (plat == 8)
+            {
+                // push rbp
+                // mov rax, rsp
+                // mov rsp, rbp
+                // mov rbp, rax
+                // sub rsp, [localidx * 10 + 10]
+                // pop ax
+                // cmp ax, 4
+                // je v64
+                // pop ax
+                // pop ax
+                // pop ax
+                // shl eax, 16
+                // pop ax
+                // mov rsp, rbp
+                // pop rbp
+                // push ax
+                // shr eax, 16
+                // push ax
+                // push word 2
+                // jmp end
+                // v64:
+                // pop ax
+                // shl eax, 16
+                // pop ax
+                // pop cx
+                // shl ecx, 16
+                // pop cx
+                // mov rsp, rbp
+                // pop rbp
+                // push cx
+                // shr ecx, 16
+                // push cx
+                // push ax
+                // shr eax, 16
+                // push ax
+                // push word 4
+                // end:
+                localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);
+                localidx *= 10;
+                localidx += 10;
+                insts.push_back({0x55, 0x48, 0x89, 0xE0, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xC5, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), POP_AX, 0x66, 0x83, 0xF8, 4, JE(28), POP_AX, POP_V32A, 0x48, 0x89, 0xEC, 0x5D, PUSH_V32, JMP(36), POP_EAX, POP_ECX, 0x48, 0x89, 0xEC, 0x5D, PUSH_V64});
+            }
             i += 4;
+            break;
+
+        case 0x21: // local.set
+            if (plat == 8)
+            {
+                // pop ax
+                // cmp ax, 4
+                // je v64
+                // pop ax
+                // shl eax, 16
+                // pop ax
+                // push rbp
+                // mov rcx, rsp
+                // mov rsp, rbp
+                // mov rbp, rcx
+                // sub rsp, [localidx * 10]
+                // push ax
+                // shr eax, 16
+                // push ax
+                // push word 2
+                // mov rsp, rbp
+                // pop rbp
+                // jmp end
+                // v64:
+                // pop ax
+                // shl eax, 16
+                // pop ax
+                // pop cx
+                // shl ecx, 16
+                // pop cx
+                // push rbp
+                // mov rdx, rsp
+                // mov rsp, rbp
+                // mov rbp, rdx
+                // sub rsp, [localidx * 10]
+                // push cx
+                // shr ecx, 16
+                // push cx
+                // push ax
+                // shr eax, 16
+                // push ax
+                // push word 4
+                // mov rsp, rbp
+                // pop rbp
+                // end:
+                localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);
+                localidx *= 10;
+                insts.push_back({POP_AX, 0x66, 0x83, 0xF8, 4, JE(41), POP_EAX, 0x55, 0x48, 0x89, 0xE1, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xCD, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), PUSH_V32, 0x48, 0x89, 0xEC, 0x5D, JMP(53), POP_EAX, POP_ECX, 0x55, 0x48, 0x89, 0xE2, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xD5, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), PUSH_V64, 0x48, 0x89, 0xEC, 0x5D});
+            }
+            i += 4;
+            break;
+
+        case 0x22: // local.tee
+            if (plat == 8)
+            {
+                // pop ax
+                // cmp ax, 4
+                // je v64
+                // pop ax
+                // shl eax, 16
+                // pop ax
+                // mov ecx, eax
+                // push cx
+                // shr ecx, 16
+                // push cx
+                // push word 2
+                // push rbp
+                // mov rcx, rsp
+                // mov rsp, rbp
+                // mov rbp, rcx
+                // sub rsp, [localidx * 10]
+                // push ax
+                // shr eax, 16
+                // push ax
+                // push word 2
+                // mov rsp, rbp
+                // pop rbp
+                // jmp end
+                // v64:
+                // pop ax
+                // shl eax, 16
+                // pop ax
+                // pop cx
+                // shl ecx, 16
+                // pop cx
+                // mov edx, eax
+                // mov ebx, ecx
+                // push bx
+                // shr ebx, 16
+                // push bx
+                // push dx
+                // shr edx, 16
+                // push dx
+                // push word 4
+                // push rbp
+                // mov rdx, rsp
+                // mov rsp, rbp
+                // mov rbp, rdx
+                // sub rsp, [localidx * 10]
+                // push cx
+                // shr ecx, 16
+                // push cx
+                // push ax
+                // shr eax, 16
+                // push ax
+                // push word 4
+                // mov rsp, rbp
+                // pop rbp
+                // end:
+                localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);
+                localidx *= 10;
+                insts.push_back({POP_AX, 0x66, 0x83, 0xF8, 4, JE(54), POP_EAX, 0x89, 0xC1, PUSH_CX, SHR_ECX, PUSH_CX, V32, 0x55, 0x48, 0x89, 0xE1, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xCD, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), PUSH_V32, 0x48, 0x89, 0xEC, 0x5D, JMP(75), POP_EAX, POP_ECX, 0x89, 0xC2, 0x89, 0xCB, PUSH_BX, SHR_EBX, PUSH_BX, PUSH_DX, SHR_EDX, PUSH_DX, V64, 0x55, 0x48, 0x89, 0xE2, 0x48, 0x89, 0xEC, 0x48, 0x89, 0xD5, 0x48, 0x81, 0xEC, (uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24), PUSH_V64, 0x48, 0x89, 0xEC, 0x5D});
+            }
+            i += 4;
+            break;
+
+        case 0x23: // global.get
+            break;
+
+        case 0x24: // global.set
             break;
 
         // numeric instructions

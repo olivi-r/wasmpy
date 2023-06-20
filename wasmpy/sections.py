@@ -145,7 +145,8 @@ def read_codesec(buffer: object) -> tuple:
             t = ()
             for _ in range(get_vec_len(buffer)):
                 n = read_uint(buffer, 32)
-                t += ((read_valtype(buffer),),)
+                v = buffer.read(1)[0]
+                t += (tuple(v for _ in range(n)),)
 
             concat_t = ()
             for locals in t:

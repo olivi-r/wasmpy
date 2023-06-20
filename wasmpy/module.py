@@ -93,6 +93,7 @@ def read_module(buffer):
                     "ansi"
                 ),
                 bytes(module["types"][typeidx[i]][0]),
+                "".join(chr(j) for j in t).encode("ansi"),
             ),
         }
         for i, (t, e) in enumerate(code)

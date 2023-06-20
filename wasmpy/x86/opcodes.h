@@ -14,6 +14,8 @@
 
 #define PUSH_AX 0x66, 0x50
 #define PUSH_CX 0x66, 0x51
+#define PUSH_DX 0x66, 0x52
+#define PUSH_BX 0x66, 0x53
 
 #define POP_AX 0x66, 0x58
 #define POP_CX 0x66, 0x59
@@ -27,6 +29,8 @@
 
 #define SHR_EAX 0xC1, 0xE8, 16
 #define SHR_ECX 0xC1, 0xE9, 16
+#define SHR_EDX 0xC1, 0xEA, 16
+#define SHR_EBX 0xC1, 0xEB, 16
 
 #define POP_EAX POP_AX, SHL_EAX, POP_AX
 #define POP_ECX POP_CX, SHL_ECX, POP_CX
@@ -43,5 +47,5 @@
 
 typedef std::vector<uint8_t> bytes;
 
-bytes decodeFunc(bytes buf);
+bytes decodeFunc(bytes buf, char plat);
 bytes concat(bytes v0, std::vector<bytes> vn);
