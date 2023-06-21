@@ -915,9 +915,37 @@ bytes decodeFunc(bytes buf, char plat)
             break;
 
         case 0x77: // i32.rotl
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // rol eax, cl
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            insts.push_back({POP_V32B, POP_V32A, 0xD3, 0xC0, PUSH_V32});
             break;
 
         case 0x78: // i32.rotr
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // ror eax, cl
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            insts.push_back({POP_V32B, POP_V32A, 0xD3, 0xC8, PUSH_V32});
             break;
 
         case 0x79: // i64.clz
