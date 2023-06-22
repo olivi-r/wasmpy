@@ -20,6 +20,7 @@ setuptools.setup(
                 "wasmpy/win_x86.cpp",
                 "wasmpy/x86/opcodes.cpp",
             ],
+            py_limited_api=True,
         )
     ],
     classifiers=[
