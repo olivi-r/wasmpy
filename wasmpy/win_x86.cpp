@@ -28,7 +28,7 @@ auto writeFunction(bytes code)
 bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 {
     bytes code = {};
-    for (int i = 0; i < (arglen < 5 ? arglen : 4); i++)
+    for (int i = 0; i < min(arglen, 4); i++)
     {
         if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
         {
@@ -73,6 +73,36 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
                 // push r[89]w
                 // push word 4
                 code = concat(code, {{0x66, 0x41, (uint8_t)(0x4E + i), 0x49, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), 0x49, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), 0x41, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), V64}});
+        }
+    }
+
+    for (Py_ssize_t i = 0; i < arglen - 4; i++)
+    {
+        // mov rax, [rbp + offset]
+        int offset = i * 8 + 48;
+        code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
+
+        if (argbuf[4 + i] == 0x7F || argbuf[4 + i] == 0x7D)
+        {
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            // push word 0
+            // push word 0
+            code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
+        }
+        else if (argbuf[i + 4] == 0x7E || argbuf[i + 4] == 0x7C)
+        {
+            // push ax
+            // shr rax, 16
+            // push ax
+            // shr rax, 16
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 4
+            code = concat(code, {{PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, SHR_EAX, PUSH_AX, V64}});
         }
     }
 
