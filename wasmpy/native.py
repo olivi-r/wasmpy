@@ -4,7 +4,9 @@ import ctypes
 
 
 def create_function(ret, code, arg=b"", local=b""):
-    func, ret = win_x86.create_function(struct.calcsize("P"), ret, code, arg, local)
+    func, ret = win_x86.create_function(
+        struct.calcsize("P"), ret, code, arg, local
+    )
 
     params = []
     param_doc = []
