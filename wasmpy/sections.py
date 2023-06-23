@@ -109,10 +109,10 @@ def read_exportsec(buffer: object) -> tuple:
     return ex
 
 
-def read_startsec(buffer: object) -> dict:
+def read_startsec(buffer: object) -> int:
     """Read a start section from buffer."""
     # https://www.w3.org/TR/wasm-core-1/#start-section%E2%91%A0
-    return {"func": read_uint(buffer, 32)}
+    return read_uint(buffer, 32)
 
 
 def read_elemsec(buffer: object) -> tuple:

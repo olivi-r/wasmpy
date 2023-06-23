@@ -54,5 +54,7 @@ class WebAssemblyBinaryLoader:
         with open(self.fname, "rb") as fp:
             mod._module = read_module(fp)
             mod.call = _call(mod._module)
+            if mod._module["start"] is not None:
+                mod.start = mod._module["start"]
 
         return mod

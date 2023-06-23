@@ -1,28 +1,30 @@
 from .native import create_function
 from .values import read_uint
 from .sections import *
+import importlib
 
 # extend to add future binary formats
 preamble = [b"\0asm\x01\0\0\0"]
 
 sects = [i for j in range(1, 12) for i in (0, j)] + [0]
 
-empty_module_lists = [
-    "types",
-    "tables",
-    "mems",
-    "globals",
-    "elem",
-    "data",
-    "imports",
-    "exports",
-]
-
 
 def read_module(buffer):
     assert preamble[0] == buffer.read(8), "Invalid magic number or version."
 
-    module = {"custom": ()}
+    module = {
+        "custom": (),
+        "types": (),
+        "imports": (),
+        "funcs": (),
+        "tables": (),
+        "mems": (),
+        "globals": (),
+        "exports": (),
+        "start": None,
+        "elem": (),
+        "data": (),
+    }
 
     typeidx = None
     code = ()
@@ -82,7 +84,17 @@ def read_module(buffer):
     except IndexError as i:
         pass
 
-    module["funcs"] = tuple(
+    for i in module["imports"]:
+        mod = importlib.import_module(i["module"])
+        if i["desc"][0] == "func":
+            module["funcs"] += (
+                {
+                    "type": module["types"][i["desc"][1]],
+                    "obj": mod.call(i["name"]),
+                },
+            )
+
+    module["funcs"] += tuple(
         {
             "type": module["types"][typeidx[i]],
             "locals": t,
@@ -103,11 +115,7 @@ def read_module(buffer):
         if e["desc"][0] == "func":
             e["obj"] = module["funcs"][e["desc"][1]]["obj"]
 
-    for section in empty_module_lists:
-        if section not in module.keys():
-            module[section] = ()
-
-    if "start" not in module.keys():
-        module["start"] = None
+    if module["start"] is not None:
+        module["start"] = module["funcs"][module["start"]]["obj"]
 
     return module
