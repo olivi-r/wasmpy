@@ -1162,15 +1162,89 @@ bytes decodeFunc(bytes buf, char plat)
             break;
 
         case 0x6D: // i32.div_s
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // cmp ecx, 0
+            // je end
+            // mov edx, 0
+            // idiv ecx
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            // end:
+            insts.push_back({POP_V32B, POP_V32A, 0x83, 0xF9, 0, JE(18), 0xBA, 0, 0, 0, 0, 0xF7, 0xF9, PUSH_V32});
             break;
 
         case 0x6E: // i32.div_u
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // cmp ecx, 0
+            // je end
+            // mov edx, 0
+            // div ecx
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            // end:
+            insts.push_back({POP_V32B, POP_V32A, 0x83, 0xF9, 0, JE(18), 0xBA, 0, 0, 0, 0, 0xF7, 0xF1, PUSH_V32});
             break;
 
         case 0x6F: // i32.rem_s
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // cmp ecx, 0
+            // je end
+            // mov edx, 0
+            // idiv ecx
+            // mov eax, edx
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            // end:
+            insts.push_back({POP_V32B, POP_V32A, 0x83, 0xF9, 0, JE(20), 0xBA, 0, 0, 0, 0, 0xF7, 0xF9, 0x89, 0xD0, PUSH_V32});
             break;
 
         case 0x70: // i32.rem_u
+            // pop cx
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // cmp ecx, 0
+            // je end
+            // mov edx, 0
+            // div ecx
+            // mov eax, edx
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push word 2
+            // end:
+            insts.push_back({POP_V32A, POP_V32B, 0x83, 0xF9, 0, JE(20), 0xBA, 0, 0, 0, 0, 0xF7, 0xF1, 0x89, 0xD0, PUSH_V32});
             break;
 
         case 0x71: // i32.and
