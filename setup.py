@@ -23,6 +23,7 @@ setuptools.setup(
             py_limited_api=True,
         )
     ],
+    options={"bdist_wheel": {"py_limited_api": "cp36"}},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
