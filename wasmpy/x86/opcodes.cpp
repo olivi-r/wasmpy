@@ -879,19 +879,131 @@ bytes decodeFunc(bytes buf, char plat)
             // end:
             // push word 0
             // push word 2
-            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xC2, 0x77, 12, 0x72, 4, 0x39, 0xCB, 0x77, 6, PUSH(0), JMP(4), PUSH(1), PUSH(0), PUSH(2)});
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xC2, 0x77, 12, 0x72, 4, 0x39, 0xCB, 0x77, 6, PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x57: // i64.le_s
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop dx
+            // pop dx
+            // shl edx, 16
+            // pop dx
+            // pop bx
+            // shl ebx, 16
+            // pop bx
+            // cmp edx, eax
+            // jl true
+            // jg false
+            // cmp ebx, ecx
+            // jbe true
+            // false:
+            // push word 0
+            // jmp end
+            // true:
+            // push word 1
+            // end:
+            // push word 0
+            // push word 2
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xC2, 0x7C, 12, 0x7F, 4, 0x39, 0xCB, 0x76, 6, PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x58: // i64.le_u
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop dx
+            // pop dx
+            // shl edx, 16
+            // pop dx
+            // pop bx
+            // shl ebx, 16
+            // pop bx
+            // cmp edx, eax
+            // jb true
+            // ja false
+            // cmp ebx, ecx
+            // jbe true
+            // false:
+            // push word 0
+            // jmp end
+            // true:
+            // push word 1
+            // end:
+            // push word 0
+            // push word 2
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xC2, 0x72, 12, 0x77, 4, 0x39, 0xCB, 0x76, 6, PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x59: // i64.ge_s
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop dx
+            // pop dx
+            // shl edx, 16
+            // pop dx
+            // pop bx
+            // shl ebx, 16
+            // pop bx
+            // cmp edx, eax
+            // jg true
+            // jl false
+            // cmp ebx, ecx
+            // jae true
+            // false:
+            // push word 0
+            // jmp end
+            // true:
+            // push word 1
+            // end:
+            // push word 0
+            // push word 2
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xC2, 0x7F, 12, 0x7C, 4, 0x39, 0xCB, 0x73, 6, PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x5A: // i64.ge_u
+            // pop ax
+            // pop ax
+            // shl eax, 16
+            // pop ax
+            // pop cx
+            // shl ecx, 16
+            // pop cx
+            // pop dx
+            // pop dx
+            // shl edx, 16
+            // pop dx
+            // pop bx
+            // shl ebx, 16
+            // pop bx
+            // cmp edx, eax
+            // ja true
+            // jb false
+            // cmp ebx, ecx
+            // jae true
+            // false:
+            // push word 0
+            // jmp end
+            // true:
+            // push word 1
+            // end:
+            // push word 0
+            // push word 2
+            insts.push_back({POP_V64A, POP_V64B, 0x39, 0xC2, 0x77, 12, 0x72, 4, 0x39, 0xCB, 0x73, 6, PUSH(0), JMP(4), PUSH(1), PUSH(0), V32});
             break;
 
         case 0x5B: // f32.eq
