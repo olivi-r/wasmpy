@@ -160,6 +160,7 @@ opcodes.update(
     )
 )
 
+prefixed = {"local.get": "localidx += 10;\n\t\t\t"}
 
 consumes = {
     "local.get": 4,

@@ -65,9 +65,11 @@ class gen_opcodes(setuptools.Command):
                     '#include "helpers.h"\n\n',
                     "bytes decodeFunc(bytes buf, char plat)\n{\n\t",
                     "std::vector<bytes> insts = {};\n\t",
+                    "int localidx;\n\t",
                     "for (size_t i = 0; i < buf.size(); i++)\n\t{\n\t\t",
-                    "int localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t",
-                    "localidx *= 10;\n\t\t",
+                    "if (i < buf.size() - 4)\n\t\t{\n\t\t\t"
+                    "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+                    "localidx *= 10;\n\t\t}\n\t\t",
                     "switch (buf.at(i))\n\t\t{\n\t\t",
                 )
             )
@@ -84,7 +86,7 @@ class gen_opcodes(setuptools.Command):
 
                 inst = os.path.basename(file)
 
-                if os.path.splitext(file)[1].lower() != ".asm":
+                if inst in opcodes.opcodes:
                     with open(file, "rb") as fp:
                         data = ", ".join(str(i) for i in fp.read())
 
@@ -93,12 +95,11 @@ class gen_opcodes(setuptools.Command):
                         for replacement in opcodes.replacements[inst]:
                             data = data.replace(*replacement)
 
-                    out.writelines(
-                        (
-                            f"case {opcodes.opcodes[inst]}:\n\t\t\t",
-                            f"insts.push_back({{{data}}});\n\t\t\t",
-                        )
-                    )
+                    out.write(f"case {opcodes.opcodes[inst]}:\n\t\t\t")
+                    if inst in opcodes.prefixed:
+                        out.write(opcodes.prefixed[inst])
+
+                    out.write(f"insts.push_back({{{data}}});\n\t\t\t")
 
                     if inst in opcodes.consumes:
                         out.write(f"i += {opcodes.consumes[inst]};\n\t\t\t")
@@ -150,7 +151,7 @@ setuptools.setup(
     cmdclass={
         "assemble": assemble,
         "build_ext": build_ext,
-        "genopcodes": gen_opcodes,
+        "gen_opcodes": gen_opcodes,
     },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

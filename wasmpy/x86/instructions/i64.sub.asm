@@ -21,4 +21,4 @@ push cx
 push ax
 shr eax, 16
 push ax
-push word 4
+push strict word 4

@@ -2,4 +2,4 @@
 pop ax
 pop ax
 pop ax
-push word 2
+push strict word 2

@@ -35,7 +35,7 @@ push cx
 push ax
 shr eax, 16
 push ax
-push word 4
+push strict word 4
 jmp end
 zerox32:
 pop ax
@@ -47,5 +47,5 @@ pop cx
 push ax
 shr eax, 16
 push ax
-push word 2
+push strict word 2
 end:

@@ -9,7 +9,7 @@ mov ecx, eax
 push cx
 shr ecx, 16
 push cx
-push word 2
+push strict word 2
 push rbp
 mov rcx, rsp
 mov rsp, rbp
@@ -18,7 +18,7 @@ sub rsp, 0xff00ff
 push ax
 shr eax, 16
 push ax
-push word 2
+push strict word 2
 mov rsp, rbp
 pop rbp
 jmp end
@@ -37,7 +37,7 @@ push bx
 push dx
 shr edx, 16
 push dx
-push word 4
+push strict word 4
 push rbp
 mov rdx, rsp
 mov rsp, rbp
@@ -49,7 +49,7 @@ push cx
 push ax
 shr eax, 16
 push ax
-push word 4
+push strict word 4
 mov rsp, rbp
 pop rbp
 end:

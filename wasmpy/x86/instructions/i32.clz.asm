@@ -11,7 +11,7 @@ sub cx, ax
 push cx
 jmp end
 true:
-push word 32
+push strict word 32
 end:
-push word 0
-push word 2
+push strict word 0
+push strict word 2

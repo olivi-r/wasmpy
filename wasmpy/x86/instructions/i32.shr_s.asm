@@ -13,4 +13,4 @@ sar eax, cl
 push ax
 shr eax, 16
 push ax
-push word 2
+push strict word 2

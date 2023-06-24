@@ -7,4 +7,4 @@ mov ax, 0x00ff
 push ax
 mov ax, 0xffff
 push ax
-push word 4
+push strict word 4

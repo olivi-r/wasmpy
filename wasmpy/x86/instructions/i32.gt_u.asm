@@ -9,10 +9,10 @@ shl ecx, 16
 pop cx
 cmp ecx, eax
 ja true
-push word 0
+push strict word 0
 jmp end
 true:
-push word 1
+push strict word 1
 end:
-push word 0
-push word 2
+push strict word 0
+push strict word 2

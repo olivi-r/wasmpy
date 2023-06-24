@@ -19,9 +19,9 @@ bsf ecx, ecx
 push cx
 jmp end
 lowzero:
-push word 64
+push strict word 64
 end:
-push word 0
-push word 0
-push word 0
-push word 4
+push strict word 0
+push strict word 0
+push strict word 0
+push strict word 4

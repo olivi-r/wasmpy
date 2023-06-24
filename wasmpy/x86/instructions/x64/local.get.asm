@@ -17,7 +17,7 @@ pop rbp
 push ax
 shr eax, 16
 push ax
-push word 2
+push strict word 2
 jmp end
 v64:
 pop ax
@@ -34,5 +34,5 @@ push cx
 push ax
 shr eax, 16
 push ax
-push word 4
+push strict word 4
 end:
