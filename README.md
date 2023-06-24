@@ -13,7 +13,8 @@ Install the latest version:
 $ python -m pip install wasmpy
 ```
 
-Or build and install from source:
+Or build and install from source (this requires having [NASM](https://www.nasm.us/) on path):
+
 
 ```
 $ git clone https://github.com/olivi-r/wasmpy.git

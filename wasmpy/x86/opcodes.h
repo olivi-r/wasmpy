@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include <vector>
+#include "helpers.h"
 
 #define PUSH(x) 0x66, 0x68, (uint8_t)(x & 255), (uint8_t)(x >> 8)
 
@@ -45,7 +44,4 @@
 #define PUSH_V32 PUSH_AX, SHR_EAX, PUSH_AX, V32
 #define PUSH_V64 PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64
 
-typedef std::vector<uint8_t> bytes;
-
 bytes decodeFunc(bytes buf, char plat);
-bytes concat(bytes v0, std::vector<bytes> vn);

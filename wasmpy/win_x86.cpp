@@ -120,7 +120,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
     for (Py_ssize_t i = 0; i < arglen - 4; i++)
     {
         // mov rax, [rbp + offset]
-        int offset = i * 8 + 48;
+        Py_ssize_t offset = i * 8 + 48;
         code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
 
         if (argbuf[i + 4] == 0x7F || argbuf[i + 4] == 0x7D)
