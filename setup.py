@@ -9,10 +9,16 @@ def listdir(path):
     return [os.path.join(path, p) for p in os.listdir(path)]
 
 
-class Assemble(setuptools.command.build_ext.build_ext):
-    def run(self):
-        bits = struct.calcsize("P")
+class assemble(setuptools.Command):
+    user_options = []
 
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
         for source in listdir("wasmpy/x86/instructions"):
             if os.path.isdir(source):
                 continue
@@ -21,29 +27,37 @@ class Assemble(setuptools.command.build_ext.build_ext):
             if os.path.splitext(source)[1].lower() == ".asm":
                 subprocess.call(["nasm", source, "-fbin"])
 
-        extra = []
-        if bits == 8:
-            extra = listdir("wasmpy/x86/instructions/x64")
-            for source in extra:
-                if os.path.isdir(source):
-                    continue
+        for source in listdir("wasmpy/x86/instructions/x64"):
+            if os.path.isdir(source):
+                continue
 
-                # assemble x64 specific instructions
-                if os.path.splitext(source)[1].lower() == ".asm":
-                    subprocess.call(["nasm", source, "-fbin"])
+            # assemble x64 specific instructions
+            if os.path.splitext(source)[1].lower() == ".asm":
+                subprocess.call(["nasm", source, "-fbin"])
 
-        elif bits == 4:
-            extra = listdir("wasmpy/x86/instructions/x86")
-            for source in extra:
-                if os.path.isdir(source):
-                    continue
+        for source in listdir("wasmpy/x86/instructions/x86"):
+            if os.path.isdir(source):
+                continue
 
-                # assemble x86 specific instructions
-                if os.path.splitext(source)[1].lower() == ".asm":
-                    subprocess.call(["nasm", source, "-fbin"])
+            # assemble x86 specific instructions
+            if os.path.splitext(source)[1].lower() == ".asm":
+                subprocess.call(["nasm", source, "-fbin"])
 
+
+class gen_opcodes(setuptools.Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
         # generate opcodes.cpp
         with open("wasmpy/x86/opcodes.cpp", "w+") as out:
+            bits = struct.calcsize("P")
+
             out.writelines(
                 (
                     "// auto-generated\n\n",
@@ -57,6 +71,12 @@ class Assemble(setuptools.command.build_ext.build_ext):
                     "switch (buf.at(i))\n\t\t{\n\t\t",
                 )
             )
+
+            if bits == 8:
+                extra = listdir("wasmpy/x86/instructions/x64")
+
+            elif bits == 4:
+                extra = listdir("wasmpy/x86/instructions/x86")
 
             for file in listdir("wasmpy/x86/instructions") + extra:
                 if os.path.isdir(file):
@@ -95,6 +115,10 @@ class Assemble(setuptools.command.build_ext.build_ext):
                 )
             )
 
+
+class build_ext(setuptools.command.build_ext.build_ext):
+    def run(self):
+        gen_opcodes.run(self)
         setuptools.command.build_ext.build_ext.run(self)
 
 
@@ -123,7 +147,11 @@ setuptools.setup(
         )
     ],
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
-    cmdclass={"build_ext": Assemble},
+    cmdclass={
+        "assemble": assemble,
+        "build_ext": build_ext,
+        "genopcodes": gen_opcodes,
+    },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

@@ -1,0 +1,6 @@
+include wasmpy/**/*.h
+exclude *.cpp
+include wasmpy/*.cpp
+include wasmpy/x86/helpers.cpp
+graft wasmpy/x86/instructions
+include opcodes.py
