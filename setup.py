@@ -1,24 +1,46 @@
 import setuptools.command.build_ext
 import subprocess
 import opcodes
+import struct
 import os
+
+
+def listdir(path):
+    return [os.path.join(path, p) for p in os.listdir(path)]
 
 
 class Assemble(setuptools.command.build_ext.build_ext):
     def run(self):
-        for source in os.listdir("wasmpy/x86/instructions"):
-            if os.path.isdir(os.path.join("wasmpy/x86/instructions", source)):
+        bits = struct.calcsize("P")
+
+        for source in listdir("wasmpy/x86/instructions"):
+            if os.path.isdir(source):
                 continue
 
             # assemble instructions
             if os.path.splitext(source)[1].lower() == ".asm":
-                subprocess.call(
-                    [
-                        "nasm",
-                        os.path.join("wasmpy/x86/instructions", source),
-                        "-fbin",
-                    ]
-                )
+                subprocess.call(["nasm", source, "-fbin"])
+
+        extra = []
+        if bits == 8:
+            extra = listdir("wasmpy/x86/instructions/x64")
+            for source in extra:
+                if os.path.isdir(source):
+                    continue
+
+                # assemble x64 specific instructions
+                if os.path.splitext(source)[1].lower() == ".asm":
+                    subprocess.call(["nasm", source, "-fbin"])
+
+        elif bits == 4:
+            extra = listdir("wasmpy/x86/instructions/x86")
+            for source in extra:
+                if os.path.isdir(source):
+                    continue
+
+                # assemble x86 specific instructions
+                if os.path.splitext(source)[1].lower() == ".asm":
+                    subprocess.call(["nasm", source, "-fbin"])
 
         # generate opcodes.cpp
         with open("wasmpy/x86/opcodes.cpp", "w+") as out:
@@ -28,30 +50,40 @@ class Assemble(setuptools.command.build_ext.build_ext):
                     '#include "opcodes.h"\n',
                     '#include "helpers.h"\n\n',
                     "bytes decodeFunc(bytes buf, char plat)\n{\n\t",
-                    "int localidx;\n\t",
                     "std::vector<bytes> insts = {};\n\t",
                     "for (size_t i = 0; i < buf.size(); i++)\n\t{\n\t\t",
+                    "int localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t",
+                    "localidx *= 10;\n\t\t",
                     "switch (buf.at(i))\n\t\t{\n\t\t",
                 )
             )
 
-            for file in os.listdir("wasmpy/x86/instructions"):
-                if os.path.isdir(os.path.join("wasmpy/x86/instructions", file)):
+            for file in listdir("wasmpy/x86/instructions") + extra:
+                if os.path.isdir(file):
                     continue
 
+                inst = os.path.basename(file)
+
                 if os.path.splitext(file)[1].lower() != ".asm":
-                    with open(
-                        os.path.join("wasmpy/x86/instructions", file), "rb"
-                    ) as fp:
+                    with open(file, "rb") as fp:
                         data = ", ".join(str(i) for i in fp.read())
+
+                    # alter binary data of instructions that take arguments
+                    if inst in opcodes.replacements:
+                        for replacement in opcodes.replacements[inst]:
+                            data = data.replace(*replacement)
 
                     out.writelines(
                         (
-                            f"case {opcodes.opcodes[file]}:\n\t\t\t",
+                            f"case {opcodes.opcodes[inst]}:\n\t\t\t",
                             f"insts.push_back({{{data}}});\n\t\t\t",
-                            "break;\n\n\t\t",
                         )
                     )
+
+                    if inst in opcodes.consumes:
+                        out.write(f"i += {opcodes.consumes[inst]};\n\t\t\t")
+
+                    out.write("break;\n\n\t\t")
 
             out.writelines(
                 (

@@ -159,3 +159,55 @@ opcodes.update(
         offset=0x41,
     )
 )
+
+
+consumes = {
+    "local.get": 4,
+    "local.set": 4,
+    "local.tee": 4,
+    "i32.const": 4,
+    "i64.const": 8,
+    "f32.const": 4,
+    "f64.const": 8,
+}
+
+replacements = {
+    "local.get": (
+        (
+            "255, 0, 255, 0",
+            "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
+        ),
+    ),
+    "local.set": (
+        (
+            "255, 0, 255, 0",
+            "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
+        ),
+    ),
+    "local.tee": (
+        (
+            "255, 0, 255, 0",
+            "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
+        ),
+    ),
+    "i32.const": (
+        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
+        ("255, 255", "buf.at(i + 3), buf.at(i + 4)"),
+    ),
+    "i64.const": (
+        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
+        ("0, 255", "buf.at(i + 3), buf.at(i + 4)"),
+        ("255, 0", "buf.at(i + 5), buf.at(i + 6)"),
+        ("255, 255", "buf.at(i + 7), buf.at(i + 8)"),
+    ),
+    "f32.const": (
+        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
+        ("255, 255", "buf.at(i + 3), buf.at(i + 4)"),
+    ),
+    "f64.const": (
+        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
+        ("0, 255", "buf.at(i + 3), buf.at(i + 4)"),
+        ("255, 0", "buf.at(i + 5), buf.at(i + 6)"),
+        ("255, 255", "buf.at(i + 7), buf.at(i + 8)"),
+    ),
+}
