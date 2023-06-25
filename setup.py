@@ -62,8 +62,8 @@ class gen_opcodes(setuptools.Command):
             out.writelines(
                 (
                     "// auto-generated\n\n",
-                    '#include "opcodes.h"\n',
-                    '#include "helpers.h"\n\n',
+                    '#include "opcodes.hpp"\n',
+                    '#include "helpers.hpp"\n\n',
                     "bytes decodeFunc(bytes buf, char plat)\n{\n\t",
                     "std::vector<bytes> insts = {};\n\t",
                     "int localidx;\n\t",
