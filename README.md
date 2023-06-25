@@ -10,17 +10,17 @@ This project is intended to be used in conjunction with [wasmpy-build](https://g
 Install the latest version:
 
 ```
-$ python -m pip install wasmpy
+python -m pip install wasmpy
 ```
 
 Or build and install from source (the `assemble` step requires having [NASM](https://www.nasm.us/) on path):
 
 
 ```
-$ git clone https://github.com/olivi-r/wasmpy.git
-$ cd wasmpy
-$ python setup.py assemble
-$ python setup.py install
+git clone https://github.com/olivi-r/wasmpy.git
+cd wasmpy
+python setup.py assemble
+python -m pip install .
 ```
 
 # Usage
