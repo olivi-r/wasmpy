@@ -2,7 +2,7 @@
 #define Py_LIMITED_API 0x03060000
 #include <Python.h>
 #include <sys/mman.h>
-#include "x86/opcodes.h"
+#include "x86/opcodes.hpp"
 
 std::vector<void (*)()> registeredFuncs = {};
 
