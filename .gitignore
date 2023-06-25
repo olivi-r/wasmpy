@@ -5,6 +5,7 @@ dist
 .env
 .vscode
 *.pyd
+*.so
 wasmpy/x86/instructions/**/*
 !wasmpy/x86/instructions/*/
 !wasmpy/x86/instructions/**/*.asm

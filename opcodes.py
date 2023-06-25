@@ -160,7 +160,21 @@ opcodes.update(
     )
 )
 
-prefixed = {"local.get": "localidx += 10;\n\t\t\t"}
+prefixed = {
+    "local.get": (
+        "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "localidx *= 10;\n\t\t\t",
+        "localidx += 10;\n\t\t\t",
+    ),
+    "local.set": (
+        "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "localidx *= 10;\n\t\t\t",
+    ),
+    "local.tee": (
+        "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "localidx *= 10;\n\t\t\t",
+    ),
+}
 
 consumes = {
     "local.get": 4,

@@ -68,9 +68,6 @@ class gen_opcodes(setuptools.Command):
                     "std::vector<bytes> insts = {};\n\t",
                     "int localidx;\n\t",
                     "for (size_t i = 0; i < buf.size(); i++)\n\t{\n\t\t",
-                    "if (i < buf.size() - 4)\n\t\t{\n\t\t\t"
-                    "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
-                    "localidx *= 10;\n\t\t}\n\t\t",
                     "switch (buf.at(i))\n\t\t{\n\t\t",
                 )
             )
@@ -98,7 +95,7 @@ class gen_opcodes(setuptools.Command):
 
                     out.write(f"case {opcodes.opcodes[inst]}:\n\t\t\t")
                     if inst in opcodes.prefixed:
-                        out.write(opcodes.prefixed[inst])
+                        out.write("".join(opcodes.prefixed[inst]))
 
                     out.write(f"insts.push_back({{{data}}});\n\t\t\t")
 
