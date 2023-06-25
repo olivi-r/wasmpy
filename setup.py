@@ -1,5 +1,6 @@
 import setuptools.command.build_ext
 import subprocess
+import platform
 import opcodes
 import struct
 import os
@@ -123,6 +124,34 @@ class build_ext(setuptools.command.build_ext.build_ext):
         setuptools.command.build_ext.build_ext.run(self)
 
 
+ext = []
+if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
+    if platform.system() == "Windows":
+        ext = [
+            setuptools.Extension(
+                "wasmpy.win_x86",
+                sources=[
+                    "wasmpy/win_x86.cpp",
+                    "wasmpy/x86/helpers.cpp",
+                    "wasmpy/x86/opcodes.cpp",
+                ],
+                py_limited_api=True,
+            )
+        ]
+
+    elif platform.system() == "Linux":
+        ext = [
+            setuptools.Extension(
+                "wasmpy.linux_x86",
+                sources=[
+                    "wasmpy/linux_x86.cpp",
+                    "wasmpy/x86/helpers.cpp",
+                    "wasmpy/x86/opcodes.cpp",
+                ],
+                py_limited_api=True,
+            )
+        ]
+
 with open("README.md", "r") as fp:
     description = fp.read()
 
@@ -136,17 +165,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
     packages=["wasmpy"],
-    ext_modules=[
-        setuptools.Extension(
-            "wasmpy.win_x86",
-            sources=[
-                "wasmpy/win_x86.cpp",
-                "wasmpy/x86/opcodes.cpp",
-                "wasmpy/x86/helpers.cpp",
-            ],
-            py_limited_api=True,
-        )
-    ],
+    ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={
         "assemble": assemble,
