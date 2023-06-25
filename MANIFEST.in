@@ -1,4 +1,4 @@
-include wasmpy/**/*.h
+include wasmpy/**/*.hpp
 exclude *.cpp
 include wasmpy/*.cpp
 include wasmpy/x86/helpers.cpp
