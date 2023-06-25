@@ -45,6 +45,31 @@ class assemble(setuptools.Command):
                 subprocess.call(["nasm", source, "-fbin"])
 
 
+class tidy(setuptools.Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        if os.path.exists("wasmpy/x86/opcodes.cpp"):
+            os.remove("wasmpy/x86/opcodes.cpp")
+
+        for file in (
+            listdir("wasmpy/x86/instructions")
+            + listdir("wasmpy/x86/instructions/x64")
+            + listdir("wasmpy/x86/instructions/x86")
+        ):
+            if not os.path.isfile(file):
+                continue
+
+            if os.path.splitext(file)[1] != ".asm":
+                os.remove(file)
+
+
 class gen_opcodes(setuptools.Command):
     user_options = []
 
@@ -166,6 +191,7 @@ setuptools.setup(
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={
         "assemble": assemble,
+        "tidy": tidy,
         "build_ext": build_ext,
         "gen_opcodes": gen_opcodes,
     },
