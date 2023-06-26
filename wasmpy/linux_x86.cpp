@@ -4,12 +4,21 @@
 #include <sys/mman.h>
 #include "x86/opcodes.hpp"
 
+#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
+
 std::vector<void (*)()> registeredFuncs = {};
+
+void freeFuncs()
+{
+    for (size_t i = 0; i < registeredFuncs.size(); i++)
+    {
+        munmap((void *)registeredFuncs.at(i), PAGE_SIZE);
+    }
+}
 
 auto writeFunction(bytes code)
 {
-    int pageSize = sysconf(_SC_PAGE_SIZE);
-    void *buf = mmap(NULL, pageSize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    void *buf = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     memcpy(buf, code.data(), code.size());
     mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
     return reinterpret_cast<void (*)()>(buf);
@@ -17,7 +26,76 @@ auto writeFunction(bytes code)
 
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
-    Py_RETURN_NONE;
+    char plat, ret;
+    const char *codebuf, *argbuf, *localbuf;
+    Py_ssize_t codelen, arglen, locallen;
+    if (!PyArg_ParseTuple(args, "bby#y#y#", &plat, &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen))
+        return NULL;
+
+    bytes ret_v64, initStack, loadLocals, cleanupStack;
+    if (plat == 4)
+    {
+    }
+    else if (plat == 8)
+    {
+        // pop ax
+        // pop ax
+        // shl eax, 16
+        // pop ax
+        // shl rax, 16
+        // pop ax
+        // shl rax, 16
+        // pop ax
+        ret_v64 = {POP_V32A, 0x48, 0xC1, 0xE0, 16, POP_AX, 0x48, 0xC1, 0xE0, 16, POP_AX};
+
+        // push rbp
+        // mov rbp, rsp
+        initStack = {0x55, 0x48, 0x89, 0xE5};
+
+        // mov rsp, rbp
+        // pop rbp
+        cleanupStack = {0x48, 0x89, 0xEC, 0x5D};
+    }
+    else
+        return NULL;
+
+    bytes code(codebuf, codelen + codebuf);
+
+    bytes cleanupCode;
+    char *returnType;
+
+    switch (ret)
+    {
+    case 0x7F:
+        cleanupCode = concat({POP_V32A}, {cleanupStack, {0xC3}});
+        returnType = "i32";
+        break;
+
+    case 0x7E:
+        cleanupCode = concat(ret_v64, {cleanupStack, {0xC3}});
+        returnType = "i64";
+        break;
+
+    case 0x7D:
+        cleanupCode = concat({POP_V32A}, {cleanupStack, {0xC3}});
+        returnType = "f32";
+        break;
+
+    case 0x7C:
+        cleanupCode = concat(ret_v64, {cleanupStack, {0xC3}});
+        returnType = "f64";
+        break;
+
+    default:
+        cleanupCode = concat(cleanupStack, {{0xC3}});
+        returnType = "void";
+        break;
+    }
+
+    auto func = writeFunction(concat(initStack, {decodeFunc(code, plat), cleanupCode}));
+    registeredFuncs.push_back(func);
+
+    return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
 }
 
 static PyMethodDef methods[] = {
@@ -33,5 +111,6 @@ static struct PyModuleDef module = {
 
 PyMODINIT_FUNC PyInit_linux_x86()
 {
+    Py_AtExit(&freeFuncs);
     return PyModule_Create(&module);
 }
