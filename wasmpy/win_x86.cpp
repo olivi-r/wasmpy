@@ -216,42 +216,36 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
     bytes code(codebuf, codelen + codebuf);
 
-    bytes cleanupCode = {};
+    bytes cleanupCode;
     char *returnType = NULL;
 
     switch (ret)
     {
     case 0x7F:
-        cleanupCode = concat(cleanupCode, {{POP_V32A}, cleanupStack, {0xC3}});
+        cleanupCode = concat({POP_V32A}, {cleanupStack, {0xC3}});
         returnType = "i32";
         break;
 
     case 0x7E:
-        cleanupCode = concat(cleanupCode, {ret_v64, cleanupStack, {0xC3}});
+        cleanupCode = concat(ret_v64, {cleanupStack, {0xC3}});
         returnType = "i64";
         break;
 
     case 0x7D:
-        cleanupCode = concat(cleanupCode, {{POP_V32A}, cleanupStack, {0xC3}});
+        cleanupCode = concat({POP_V32A}, {cleanupStack, {0xC3}});
         returnType = "f32";
         break;
 
     case 0x7C:
-        cleanupCode = concat(cleanupCode, {ret_v64, cleanupStack, {0xC3}});
+        cleanupCode = concat(ret_v64, {cleanupStack, {0xC3}});
         returnType = "f64";
         break;
 
-    case 0x40:
+    default:
         cleanupCode = concat(cleanupStack, {{0xC3}});
         returnType = "void";
         break;
-
-    default:
-        break;
     }
-
-    if (returnType == NULL)
-        return NULL;
 
     auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat), cleanupCode}));
     registeredFuncs.push_back(func);
