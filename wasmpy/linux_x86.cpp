@@ -59,6 +59,15 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     else
         return NULL;
 
+    for (Py_ssize_t i = 0; i < locallen; i++)
+    {
+        if (localbuf[i] == 0x7F || localbuf[i] == 0x7D)
+            loadLocals = concat(loadLocals, {{PUSH(0), PUSH(0), PUSH(2), PUSH(0), PUSH(0)}});
+
+        if (localbuf[i] == 0x7E || localbuf[i] == 0x7C)
+            loadLocals = concat(loadLocals, {{PUSH(0), PUSH(0), PUSH(0), PUSH(0), PUSH(4)}});
+    }
+
     bytes code(codebuf, codelen + codebuf);
 
     bytes cleanupCode;
