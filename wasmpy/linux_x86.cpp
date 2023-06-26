@@ -52,6 +52,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         // mov rbp, rsp
         initStack = {0x55, 0x48, 0x89, 0xE5};
 
+        loadLocals = {};
+
         // mov rsp, rbp
         // pop rbp
         cleanupStack = {0x48, 0x89, 0xEC, 0x5D};
@@ -101,7 +103,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         break;
     }
 
-    auto func = writeFunction(concat(initStack, {decodeFunc(code, plat), cleanupCode}));
+    auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat), cleanupCode}));
     registeredFuncs.push_back(func);
 
     return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
