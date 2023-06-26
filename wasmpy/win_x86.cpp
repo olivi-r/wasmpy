@@ -217,7 +217,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     bytes code(codebuf, codelen + codebuf);
 
     bytes cleanupCode;
-    char *returnType = NULL;
+    const char *returnType;
 
     switch (ret)
     {
