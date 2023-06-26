@@ -24,6 +24,47 @@ auto writeFunction(bytes code)
     return reinterpret_cast<void (*)()>(buf);
 }
 
+bytes regParam32(const char *argbuf, Py_ssize_t arglen)
+{
+    bytes code = {};
+    int offset = 8;
+    for (Py_ssize_t i = 0; i < arglen; i++)
+    {
+        // mov eax, [ebp + offset]
+        code = concat(code, {{0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
+
+        if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
+        {
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push strict word 2
+            // push strict word 0
+            // push strict word 0
+            code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
+        }
+        else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
+        {
+            offset += 4;
+            // mov ecx, [ebp + offset]
+            code = concat(code, {{0x8B, 0x8D, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
+
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push cx
+            // shr ecx, 16
+            // push cx
+            // push strict word 4
+            code = concat(code, {{PUSH_AX, SHR_EAX, PUSH_AX, PUSH_CX, SHR_ECX, PUSH_CX, V64}});
+        }
+
+        offset += 4;
+    }
+
+    return code;
+}
+
 bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 {
     bytes code = {};
@@ -104,6 +145,24 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     bytes ret_v64, initStack, loadLocals, cleanupStack;
     if (plat == 4)
     {
+        // pop ax
+        // pop dx
+        // shl edx, 16
+        // pop dx
+        // pop ax
+        // shl eax, 16
+        // pop ax
+        ret_v64 = {POP_AX, POP_EDX, POP_EAX};
+
+        // push ebp
+        // mov ebp, esp
+        initStack = {0x55, 0x89, 0xE5};
+
+        loadLocals = regParam32(argbuf, arglen);
+
+        // mov esp, ebp
+        // pop ebp
+        cleanupStack = {0x89, 0xEC, 0x5D};
     }
     else if (plat == 8)
     {
