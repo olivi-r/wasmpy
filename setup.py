@@ -199,6 +199,7 @@ setuptools.setup(
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Environment :: WebAssembly",
+        "Programming Language :: C++",
         "Programming Language :: Assembly",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
