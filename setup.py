@@ -196,8 +196,9 @@ setuptools.setup(
         "gen_opcodes": gen_opcodes,
     },
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
+        "Environment :: WebAssembly",
         "Programming Language :: Assembly",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
