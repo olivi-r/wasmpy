@@ -24,6 +24,75 @@ auto writeFunction(bytes code)
     return reinterpret_cast<void (*)()>(buf);
 }
 
+bytes regParam64(const char *argbuf, Py_ssize_t arglen)
+{
+    bytes code = {};
+    for (int i = 0; i < std::min((int)arglen, 6); i++)
+    {
+        if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
+        {
+            if (i / 2 == 0)
+                // push [ds]i
+                // shr e[ds]i, 16
+                // push [ds]i
+                // push strict word 2
+                // push strict word 0
+                // push strict word 0
+                code = concat(code, {{0x66, (uint8_t)(0x57 - i), 0xC1, (uint8_t)(0xEF - i), 16, 0x66, (uint8_t)(0x57 - i), V32, PUSH(0), PUSH(0)}});
+
+            else if (i / 2 == 1)
+                // push [dc]x
+                // shr e[dc]x, 16
+                // push [dc]x
+                // push strict word 2
+                // push strict word 0
+                // push strict word 0
+                code = concat(code, {{0x66, (uint8_t)(0x54 - i), 0xC1, (uint8_t)(0xEC - i), 16, 0x66, (uint8_t)(0x54 - i), V32, PUSH(0), PUSH(0)}});
+
+            else
+                // push r[89]w
+                // shr r[89]d, 16
+                // push r[89]w
+                // push strict word 2
+                // push strict word 0
+                // push strict word 0
+                code = concat(code, {{0x66, 0x41, (uint8_t)(0x4C + i), 0x41, 0xC1, (uint8_t)(0xE4 + i), 16, 0x66, 0x41, (uint8_t)(0x4C + i), V32, PUSH(0), PUSH(0)}});
+        }
+    }
+
+    for (Py_ssize_t i = 0; i < arglen - 6; i++)
+    {
+        // mov rax, [rbp + offset]
+        Py_ssize_t offset = i * 8 + 16;
+        code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
+
+        if (argbuf[i + 4] == 0x7F || argbuf[i + 4] == 0x7D)
+        {
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push strict word 2
+            // push strict word 0
+            // push strict word 0
+            code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
+        }
+        else if (argbuf[i + 4] == 0x7E || argbuf[i + 4] == 0x7C)
+        {
+            // push ax
+            // shr rax, 16
+            // push ax
+            // shr rax, 16
+            // push ax
+            // shr eax, 16
+            // push ax
+            // push strict word 4
+            code = concat(code, {{PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, SHR_EAX, PUSH_AX, V64}});
+        }
+    }
+
+    return code;
+}
+
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
     char plat, ret;
@@ -52,7 +121,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         // mov rbp, rsp
         initStack = {0x55, 0x48, 0x89, 0xE5};
 
-        loadLocals = {};
+        loadLocals = regParam64(argbuf, arglen);
 
         // mov rsp, rbp
         // pop rbp
