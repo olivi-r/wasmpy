@@ -1,5 +1,7 @@
-[bits 32]
+.globl _start
+_start:
+.intel_syntax noprefix
 pop ax
 pop ax
 pop ax
-push strict word 2
+pushw 2

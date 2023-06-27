@@ -1,4 +1,6 @@
-[bits 32]
+.globl _start
+_start:
+.intel_syntax noprefix
 pop ax
 cmp ax, 2
 je x32

@@ -1,4 +1,6 @@
-[bits 32]
+.globl _start
+_start:
+.intel_syntax noprefix
 pop ax
 pop ax
 shl eax, 16
@@ -22,9 +24,9 @@ sub ax, cx
 push ax
 jmp end
 lowzero:
-push strict word 64
+pushw 64
 end:
-push strict word 0
-push strict word 0
-push strict word 0
-push strict word 4
+pushw 0
+pushw 0
+pushw 0
+pushw 4

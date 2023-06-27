@@ -1,6 +1,8 @@
-[bits 32]
+.globl _start
+_start:
+.intel_syntax noprefix
 mov ax, 0x0000
 push ax
 mov ax, 0xffff
 push ax
-push strict word 2
+pushw 2

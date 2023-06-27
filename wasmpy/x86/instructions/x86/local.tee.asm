@@ -1,4 +1,6 @@
-[bits 32]
+.globl _start
+_start:
+.intel_syntax noprefix
 pop ax
 cmp ax, 4
 je v64
@@ -9,7 +11,7 @@ mov ecx, eax
 push cx
 shr ecx, 16
 push cx
-push strict word 2
+pushw 2
 push ebp
 mov ecx, esp
 mov esp, ebp
@@ -18,7 +20,7 @@ sub esp, 0xff00ff
 push ax
 shr eax, 16
 push ax
-push strict word 2
+pushw 2
 mov esp, ebp
 pop ebp
 jmp end
@@ -37,7 +39,7 @@ push bx
 push dx
 shr edx, 16
 push dx
-push strict word 4
+pushw 4
 push ebp
 mov edx, esp
 mov esp, ebp
@@ -49,7 +51,7 @@ push cx
 push ax
 shr eax, 16
 push ax
-push strict word 4
+pushw 4
 mov esp, ebp
 pop ebp
 end:

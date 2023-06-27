@@ -20,21 +20,28 @@ class assemble(setuptools.Command):
         pass
 
     def run(self):
-        for source in listdir("wasmpy/x86/instructions"):
+        for source in listdir("wasmpy/x86/instructions") + listdir(
+            "wasmpy/x86/instructions/x64"
+        ):
             if os.path.isdir(source):
                 continue
 
             # assemble instructions
             if os.path.splitext(source)[1].lower() == ".asm":
-                subprocess.call(["nasm", source, "-fbin"])
+                subprocess.call(
+                    ["as", source, "-o", os.path.splitext(source)[0] + ".o"]
+                )
 
-        for source in listdir("wasmpy/x86/instructions/x64"):
-            if os.path.isdir(source):
-                continue
-
-            # assemble x64 specific instructions
-            if os.path.splitext(source)[1].lower() == ".asm":
-                subprocess.call(["nasm", source, "-fbin"])
+                subprocess.call(
+                    [
+                        "ld",
+                        os.path.splitext(source)[0] + ".o",
+                        "--oformat",
+                        "binary",
+                        "-o",
+                        os.path.splitext(source)[0],
+                    ]
+                )
 
         for source in listdir("wasmpy/x86/instructions/x86"):
             if os.path.isdir(source):
@@ -42,7 +49,27 @@ class assemble(setuptools.Command):
 
             # assemble x86 specific instructions
             if os.path.splitext(source)[1].lower() == ".asm":
-                subprocess.call(["nasm", source, "-fbin"])
+                subprocess.call(
+                    [
+                        "as",
+                        source,
+                        "--32",
+                        "-o",
+                        os.path.splitext(source)[0] + ".o",
+                    ]
+                )
+
+                subprocess.call(
+                    [
+                        "ld",
+                        os.path.splitext(source)[0] + ".o",
+                        "-melf_i386",
+                        "--oformat",
+                        "binary",
+                        "-o",
+                        os.path.splitext(source)[0],
+                    ]
+                )
 
 
 class tidy(setuptools.Command):
