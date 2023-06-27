@@ -27,7 +27,7 @@ class assemble(setuptools.Command):
                 continue
 
             # assemble instructions
-            if os.path.splitext(source)[1].lower() == ".asm":
+            if os.path.splitext(source)[1].lower() == ".s":
                 subprocess.call(
                     ["as", source, "-o", os.path.splitext(source)[0] + ".o"]
                 )
@@ -48,7 +48,7 @@ class assemble(setuptools.Command):
                 continue
 
             # assemble x86 specific instructions
-            if os.path.splitext(source)[1].lower() == ".asm":
+            if os.path.splitext(source)[1].lower() == ".s":
                 subprocess.call(
                     [
                         "as",
@@ -93,7 +93,7 @@ class tidy(setuptools.Command):
             if not os.path.isfile(file):
                 continue
 
-            if os.path.splitext(file)[1] != ".asm":
+            if os.path.splitext(file)[1] != ".s":
                 os.remove(file)
 
 
