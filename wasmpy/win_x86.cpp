@@ -18,7 +18,8 @@ auto writeFunction(bytes code)
 {
     SYSTEM_INFO sysinf;
     GetSystemInfo(&sysinf);
-    LPVOID buf = VirtualAlloc(nullptr, sysinf.dwPageSize, MEM_COMMIT, PAGE_READWRITE);
+    size_t size = sysinf.dwPageSize * (1 + code.size() / sysinf.dwPageSize);
+    LPVOID buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
     memcpy(buf, code.data(), code.size());
     DWORD dummy;
     VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);

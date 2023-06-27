@@ -18,7 +18,8 @@ void freeFuncs()
 
 auto writeFunction(bytes code)
 {
-    void *buf = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    size_t size = PAGE_SIZE * (1 + code.size() / PAGE_SIZE);
+    void *buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     memcpy(buf, code.data(), code.size());
     mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
     return reinterpret_cast<void (*)()>(buf);
