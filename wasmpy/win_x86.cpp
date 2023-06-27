@@ -39,9 +39,9 @@ bytes regParam32(const char *argbuf, Py_ssize_t arglen)
             // push ax
             // shr eax, 16
             // push ax
-            // push strict word 2
-            // push strict word 0
-            // push strict word 0
+            // pushw 2
+            // pushw 0
+            // pushw 0
             code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
         }
         else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
@@ -56,7 +56,7 @@ bytes regParam32(const char *argbuf, Py_ssize_t arglen)
             // push cx
             // shr ecx, 16
             // push cx
-            // push strict word 4
+            // pushw 4
             code = concat(code, {{PUSH_AX, SHR_EAX, PUSH_AX, PUSH_CX, SHR_ECX, PUSH_CX, V64}});
         }
 
@@ -77,18 +77,18 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
                 // push [cd]x
                 // shr e[cd]x, 16
                 // push [cd]x
-                // push strict word 2
-                // push strict word 0
-                // push strict word 0
+                // pushw 2
+                // pushw 0
+                // pushw 0
                 code = concat(code, {{0x66, (uint8_t)(0x51 + i), 0xC1, (uint8_t)(0xE9 + i), 0x10, 0x66, (uint8_t)(0x51 + i), V32, PUSH(0), PUSH(0)}});
 
             else
                 // push r[89]w
                 // shr r[89]d, 16
                 // push r[89]w
-                // push strict word 2
-                // push strict word 0
-                // push strict word 0
+                // pushw 2
+                // pushw 0
+                // pushw 0
                 code = concat(code, {{0x66, 0x41, (uint8_t)(0x4E + i), 0x41, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), V32, PUSH(0), PUSH(0)}});
         }
         else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
@@ -101,7 +101,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
                 // push [cd]x
                 // shr e[cd]x, 16
                 // push [cd]x
-                // push strict word 4
+                // pushw 4
                 code = concat(code, {{0x66, (uint8_t)(0x51 + i), 0x48, 0xC1, (uint8_t)(0xE9 + i), 16, 0x66, (uint8_t)(0x51 + i), 0x48, 0xC1, (uint8_t)(0xE9 + i), 16, 0x66, (uint8_t)(0x51 + i), 0xC1, (uint8_t)(0xE9 + i), 16, 0x66, (uint8_t)(0x51 + i), V64}});
 
             else
@@ -112,7 +112,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
                 // push r[89]w
                 // shr r[89]d, 16
                 // push r[89]w
-                // push strict word 4
+                // pushw 4
                 code = concat(code, {{0x66, 0x41, (uint8_t)(0x4E + i), 0x49, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), 0x49, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), 0x41, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), V64}});
         }
     }
@@ -128,9 +128,9 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
             // push ax
             // shr eax, 16
             // push ax
-            // push strict word 2
-            // push strict word 0
-            // push strict word 0
+            // pushw 2
+            // pushw 0
+            // pushw 0
             code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
         }
         else if (argbuf[i + 4] == 0x7E || argbuf[i + 4] == 0x7C)
@@ -142,7 +142,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
             // push ax
             // shr eax, 16
             // push ax
-            // push strict word 4
+            // pushw 4
             code = concat(code, {{PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, SHR_EAX, PUSH_AX, V64}});
         }
     }
