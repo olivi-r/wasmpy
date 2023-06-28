@@ -17,7 +17,6 @@ def expand_bytes(n, bits=32):
 
 def read_expr(buffer: object) -> tuple:
     """Read an expression from buffer."""
-    # https://www.w3.org/TR/wasm-core-1/#expressions%E2%91%A6
     in_ = ()
     instruction = read_instruction(buffer)
     while instruction != "end":
@@ -29,7 +28,6 @@ def read_expr(buffer: object) -> tuple:
 
 def read_memarg(buffer: object) -> dict:
     """Read a memory arg from buffer."""
-    # https://www.w3.org/TR/wasm-core-1/#binary-memarg
     a = read_uint(buffer, 32)
     o = read_uint(buffer, 32)
     return {"align": a, "offset": o}
@@ -46,7 +44,6 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "else"
 
     # Control instructions
-    # https://www.w3.org/TR/wasm-core-1/#control-instructions%E2%91%A6
     if data == b"\0":
         return "unreachable"
 
@@ -143,7 +140,6 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "call_indirect", x
 
     # Parametric instructions
-    # https://www.w3.org/TR/wasm-core-1/#parametric-instructions%E2%91%A6
     if data == b"\x1a":
         return "drop", data[0]
 
@@ -151,7 +147,6 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "select", data[0]
 
     # Variable instructions
-    # https://www.w3.org/TR/wasm-core-1/#variable-instructions%E2%91%A6
     if data == b"\x20":
         return ("local.get", data[0]) + expand_bytes(read_uint(buffer, 32))
 
@@ -168,7 +163,6 @@ def read_instruction(buffer: object) -> "str or tuple":
         return ("global.set", data[0]) + expand_bytes(read_uint(buffer, 32))
 
     # Memory instructions
-    # https://www.w3.org/TR/wasm-core-1/#memory-instructions%E2%91%A6
     if data == b"\x28":
         return "i32.load", data[0], read_memarg(buffer)
 
@@ -247,7 +241,6 @@ def read_instruction(buffer: object) -> "str or tuple":
         return "memory.grow", data[0]
 
     # Numeric instructions
-    # https://www.w3.org/TR/wasm-core-1/#numeric-instructions%E2%91%A6
     if data == b"\x41":
         return ("i32.const", data[0]) + expand_bytes(read_sint(buffer, 32))
 

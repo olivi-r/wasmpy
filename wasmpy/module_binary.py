@@ -1,6 +1,6 @@
 from .native import create_function
 from .values import read_uint
-from .sections import *
+from .sections_binary import *
 import importlib
 
 # extend to add future binary formats
