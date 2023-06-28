@@ -26,7 +26,7 @@ class assemble(setuptools.Command):
             if os.path.isdir(source):
                 continue
 
-            # assemble instructions
+            # assemble x86 instructions
             if os.path.splitext(source)[1].lower() == ".s":
                 subprocess.call(
                     ["as", source, "-o", os.path.splitext(source)[0] + ".o"]
@@ -47,7 +47,7 @@ class assemble(setuptools.Command):
             if os.path.isdir(source):
                 continue
 
-            # assemble x86 specific instructions
+            # assemble x86 32 bit specific instructions
             if os.path.splitext(source)[1].lower() == ".s":
                 subprocess.call(
                     [
