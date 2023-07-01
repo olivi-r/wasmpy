@@ -5,6 +5,7 @@
 #include "x86/opcodes.hpp"
 
 std::vector<void (*)()> registeredFuncs = {};
+bytes globalTable = {};
 
 void freeFuncs()
 {
@@ -151,6 +152,34 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
     return code;
 }
 
+static PyObject *appendGlobal(PyObject *self, PyObject *args)
+{
+    unsigned long long global;
+    char type;
+    if (!PyArg_ParseTuple(args, "Kb", &global, &type))
+        return NULL;
+
+    size_t offset = globalTable.size();
+
+    if (type == 0x7F || type == 0x7D)
+        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), 2, 0, 0, 0, 0}});
+
+    else if (type == 0x7E || type == 0x7C)
+        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), (uint8_t)(global >> 32), (uint8_t)(global >> 40), (uint8_t)(global >> 48), (uint8_t)(global >> 56), 4}});
+
+    return Py_BuildValue("O", PyLong_FromSize_t(offset));
+}
+
+static PyObject *writeGlobalTable(PyObject *self, PyObject *args)
+{
+    SYSTEM_INFO sysinf;
+    GetSystemInfo(&sysinf);
+    size_t size = sysinf.dwPageSize * (1 + globalTable.size() / sysinf.dwPageSize);
+    LPVOID buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
+    memcpy(buf, globalTable.data(), globalTable.size());
+    return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
+}
+
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
     char plat, ret;
@@ -258,6 +287,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
+    {"append_global", appendGlobal, METH_VARARGS, NULL},
+    {"write_global_table", writeGlobalTable, METH_VARARGS, NULL},
     {"create_function", createFunction, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
