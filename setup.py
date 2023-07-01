@@ -20,9 +20,7 @@ class assemble(setuptools.Command):
         pass
 
     def run(self):
-        for source in listdir("wasmpy/x86/instructions") + listdir(
-            "wasmpy/x86/instructions/x64"
-        ):
+        for source in listdir("wasmpy/x86") + listdir("wasmpy/x86/64"):
             if os.path.isdir(source):
                 continue
 
@@ -43,7 +41,7 @@ class assemble(setuptools.Command):
                     ]
                 )
 
-        for source in listdir("wasmpy/x86/instructions/x86"):
+        for source in listdir("wasmpy/x86/32"):
             if os.path.isdir(source):
                 continue
 
@@ -82,13 +80,13 @@ class tidy(setuptools.Command):
         pass
 
     def run(self):
-        if os.path.exists("wasmpy/x86/opcodes.cpp"):
-            os.remove("wasmpy/x86/opcodes.cpp")
+        if os.path.exists("wasmpy/opcodes.cpp"):
+            os.remove("wasmpy/opcodes.cpp")
 
         for file in (
-            listdir("wasmpy/x86/instructions")
-            + listdir("wasmpy/x86/instructions/x64")
-            + listdir("wasmpy/x86/instructions/x86")
+            listdir("wasmpy/x86")
+            + listdir("wasmpy/x86/64")
+            + listdir("wasmpy/x86/32")
         ):
             if not os.path.isfile(file):
                 continue
@@ -108,14 +106,14 @@ class gen_opcodes(setuptools.Command):
 
     def run(self):
         # generate opcodes.cpp
-        with open("wasmpy/x86/opcodes.cpp", "w+") as out:
+        with open("wasmpy/opcodes.cpp", "w+") as out:
             bits = struct.calcsize("P")
 
             out.writelines(
                 (
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n',
-                    '#include "helpers.hpp"\n\n',
+                    '#include "x86.hpp"\n\n',
                     "bytes decodeFunc(bytes buf, char plat)\n{\n\t",
                     "std::vector<bytes> insts = {};\n\t",
                     "int localidx;\n\t",
@@ -125,12 +123,12 @@ class gen_opcodes(setuptools.Command):
             )
 
             if bits == 8:
-                extra = listdir("wasmpy/x86/instructions/x64")
+                extra = listdir("wasmpy/x86/64")
 
             elif bits == 4:
-                extra = listdir("wasmpy/x86/instructions/x86")
+                extra = listdir("wasmpy/x86/32")
 
-            for file in listdir("wasmpy/x86/instructions") + extra:
+            for file in listdir("wasmpy/x86") + extra:
                 if os.path.isdir(file):
                     continue
 
@@ -175,31 +173,16 @@ class build_ext(setuptools.command.build_ext.build_ext):
 
 ext = []
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
-    if platform.system() == "Windows":
-        ext = [
-            setuptools.Extension(
-                "wasmpy.win_x86",
-                sources=[
-                    "wasmpy/win_x86.cpp",
-                    "wasmpy/x86/helpers.cpp",
-                    "wasmpy/x86/opcodes.cpp",
-                ],
-                py_limited_api=True,
-            )
-        ]
-
-    elif platform.system() == "Linux":
-        ext = [
-            setuptools.Extension(
-                "wasmpy.linux_x86",
-                sources=[
-                    "wasmpy/linux_x86.cpp",
-                    "wasmpy/x86/helpers.cpp",
-                    "wasmpy/x86/opcodes.cpp",
-                ],
-                py_limited_api=True,
-            )
-        ]
+    ext = [
+        setuptools.Extension(
+            "wasmpy.x86",
+            sources=[
+                "wasmpy/x86.cpp",
+                "wasmpy/opcodes.cpp",
+            ],
+            py_limited_api=True,
+        )
+    ]
 
 with open("README.md", "r") as fp:
     description = fp.read()

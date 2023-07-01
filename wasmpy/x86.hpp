@@ -18,13 +18,6 @@
 
 typedef std::vector<uint8_t> bytes;
 
-extern std::vector<void (*)()> registeredFuncs;
-extern bytes globalTable;
-
 bytes concat(bytes v0, std::vector<bytes> vn);
-void freeFuncs();
-bytes regParam32(const char *argbuf, Py_ssize_t arglen);
-PyObject *createFunction(PyObject *self, PyObject *args);
-PyObject *appendGlobal(PyObject *self, PyObject *args);
 
 #endif

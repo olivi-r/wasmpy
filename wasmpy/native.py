@@ -4,11 +4,7 @@ import ctypes
 
 
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
-    if platform.system() == "Windows":
-        from . import win_x86 as nativelib
-
-    elif platform.system() == "Linux":
-        from . import linux_x86 as nativelib
+    from . import x86 as nativelib
 
 
 def create_function(ret, code, arg=b"", local=b""):
