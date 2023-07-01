@@ -1,4 +1,7 @@
-#include "helpers.hpp"
+#ifndef OPCODES_H
+#define OPCODES_H
+
+#include "x86.hpp"
 
 #define PUSH(x) 0x66, 0x68, (uint8_t)(x & 255), (uint8_t)(x >> 8)
 
@@ -8,8 +11,6 @@
 
 #define V32 PUSH(2)
 #define V64 PUSH(4)
-
-#define MOV_AX 0x66, 0xB8
 
 #define PUSH_AX 0x66, 0x50
 #define PUSH_CX 0x66, 0x51
@@ -45,3 +46,5 @@
 #define PUSH_V64 PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64
 
 bytes decodeFunc(bytes buf, char plat);
+
+#endif
