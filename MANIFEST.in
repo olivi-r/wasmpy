@@ -1,7 +1,6 @@
-include wasmpy/**/*.hpp
+include wasmpy/*.hpp
 exclude *.cpp
-include wasmpy/*.cpp
-include wasmpy/x86/helpers.cpp
-include wasmpy/x86/instructions
-recursive-exclude wasmpy/x86/instructions *.o
+include wasmpy/x86.cpp
+graft wasmpy/x86
+recursive-exclude wasmpy/x86 *.o
 include opcodes.py
