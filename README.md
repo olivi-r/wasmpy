@@ -1,4 +1,6 @@
-# WasmPy
+[![AppVeyor](https://img.shields.io/appveyor/build/olivi-r/wasmpy)](https://ci.appveyor.com/project/olivi-r/wasmpy)
+
+# wasmpy
 Interacting with WebAssembly code from python.
 
 Wasmpy is a fairly lightweight layer that sits between Python and the WebAssembly code. When attempting to import a WebAssembly file, the file is read and it is converted into native machine code for native speeds.
@@ -24,7 +26,7 @@ python -m pip install .
 ```
 
 # Usage
-WasmPy defines import hooks to make the loading of WebAssembly binary files much easier! Just import the `WasmPy` library then you are good to go!
+WasmPy defines import hooks to make the loading of WebAssembly binary files much easier! Just import the `wasmpy` library then you are good to go!
 ### Example:
 If you have the following project setup:
 
