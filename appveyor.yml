@@ -13,8 +13,7 @@ init:
 - cmd: set PATH=C:\msys64\mingw64\bin;%PATH%
 
 install:
-- cmd: python setup.py assemble gen_opcodes sdist
-- cmd: python -m pip install cibuildwheel==2.13.1
+- cmd: python -m pip install setuptools cibuildwheel==2.13.1 && python setup.py assemble gen_opcodes sdist
 
 build_script: python -m cibuildwheel --output-dir wheelhouse
 
