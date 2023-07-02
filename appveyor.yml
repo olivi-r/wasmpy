@@ -10,11 +10,18 @@ stack: python 3.7
 
 init:
 - cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
+- cmd: set PATH=%PATH%C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;
 
-install: python -m pip install cibuildwheel==2.13.1
+install:
+- cmd: python setup.py assemble gen_opcodes
+- cmd: python -m pip install cibuildwheel==2.13.1
 
-build_script: python -m cibuildwheel --output-dir wheelhouse
+build_script:
+- cmd: python setup.py sdist
+- cmd: python -m cibuildwheel --output-dir wheelhouse
 
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
+  - path: "dist\\*"
+    name: Dists
