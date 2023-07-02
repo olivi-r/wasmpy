@@ -1,8 +1,7 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-mov ax, 0x0000
-push ax
-mov ax, 0xffff
-push ax
-pushw 2
+movw $0x0000, %ax
+push %ax
+movw $0xffff, %ax
+push %ax
+pushw $2

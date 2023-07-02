@@ -1,11 +1,10 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop ax
-cmp ax, 2
+pop %ax
+cmp $2, %ax
 je x32
-pop ax
-pop ax
+pop %ax
+pop %ax
 x32:
-pop ax
-pop ax
+pop %ax
+pop %ax

@@ -1,19 +1,18 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop ax
-pop ax
-shl eax, 16
-pop ax
-cmp eax, 0
+pop %ax
+pop %ax
+shl $16, %eax
+pop %ax
+cmp $0, %eax
 je true
-bsr eax, eax
-mov cx, 31
-sub cx, ax
-push cx
+bsr %eax, %eax
+movw $31, %cx
+sub %ax, %cx
+push %cx
 jmp end
 true:
-pushw 32
+pushw $32
 end:
-pushw 0
-pushw 2
+pushw $0
+pushw $2

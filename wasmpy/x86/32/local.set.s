@@ -1,43 +1,42 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop ax
-cmp ax, 4
+pop %ax
+cmp $4, %ax
 je v64
-pop ax
-shl eax, 16
-pop ax
-push ebp
-mov ecx, esp
-mov esp, ebp
-mov ebp, ecx
-sub esp, 0xff00ff
-push ax
-shr eax, 16
-push ax
-pushw 2
-mov esp, ebp
-pop ebp
+pop %ax
+shl $16, %eax
+pop %ax
+push %ebp
+movl %esp, %ecx
+movl %ebp, %esp
+movl %ecx, %ebp
+sub $0xff00ff, %esp
+push %ax
+shr $16, %eax
+push %ax
+pushw $2
+movl %ebp, %esp
+pop %ebp
 jmp end
 v64:
-pop ax
-shl eax, 16
-pop ax
-pop cx
-shl ecx, 16
-pop cx
-push ebp
-mov edx, esp
-mov esp, ebp
-mov ebp, edx
-sub esp, 0xff00ff
-push cx
-shr ecx, 16
-push cx
-push ax
-shr eax, 16
-push ax
-pushw 4
-mov esp, ebp
-pop ebp
+pop %ax
+shl $16, %eax
+pop %ax
+pop %cx
+shl $16, %ecx
+pop %cx
+push %ebp
+movl %esp, %edx
+movl %ebp, %esp
+movl %edx, %ebp
+sub $0xff00ff, %esp
+push %cx
+shr $16, %ecx
+push %cx
+push %ax
+shr $16, %eax
+push %ax
+pushw $4
+movl %ebp, %esp
+pop %ebp
 end:

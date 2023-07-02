@@ -53,32 +53,32 @@ bytes regParam32(const char *argbuf, Py_ssize_t arglen)
     int offset = 8;
     for (Py_ssize_t i = 0; i < arglen; i++)
     {
-        // mov eax, [ebp + offset]
+        // movl (%ebp + offset), %eax
         code = concat(code, {{0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
 
         if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
         {
-            // push ax
-            // shr eax, 16
-            // push ax
-            // pushw 2
-            // pushw 0
-            // pushw 0
+            // push %ax
+            // shr $16, %eax
+            // push %ax
+            // pushw $2
+            // pushw $0
+            // pushw $0
             code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
         }
         else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
         {
             offset += 4;
-            // mov ecx, [ebp + offset]
+            // movl (%ebp + offset), %ecx
             code = concat(code, {{0x8B, 0x8D, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
 
-            // push ax
-            // shr eax, 16
-            // push ax
-            // push cx
-            // shr ecx, 16
-            // push cx
-            // pushw 4
+            // push %ax
+            // shr $16, %eax
+            // push %ax
+            // push %cx
+            // shr $16, %ecx
+            // push %cx
+            // pushw $4
             code = concat(code, {{PUSH_AX, SHR_EAX, PUSH_AX, PUSH_CX, SHR_ECX, PUSH_CX, V64}});
         }
 
@@ -97,30 +97,30 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
         {
             if (i / 2 == 0)
-                // push [ds]i
-                // shr e[ds]i, 16
-                // push [ds]i
-                // pushw 2
-                // pushw 0
-                // pushw 0
+                // push %[ds]i
+                // shr $16, %e[ds]i
+                // push %[ds]i
+                // pushw $2
+                // pushw $0
+                // pushw $0
                 code = concat(code, {{0x66, (uint8_t)(0x57 - i), 0xC1, (uint8_t)(0xEF - i), 16, 0x66, (uint8_t)(0x57 - i), V32, PUSH(0), PUSH(0)}});
 
             else if (i / 2 == 1)
-                // push [dc]x
-                // shr e[dc]x, 16
-                // push [dc]x
-                // pushw 2
-                // pushw 0
-                // pushw 0
+                // push %[dc]x
+                // shr $16, %e[dc]x
+                // push %[dc]x
+                // pushw $2
+                // pushw $0
+                // pushw $0
                 code = concat(code, {{0x66, (uint8_t)(0x54 - i), 0xC1, (uint8_t)(0xEC - i), 16, 0x66, (uint8_t)(0x54 - i), V32, PUSH(0), PUSH(0)}});
 
             else
-                // push r[89]w
-                // shr r[89]d, 16
-                // push r[89]w
-                // pushw 2
-                // pushw 0
-                // pushw 0
+                // push %r[89]w
+                // shr $16, %r[89]d
+                // push %r[89]w
+                // pushw $2
+                // pushw $0
+                // pushw $0
                 code = concat(code, {{0x66, 0x41, (uint8_t)(0x4C + i), 0x41, 0xC1, (uint8_t)(0xE4 + i), 16, 0x66, 0x41, (uint8_t)(0x4C + i), V32, PUSH(0), PUSH(0)}});
         }
     }
@@ -131,45 +131,45 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
         {
             if (i / 2 == 0)
-                // push [cd]x
-                // shr e[cd]x, 16
-                // push [cd]x
-                // pushw 2
-                // pushw 0
-                // pushw 0
+                // push %[cd]x
+                // shr $16, %e[cd]x
+                // push %[cd]x
+                // pushw $2
+                // pushw $0
+                // pushw $0
                 code = concat(code, {{0x66, (uint8_t)(0x51 + i), 0xC1, (uint8_t)(0xE9 + i), 0x10, 0x66, (uint8_t)(0x51 + i), V32, PUSH(0), PUSH(0)}});
 
             else
-                // push r[89]w
-                // shr r[89]d, 16
-                // push r[89]w
-                // pushw 2
-                // pushw 0
-                // pushw 0
+                // push %r[89]w
+                // shr $16, %r[89]d
+                // push %r[89]w
+                // pushw $2
+                // pushw $0
+                // pushw $0
                 code = concat(code, {{0x66, 0x41, (uint8_t)(0x4E + i), 0x41, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), V32, PUSH(0), PUSH(0)}});
         }
         else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
         {
             if (i / 2 == 0)
-                // push [cd]x
-                // shr r[cd]x, 16
-                // push [cd]x
-                // shr r[cd]x, 16
-                // push [cd]x
-                // shr e[cd]x, 16
-                // push [cd]x
-                // pushw 4
+                // push %[cd]x
+                // shr $16, %r[cd]x
+                // push %[cd]x
+                // shr $16, %r[cd]x
+                // push %[cd]x
+                // shr $16, %e[cd]x
+                // push %[cd]x
+                // pushw $4
                 code = concat(code, {{0x66, (uint8_t)(0x51 + i), 0x48, 0xC1, (uint8_t)(0xE9 + i), 16, 0x66, (uint8_t)(0x51 + i), 0x48, 0xC1, (uint8_t)(0xE9 + i), 16, 0x66, (uint8_t)(0x51 + i), 0xC1, (uint8_t)(0xE9 + i), 16, 0x66, (uint8_t)(0x51 + i), V64}});
 
             else
-                // push r[89]w
-                // shr r[89], 16
-                // push r[89]w
-                // shr r[89], 16
-                // push r[89]w
-                // shr r[89]d, 16
-                // push r[89]w
-                // pushw 4
+                // push %r[89]w
+                // shr $16, %r[89
+                // push %r[89]w
+                // shr $16, %r[89
+                // push %r[89]w
+                // shr $16, %r[89]d
+                // push %r[89]w
+                // pushw $4
                 code = concat(code, {{0x66, 0x41, (uint8_t)(0x4E + i), 0x49, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), 0x49, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), 0x41, 0xC1, (uint8_t)(0xE6 + i), 16, 0x66, 0x41, (uint8_t)(0x4E + i), V64}});
         }
     }
@@ -187,29 +187,29 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
             Py_ssize_t offset = i * 8 + 48;
             int argoff = 4;
 #endif
-            // mov rax, [rbp + offset]
+            // movq (%rbp + offset), %rax
             code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
 
             if (argbuf[i + argoff] == 0x7F || argbuf[i + argoff] == 0x7D)
             {
-                // push ax
-                // shr eax, 16
-                // push ax
-                // pushw 2
-                // pushw 0
-                // pushw 0
+                // push %ax
+                // shr $16, %eax
+                // push %ax
+                // pushw $2
+                // pushw $0
+                // pushw $0
                 code = concat(code, {{PUSH_V32, PUSH(0), PUSH(0)}});
             }
             else if (argbuf[i + argoff] == 0x7E || argbuf[i + argoff] == 0x7C)
             {
-                // push ax
-                // shr rax, 16
-                // push ax
-                // shr rax, 16
-                // push ax
-                // shr eax, 16
-                // push ax
-                // pushw 4
+                // push %ax
+                // shr $16, %rax
+                // push %ax
+                // shr $16, %rax
+                // push %ax
+                // shr $16, %eax
+                // push %ax
+                // pushw $4
                 code = concat(code, {{PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, 0x48, 0xC1, 0xE8, 16, PUSH_AX, SHR_EAX, PUSH_AX, V64}});
             }
         }
@@ -228,45 +228,45 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         bytes ret_v64, initStack, loadLocals, cleanupStack;
         if (plat == 4)
         {
-            // pop ax
-            // pop dx
-            // shl edx, 16
-            // pop dx
-            // pop ax
-            // shl eax, 16
-            // pop ax
+            // pop %ax
+            // pop %dx
+            // shl $16, %edx
+            // pop %dx
+            // pop %ax
+            // shl $16, %eax
+            // pop %ax
             ret_v64 = {POP_AX, POP_EDX, POP_EAX};
 
-            // push ebp
-            // mov ebp, esp
+            // push %ebp
+            // movl %esp, %ebp
             initStack = {0x55, 0x89, 0xE5};
 
             loadLocals = regParam32(argbuf, arglen);
 
-            // mov esp, ebp
-            // pop ebp
+            // movl %ebp, %esp
+            // pop %ebp
             cleanupStack = {0x89, 0xEC, 0x5D};
         }
         else if (plat == 8)
         {
-            // pop ax
-            // pop ax
-            // shl eax, 16
-            // pop ax
-            // shl rax, 16
-            // pop ax
-            // shl rax, 16
-            // pop ax
+            // pop %ax
+            // pop %ax
+            // shl $16, %eax
+            // pop %ax
+            // shl $16, %rax
+            // pop %ax
+            // shl $16, %rax
+            // pop %ax
             ret_v64 = {POP_V32A, 0x48, 0xC1, 0xE0, 16, POP_AX, 0x48, 0xC1, 0xE0, 16, POP_AX};
 
-            // push rbp
-            // mov rbp, rsp
+            // push %rbp
+            // movq %rsp, %rbp
             initStack = {0x55, 0x48, 0x89, 0xE5};
 
             loadLocals = regParam64(argbuf, arglen);
 
-            // mov rsp, rbp
-            // pop rbp
+            // movq %rbp, %rsp
+            // pop %rbp
             cleanupStack = {0x48, 0x89, 0xEC, 0x5D};
         }
         else

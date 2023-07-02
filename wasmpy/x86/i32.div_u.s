@@ -1,20 +1,19 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop cx
-pop cx
-shl ecx, 16
-pop cx
-pop ax
-pop ax
-shl eax, 16
-pop ax
-cmp ecx, 0
+pop %cx
+pop %cx
+shl $16, %ecx
+pop %cx
+pop %ax
+pop %ax
+shl $16, %eax
+pop %ax
+cmp $0, %ecx
 je end
-mov edx, 0
-div ecx
-push ax
-shr eax, 16
-push ax
-pushw 2
+movl $0, %edx
+div %ecx
+push %ax
+shr $16, %eax
+push %ax
+pushw $2
 end:

@@ -1,26 +1,25 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop ax
-pop ax
-shl eax, 16
-pop ax
-pop cx
-shl ecx, 16
-pop cx
-pop dx
-pop dx
-shl edx, 16
-pop dx
-pop bx
-shl ebx, 16
-pop bx
-or eax, edx
-or ecx, ebx
-push cx
-shr ecx, 16
-push cx
-push ax
-shr eax, 16
-push ax
-pushw 4
+pop %ax
+pop %ax
+shl $16, %eax
+pop %ax
+pop %cx
+shl $16, %ecx
+pop %cx
+pop %dx
+pop %dx
+shl $16, %edx
+pop %dx
+pop %bx
+shl $16, %ebx
+pop %bx
+or %edx, %eax
+or %ebx, %ecx
+push %cx
+shr $16, %ecx
+push %cx
+push %ax
+shr $16, %eax
+push %ax
+pushw $4

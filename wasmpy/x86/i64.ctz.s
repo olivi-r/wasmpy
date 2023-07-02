@@ -1,29 +1,28 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop ax
-pop ax
-shl eax, 16
-pop ax
-pop cx
-shl ecx, 16
-pop cx
-cmp eax, 0
+pop %ax
+pop %ax
+shl $16, %eax
+pop %ax
+pop %cx
+shl $16, %ecx
+pop %cx
+cmp $0, %eax
 je highzero
-bsf eax, eax
-add ax, 32
-push ax
+bsf %eax, %eax
+add $32, %ax
+push %ax
 jmp end
 highzero:
-cmp ecx, 0
+cmp $0, %ecx
 je lowzero
-bsf ecx, ecx
-push cx
+bsf %ecx, %ecx
+push %cx
 jmp end
 lowzero:
-pushw 64
+pushw $64
 end:
-pushw 0
-pushw 0
-pushw 0
-pushw 4
+pushw $0
+pushw $0
+pushw $0
+pushw $4

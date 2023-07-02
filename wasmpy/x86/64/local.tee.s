@@ -1,57 +1,56 @@
 .globl _start
 _start:
-.intel_syntax noprefix
-pop ax
-cmp ax, 4
+pop %ax
+cmp $4, %ax
 je v64
-pop ax
-shl eax, 16
-pop ax
-mov ecx, eax
-push cx
-shr ecx, 16
-push cx
-pushw 2
-push rbp
-mov rcx, rsp
-mov rsp, rbp
-mov rbp, rcx
-sub rsp, 0xff00ff
-push ax
-shr eax, 16
-push ax
-pushw 2
-mov rsp, rbp
-pop rbp
+pop %ax
+shl $16, %eax
+pop %ax
+movl %eax, %ecx
+push %cx
+shr $16, %ecx
+push %cx
+pushw $2
+push %rbp
+movq %rsp, %rcx
+movq %rbp, %rsp
+movq %rcx, %rbp
+sub $0xff00ff, %rsp
+push %ax
+shr $16, %eax
+push %ax
+pushw $2
+movq %rbp, %rsp
+pop %rbp
 jmp end
 v64:
-pop ax
-shl eax, 16
-pop ax
-pop cx
-shl ecx, 16
-pop cx
-mov edx, eax
-mov ebx, ecx
-push bx
-shr ebx, 16
-push bx
-push dx
-shr edx, 16
-push dx
-pushw 4
-push rbp
-mov rdx, rsp
-mov rsp, rbp
-mov rbp, rdx
-sub rsp, 0xff00ff
-push cx
-shr ecx, 16
-push cx
-push ax
-shr eax, 16
-push ax
-pushw 4
-mov rsp, rbp
-pop rbp
+pop %ax
+shl $16, %eax
+pop %ax
+pop %cx
+shl $16, %ecx
+pop %cx
+movl %eax, %edx
+movl %ecx, %ebx
+push %bx
+shr $16, %ebx
+push %bx
+push %dx
+shr $16, %edx
+push %dx
+pushw $4
+push %rbp
+movq %rsp, %rdx
+movq %rbp, %rsp
+movq %rdx, %rbp
+sub $0xff00ff, %rsp
+push %cx
+shr $16, %ecx
+push %cx
+push %ax
+shr $16, %eax
+push %ax
+pushw $4
+movq %rbp, %rsp
+pop %rbp
 end:
