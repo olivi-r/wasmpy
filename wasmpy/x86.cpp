@@ -22,7 +22,7 @@ void freeFuncs()
         munmap((void *)registeredFuncs.at(i), sysconf(_SC_PAGE_SIZE));
 #endif
 #ifdef _WIN32
-        VirtualFree((LPVOID)registeredFuncs.at(i), 0, MEM_RELEASE);
+        VirtualFree((void *)registeredFuncs.at(i), 0, MEM_RELEASE);
 #endif
     }
 }
@@ -39,7 +39,7 @@ auto writeFunction(bytes code)
     SYSTEM_INFO sysinf;
     GetSystemInfo(&sysinf);
     size_t size = sysinf.dwPageSize * (1 + code.size() / sysinf.dwPageSize);
-    LPVOID buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
+    void *buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
     memcpy(buf, code.data(), code.size());
     DWORD dummy;
     VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);
@@ -317,7 +317,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat), cleanupCode}));
         registeredFuncs.push_back(func);
 
-        if (returnType == "void")
+        if (!strcmp(returnType, "void"))
             return Py_BuildValue("OO", PyLong_FromSize_t((size_t)func), Py_None);
 
         return Py_BuildValue("OU#", PyLong_FromSize_t((size_t)func), returnType, 3);
@@ -341,24 +341,28 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         return Py_BuildValue("O", PyLong_FromSize_t(offset));
     }
 
-#ifdef _WIN32
     static PyObject *writeGlobalTable(PyObject * self, PyObject * args)
     {
+#ifdef linux
+        size_t size = sysconf(_SC_PAGE_SIZE) * (1 + globalTable.size() / sysconf(_SC_PAGE_SIZE));
+        void *buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        memcpy(buf, globalTable.data(), globalTable.size());
+#endif
+#ifdef _WIN32
         SYSTEM_INFO sysinf;
         GetSystemInfo(&sysinf);
         size_t size = sysinf.dwPageSize * (1 + globalTable.size() / sysinf.dwPageSize);
-        LPVOID buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
+        void *buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
         memcpy(buf, globalTable.data(), globalTable.size());
+#endif
+        registeredFuncs.push_back((void (*)())buf);
         return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
     }
-#endif
 
     static PyMethodDef methods[] = {
         {"append_global", appendGlobal, METH_VARARGS, NULL},
         {"create_function", createFunction, METH_VARARGS, NULL},
-#ifdef _WIN32
         {"write_global_table", writeGlobalTable, METH_VARARGS, NULL},
-#endif
         {NULL, NULL, 0, NULL}};
 
     static struct PyModuleDef module = {
