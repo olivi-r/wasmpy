@@ -27,19 +27,50 @@ class assemble(setuptools.Command):
             # assemble x86 instructions
             if os.path.splitext(source)[1].lower() == ".s":
                 subprocess.call(
-                    ["as", source, "-o", os.path.splitext(source)[0] + ".o"]
-                )
-
-                subprocess.call(
                     [
-                        "ld",
-                        os.path.splitext(source)[0] + ".o",
-                        "--oformat",
-                        "binary",
+                        "as",
+                        source,
                         "-o",
-                        os.path.splitext(source)[0],
+                        os.path.splitext(source)[0] + ".o",
                     ]
                 )
+
+                if platform.system() == "Linux":
+                    subprocess.call(
+                        [
+                            "ld",
+                            "--oformat",
+                            "binary",
+                            os.path.splitext(source)[0] + ".o",
+                            "-o",
+                            os.path.splitext(source)[0],
+                        ]
+                    )
+
+                elif platform.system() == "Windows":
+                    subprocess.call(
+                        [
+                            "ld",
+                            "-T",
+                            "NUL",
+                            "--image-base",
+                            "0",
+                            os.path.splitext(source)[0] + ".o",
+                            "-o",
+                            os.path.splitext(source)[0] + ".tmp",
+                        ]
+                    )
+                    subprocess.call(
+                        [
+                            "objcopy",
+                            "-O",
+                            "binary",
+                            "-j",
+                            ".text",
+                            os.path.splitext(source)[0] + ".tmp",
+                            os.path.splitext(source)[0],
+                        ]
+                    )
 
         for source in listdir("wasmpy/x86/32"):
             if os.path.isdir(source):
@@ -50,24 +81,52 @@ class assemble(setuptools.Command):
                 subprocess.call(
                     [
                         "as",
-                        source,
                         "--32",
+                        source,
                         "-o",
                         os.path.splitext(source)[0] + ".o",
                     ]
                 )
 
-                subprocess.call(
-                    [
-                        "ld",
-                        os.path.splitext(source)[0] + ".o",
-                        "-melf_i386",
-                        "--oformat",
-                        "binary",
-                        "-o",
-                        os.path.splitext(source)[0],
-                    ]
-                )
+                if platform.system() == "Linux":
+                    subprocess.call(
+                        [
+                            "ld",
+                            "-melf_i386",
+                            "--oformat",
+                            "binary",
+                            os.path.splitext(source)[0] + ".o",
+                            "-o",
+                            os.path.splitext(source)[0],
+                        ]
+                    )
+
+                elif platform.system() == "Windows":
+                    subprocess.call(
+                        [
+                            "ld",
+                            "-mi386pe",
+                            "-T",
+                            "NUL",
+                            "--image-base",
+                            "0",
+                            os.path.splitext(source)[0] + ".o",
+                            "-o",
+                            os.path.splitext(source)[0] + ".tmp",
+                        ]
+                    )
+
+                    subprocess.call(
+                        [
+                            "objcopy",
+                            "-O",
+                            "binary",
+                            "-j",
+                            ".text",
+                            os.path.splitext(source)[0] + ".tmp",
+                            os.path.splitext(source)[0],
+                        ]
+                    )
 
 
 class tidy(setuptools.Command):
@@ -136,7 +195,7 @@ class gen_opcodes(setuptools.Command):
 
                 if inst in opcodes.opcodes:
                     with open(file, "rb") as fp:
-                        data = ", ".join(str(i) for i in fp.read())
+                        data = ", ".join(str(i) for i in fp.read() if i != 0x90)
 
                     # alter binary data of instructions that take arguments
                     if inst in opcodes.replacements:
