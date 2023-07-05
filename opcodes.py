@@ -196,7 +196,11 @@ consumes = {
     "f64.const": 8,
 }
 
-global_get = "(uint8_t){b}, (uint8_t)({b} >> 8), (uint8_t)({b} >> 16), (uint8_t)({b} >> 24), (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
+global_get_32 = "(uint8_t){b}, (uint8_t)({b} >> 8), (uint8_t)({b} >> 16), (uint8_t)({b} >> 24)"
+global_get_64 = (
+    global_get_32
+    + ", (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
+)
 
 
 replacements = {
@@ -219,11 +223,18 @@ replacements = {
         ),
     ),
     "global.get": (
-        ("0, 0, 0, 255, 0, 0, 0, 0", global_get.format(b="ll")),
-        ("255, 0, 0, 255, 0, 0, 0, 0", global_get.format(b="lh")),
-        ("0, 255, 0, 255, 0, 0, 0, 0", global_get.format(b="hl")),
-        ("255, 255, 0, 255, 0, 0, 0, 0", global_get.format(b="hh")),
-        ("255, 255, 255, 255, 0, 0, 0, 0", global_get.format(b="bits")),
+        # 64 bit replacements
+        ("0, 0, 0, 255, 0, 0, 0, 0", global_get_64.format(b="ll")),
+        ("255, 0, 0, 255, 0, 0, 0, 0", global_get_64.format(b="lh")),
+        ("0, 255, 0, 255, 0, 0, 0, 0", global_get_64.format(b="hl")),
+        ("255, 255, 0, 255, 0, 0, 0, 0", global_get_64.format(b="hh")),
+        ("255, 255, 255, 255, 0, 0, 0, 0", global_get_64.format(b="bits")),
+        # 32 bit replacements
+        ("0, 0, 0, 255", global_get_32.format(b="ll")),
+        ("255, 0, 0, 255", global_get_32.format(b="lh")),
+        ("0, 255, 0, 255", global_get_32.format(b="hl")),
+        ("255, 255, 0, 255", global_get_32.format(b="hh")),
+        ("255, 255, 255, 255", global_get_32.format(b="bits")),
     ),
     "i32.const": (
         ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
