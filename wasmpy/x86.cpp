@@ -3,6 +3,7 @@
 
 std::vector<void (*)()> registeredFuncs = {};
 bytes globalTable = {};
+uint64_t globalTableAddr = NULL;
 
 bytes concat(bytes v0, std::vector<bytes> vn)
 {
@@ -314,7 +315,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
             break;
         }
 
-        auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat), cleanupCode}));
+        auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat, globalTableAddr), cleanupCode}));
         registeredFuncs.push_back(func);
 
         if (!strcmp(returnType, "void"))
@@ -356,6 +357,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         memcpy(buf, globalTable.data(), globalTable.size());
 #endif
         registeredFuncs.push_back((void (*)())buf);
+        globalTableAddr = (uint64_t)buf;
         return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
     }
 

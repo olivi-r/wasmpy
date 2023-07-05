@@ -45,6 +45,6 @@
 #define PUSH_V32 PUSH_AX, SHR_EAX, PUSH_AX, V32
 #define PUSH_V64 PUSH_CX, SHR_ECX, PUSH_CX, PUSH_AX, SHR_EAX, PUSH_AX, V64
 
-bytes decodeFunc(bytes buf, char plat);
+bytes decodeFunc(bytes buf, char plat, uint64_t globalTableAddr);
 
 #endif

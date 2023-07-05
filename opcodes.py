@@ -174,17 +174,30 @@ prefixed = {
         "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
         "localidx *= 10;\n\t\t\t",
     ),
+    "global.get": (
+        "ll = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "ll *= 9;\n\t\t\t",
+        "ll += globalTableAddr;\n\t\t\t",
+        "lh = ll + 2;\n\t\t\t",
+        "hl = ll + 4;\n\t\t\t",
+        "hh = ll + 6;\n\t\t\t",
+        "bits = ll + 8;\n\t\t\t",
+    ),
 }
 
 consumes = {
     "local.get": 4,
     "local.set": 4,
     "local.tee": 4,
+    "global.get": 4,
     "i32.const": 4,
     "i64.const": 8,
     "f32.const": 4,
     "f64.const": 8,
 }
+
+global_get = "(uint8_t){b}, (uint8_t)({b} >> 8), (uint8_t)({b} >> 16), (uint8_t)({b} >> 24), (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
+
 
 replacements = {
     "local.get": (
@@ -204,6 +217,13 @@ replacements = {
             "255, 0, 255, 0",
             "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
         ),
+    ),
+    "global.get": (
+        ("0, 0, 0, 255, 0, 0, 0, 0", global_get.format(b="ll")),
+        ("255, 0, 0, 255, 0, 0, 0, 0", global_get.format(b="lh")),
+        ("0, 255, 0, 255, 0, 0, 0, 0", global_get.format(b="hl")),
+        ("255, 255, 0, 255, 0, 0, 0, 0", global_get.format(b="hh")),
+        ("255, 255, 255, 255, 0, 0, 0, 0", global_get.format(b="bits")),
     ),
     "i32.const": (
         ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),

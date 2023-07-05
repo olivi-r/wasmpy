@@ -173,9 +173,10 @@ class gen_opcodes(setuptools.Command):
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n',
                     '#include "x86.hpp"\n\n',
-                    "bytes decodeFunc(bytes buf, char plat)\n{\n\t",
+                    "bytes decodeFunc(bytes buf, char plat, uint64_t globalTableAddr)\n{\n\t",
                     "std::vector<bytes> insts = {};\n\t",
                     "int localidx;\n\t",
+                    "uint64_t hh, hl, lh, ll, bits;\n\t"
                     "for (size_t i = 0; i < buf.size(); i++)\n\t{\n\t\t",
                     "switch (buf.at(i))\n\t\t{\n\t\t",
                 )
