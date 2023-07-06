@@ -6,7 +6,7 @@ from .types import (
     read_valtype,
 )
 from .values import get_vec_len, read_name, read_uint
-from .instructions import read_expr
+from .instructions import read_expr_binary
 
 
 def read_customsec(buffer: object, length: int) -> tuple:
@@ -72,7 +72,7 @@ def read_memsec(buffer: object) -> tuple:
 def read_globalsec(buffer: object) -> tuple:
     """Read a global section from buffer."""
     return tuple(
-        {"gt": read_globaltype(buffer), "e": read_expr(buffer)}
+        {"gt": read_globaltype(buffer), "e": read_expr_binary(buffer)}
         for _ in range(get_vec_len(buffer))
     )
 
@@ -113,7 +113,7 @@ def read_elemsec(buffer: object) -> tuple:
         seg += (
             {
                 "table": read_uint(buffer, 32),
-                "offset": read_expr(buffer),
+                "offset": read_expr_binary(buffer),
                 "init": tuple(
                     read_uint(buffer, 32) for _ in range(get_vec_len(buffer))
                 ),
@@ -141,7 +141,7 @@ def read_codesec(buffer: object) -> tuple:
             for locals in t:
                 concat_t += locals
 
-            code += ((concat_t, read_expr(buffer)),)
+            code += ((concat_t, read_expr_binary(buffer)),)
             end = buffer.tell()
             assert size == end - start
 
@@ -156,7 +156,7 @@ def read_datasec(buffer: object) -> tuple:
     return tuple(
         {
             "data": read_uint(buffer, 32),
-            "offset": read_expr(buffer),
+            "offset": read_expr_binary(buffer),
             "init": tuple(
                 buffer.read(1)[0] for _ in range(get_vec_len(buffer))
             ),

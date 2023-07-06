@@ -9,14 +9,14 @@ preamble = [b"\0asm\x01\0\0\0"]
 sects = [i for j in range(1, 12) for i in (0, j)] + [0]
 
 
-def read_module(buffer):
+def read_module(buffer: object) -> dict:
     assert preamble[0] == buffer.read(8), "Invalid magic number or version."
 
     module = {
         "custom": (),
         "types": (),
         "imports": (),
-        "funcs": (),
+        "funcs": [],
         "tables": (),
         "mems": (),
         "globals": (),
@@ -94,26 +94,21 @@ def read_module(buffer):
                 },
             )
 
-    module["funcs"] += tuple(
-        {
-            "type": module["types"][typeidx[i]],
-            "locals": t,
-            "body": e,
-            "obj": create_function(
-                module["types"][typeidx[i]][1][0],
-                bytes(k for j in e for k in j[1:]),
-                bytes(module["types"][typeidx[i]][0]),
-                bytes(t),
-            ),
-        }
-        for i, (t, e) in enumerate(code)
-    )
+    module["funcs"] += [
+        create_function(
+            module["types"][typeidx[i]][1][0],
+            bytes(body),
+            bytes(module["types"][typeidx[i]][0]),
+            bytes(locals),
+        )
+        for i, (locals, body) in enumerate(code)
+    ]
 
     for e in module["exports"]:
         if e["desc"][0] == "func":
-            e["obj"] = module["funcs"][e["desc"][1]]["obj"]
+            e["obj"] = module["funcs"][e["desc"][1]]
 
     if module["start"] is not None:
-        module["start"] = module["funcs"][module["start"]]["obj"]
+        module["start"] = module["funcs"][module["start"]]
 
     return module

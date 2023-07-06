@@ -1,7 +1,7 @@
+include LICENSE
 include wasmpy/**/*.hpp
 exclude *.cpp
 include wasmpy/*.cpp
 include wasmpy/x86/helpers.cpp
 include wasmpy/x86/instructions
 recursive-exclude wasmpy/x86/instructions *.o
-include opcodes.py

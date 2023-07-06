@@ -180,6 +180,8 @@ consumes = {
     "local.get": 4,
     "local.set": 4,
     "local.tee": 4,
+    "global.get": 4,
+    "global.set": 4,
     "i32.const": 4,
     "i64.const": 8,
     "f32.const": 4,
