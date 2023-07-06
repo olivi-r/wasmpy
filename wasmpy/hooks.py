@@ -30,17 +30,13 @@ class WebAssemblyBinaryLoader:
         if fullname in sys.modules:
             return
 
-        mod = types.ModuleType(fullname)
-        mod.__file__ = self.fname
-        mod.__name__ = fullname
-        mod.__loader__ = self
-        sys.modules[fullname] = mod
         with open(self.fname, "rb") as fp:
-            mod._module = module_binary.read_module(fp)
-            mod.call = _call(mod._module)
-            if mod._module["start"] is not None:
-                mod.start = mod._module["start"]
+            mod = module_binary.read_module(fp)
+            mod.__file__ = self.fname
+            mod.__name__ = fullname
+            mod.__loader__ = self
 
+        sys.modules[fullname] = mod
         return mod
 
 

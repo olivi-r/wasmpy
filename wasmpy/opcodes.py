@@ -3,7 +3,7 @@ import os
 
 opcodes = {}
 with open(os.path.splitext(__file__)[0] + ".json") as fp:
-    for group in json.load(fp):
+    for group in json.load(fp)["opcodes"]:
         opcodes.update(
             dict(
                 zip(

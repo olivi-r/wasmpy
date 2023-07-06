@@ -62,12 +62,12 @@ def read_tabletype(buffer: object) -> tuple:
 
 def read_globaltype(buffer: object) -> tuple:
     """Attempt to read a global type from buffer."""
-    t = read_valtype(buffer)
+    t = buffer.read(1)[0]
     try:
         mut = buffer.read(1)[0]
         assert mut in range(2)
         if mut:
-            return "var", t
+            return "mut", t
 
         return "const", t
 

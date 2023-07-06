@@ -1,7 +1,20 @@
-import math, struct
+import struct
+import math
+import re
 
 f32 = struct.Struct("<f")
 f64 = struct.Struct("<d")
+
+
+def sanitize(name: str) -> str:
+    """Convert name to valid Python identifier."""
+    if name.isidentifier():
+        return name
+
+    if not name[0].isidentifier():
+        name = "_" + name
+
+    return name[0] + re.sub(r"\W+", "_", name[1:])
 
 
 def get_vec_len(buffer):

@@ -1,11 +1,5 @@
-from .types import (
-    read_functype,
-    read_globaltype,
-    read_memtype,
-    read_tabletype,
-    read_valtype,
-)
-from .values import get_vec_len, read_name, read_uint
+from .types import read_functype, read_globaltype, read_memtype, read_tabletype
+from .values import get_vec_len, read_name, read_uint, sanitize
 from .instructions import read_expr_binary
 
 
@@ -72,7 +66,10 @@ def read_memsec(buffer: object) -> tuple:
 def read_globalsec(buffer: object) -> tuple:
     """Read a global section from buffer."""
     return tuple(
-        {"gt": read_globaltype(buffer), "e": read_expr_binary(buffer)}
+        {
+            "globaltype": read_globaltype(buffer),
+            "expr": read_expr_binary(buffer),
+        }
         for _ in range(get_vec_len(buffer))
     )
 
@@ -81,7 +78,7 @@ def read_exportsec(buffer: object) -> tuple:
     """Read an export section from buffer."""
     ex = ()
     for _ in range(get_vec_len(buffer)):
-        export = {"name": read_name(buffer)}
+        export = {"name": sanitize(read_name(buffer))}
         desc = buffer.read(1)[0]
         assert desc in range(4)
         if not desc:
