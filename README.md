@@ -57,7 +57,7 @@ Functions can be called with the call function from the imported module:
 import wasmpy
 import wasm_math
 
-wasm_math.call("add")(...)
+wasm_math.add(...)
 ```
 
-This is due to WebAssembly supporting exported names that may not be valid Python names, such as `add two numbers`
+Exported names that aren't valid Python identifiers such as `add two numbers` are converted to become valid `add_two_numbers`
