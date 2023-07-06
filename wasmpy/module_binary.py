@@ -106,7 +106,10 @@ def read_module(buffer: object) -> dict:
     global_offset = write_globals()
     for g in module["globals"]:
         g["offset"] += global_offset
-        g["obj"] = get_global_object(g["offset"], *g["globaltype"])
+        g["obj"] = [
+            g["globaltype"][0],
+            get_global_object(g["offset"], *g["globaltype"]),
+        ]
 
     module["funcs"] += [
         create_function(
