@@ -19,7 +19,7 @@ def create_module(module: dict) -> object:
     for e in module["exports"]:
         setattr(obj, e["name"], e["obj"])
 
-    if hasattr(WebAssemblyModule, "__call__"):
+    if module["start"] is not None:
         # run start function
         obj()
 

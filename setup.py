@@ -29,11 +29,19 @@ prefixed = {
         "hh = ll + 6;\n\t\t\t",
         "bits = ll + 8;\n\t\t\t",
     ),
+    "global.set": (
+        "ll = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "ll *= 9;\n\t\t\t",
+        "ll += globalTableAddr;\n\t\t\t",
+        "lh = ll + 2;\n\t\t\t",
+        "hl = ll + 4;\n\t\t\t",
+        "hh = ll + 6;\n\t\t\t",
+    ),
 }
 
-global_get_32 = "(uint8_t){b}, (uint8_t)({b} >> 8), (uint8_t)({b} >> 16), (uint8_t)({b} >> 24)"
-global_get_64 = (
-    global_get_32
+global_32 = "(uint8_t){b}, (uint8_t)({b} >> 8), (uint8_t)({b} >> 16), (uint8_t)({b} >> 24)"
+global_64 = (
+    global_32
     + ", (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
 )
 
@@ -59,17 +67,29 @@ replacements = {
     ),
     "global.get": (
         # 64 bit replacements
-        ("0, 0, 0, 255, 0, 0, 0, 0", global_get_64.format(b="ll")),
-        ("255, 0, 0, 255, 0, 0, 0, 0", global_get_64.format(b="lh")),
-        ("0, 255, 0, 255, 0, 0, 0, 0", global_get_64.format(b="hl")),
-        ("255, 255, 0, 255, 0, 0, 0, 0", global_get_64.format(b="hh")),
-        ("255, 255, 255, 255, 0, 0, 0, 0", global_get_64.format(b="bits")),
+        ("0, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="ll")),
+        ("255, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="lh")),
+        ("0, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hl")),
+        ("255, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hh")),
+        ("255, 255, 255, 255, 0, 0, 0, 0", global_64.format(b="bits")),
         # 32 bit replacements
-        ("0, 0, 0, 255", global_get_32.format(b="ll")),
-        ("255, 0, 0, 255", global_get_32.format(b="lh")),
-        ("0, 255, 0, 255", global_get_32.format(b="hl")),
-        ("255, 255, 0, 255", global_get_32.format(b="hh")),
-        ("255, 255, 255, 255", global_get_32.format(b="bits")),
+        ("0, 0, 0, 255", global_32.format(b="ll")),
+        ("255, 0, 0, 255", global_32.format(b="lh")),
+        ("0, 255, 0, 255", global_32.format(b="hl")),
+        ("255, 255, 0, 255", global_32.format(b="hh")),
+        ("255, 255, 255, 255", global_32.format(b="bits")),
+    ),
+    "global.set": (
+        # 64 bit replacements
+        ("0, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="ll")),
+        ("255, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="lh")),
+        ("0, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hl")),
+        ("255, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hh")),
+        # 32 bit replacements
+        ("0, 0, 0, 255", global_32.format(b="ll")),
+        ("255, 0, 0, 255", global_32.format(b="lh")),
+        ("0, 255, 0, 255", global_32.format(b="hl")),
+        ("255, 255, 0, 255", global_32.format(b="hh")),
     ),
     "i32.const": (
         ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
