@@ -1,6 +1,5 @@
 from .values import get_vec_len, read_sint, read_uint, read_f32, read_f64
 from .types import read_valtype
-from sexpdata import Symbol
 from . import opcodes
 
 

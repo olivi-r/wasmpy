@@ -14,7 +14,7 @@ init:
 
 install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble gen_opcodes sdist
 
-build_script: pip install -r requirements.txt && python -m cibuildwheel --output-dir wheelhouse
+build_script: python -m cibuildwheel --output-dir wheelhouse
 
 artifacts:
   - path: "wheelhouse\\*.whl"
