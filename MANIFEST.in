@@ -1,3 +1,4 @@
+include LICENSE
 include wasmpy/*.hpp
 exclude *.cpp
 exclude wasmpy/*.cpp
@@ -5,4 +6,3 @@ include wasmpy/x86.cpp
 graft wasmpy/x86
 recursive-exclude wasmpy/x86 *.o
 recursive-exclude wasmpy/x86 *.tmp
-include opcodes.py

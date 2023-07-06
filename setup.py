@@ -1,7 +1,7 @@
 import setuptools.command.build_ext
 import subprocess
 import platform
-import opcodes
+import wasmpy.opcodes as opcodes
 import struct
 import os
 
