@@ -3,7 +3,9 @@ import os
 
 opcodes = {}
 with open(os.path.splitext(__file__)[0] + ".json") as fp:
-    for group in json.load(fp)["opcodes"]:
+    data = json.load(fp)
+    consumes = data["consumes"]
+    for group in data["opcodes"]:
         opcodes.update(
             dict(
                 zip(
