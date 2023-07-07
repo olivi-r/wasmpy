@@ -1,5 +1,12 @@
 from .instructions import read_expr_text
+from .module import create_module
 from .sections_text import *
+from .native import (
+    create_function,
+    create_global,
+    write_globals,
+    get_global_object,
+)
 import sexpdata
 import shutil
 import io
@@ -28,13 +35,14 @@ def read_module(buffer: object) -> dict:
         "tables": (),
         "mems": (),
         "globals": [],
-        "exports": (),
+        "exports": [],
         "start": None,
         "elem": (),
         "data": (),
     }
 
     type_ids = []
+    func_ids = []
     global_ids = []
 
     for expr in data:
@@ -45,14 +53,53 @@ def read_module(buffer: object) -> dict:
                 type_ids.append(typeidx)
 
             elif expr[0].value() == "func":
-                module["funcs"].append(read_func(expr))
+                funcidx, export, func = read_func(expr)
+                module["funcs"].append(func)
+                func_ids.append(funcidx)
+                if export is not None:
+                    module["exports"].append(
+                        {
+                            "name": export,
+                            "type": "func",
+                            "idx": len(module["funcs"]) - 1,
+                        }
+                    )
 
             elif expr[0].value() == "global":
-                globalidx, global_ = read_global(expr)
+                globalidx, export, global_ = read_global(expr)
                 module["globals"].append(global_)
                 global_ids.append(globalidx)
+                if export is not None:
+                    module["exports"].append(
+                        {
+                            "name": export,
+                            "type": "global",
+                            "idx": len(module["globals"]) - 1,
+                        }
+                    )
 
-    for func in module["funcs"]:
+            elif expr[0].value() == "export":
+                module["exports"].append(read_export(expr))
+
+    for g in module["globals"]:
+        for i, term in enumerate(g["init"]):
+            if term in global_ids:
+                g["init"][i] = global_ids.index(term)
+
+        g["init"] = read_expr_text(g["init"])
+        g["offset"] = create_global(g["type"], g["init"])
+
+    global_offset = write_globals()
+    for globalidx, g in enumerate(module["globals"]):
+        g["offset"] += global_offset
+        g["obj"] = [
+            g["mutable"],
+            get_global_object(g["offset"], g["type"]),
+        ]
+
+        module["globals"][globalidx] = g["obj"]
+
+    for funcidx, func in enumerate(module["funcs"]):
         if func["typeidx"] is not None:
             if func["typeuse"] is not None:
                 assert (
@@ -60,7 +107,10 @@ def read_module(buffer: object) -> dict:
                     == func["typeuse"]
                 ), "type mismatch"
 
-            func["type"] = module["types"][type_ids.index(func["typeidx"])]
+            if isinstance(func["typeidx"], Symbol):
+                func["typeidx"] = type_ids.index(func["typeidx"])
+
+            func["type"] = module["types"][func["typeidx"]]
 
         else:
             assert func["typeuse"] is not None, "missing type"
@@ -71,5 +121,24 @@ def read_module(buffer: object) -> dict:
                 func["body"][i] = global_ids.index(term)
 
         func["body"] = read_expr_text(func["body"])
+        func["obj"] = create_function(
+            func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
+        )
 
-    return module
+        module["funcs"][funcidx] = func["obj"]
+
+    for e in module["exports"]:
+        if isinstance(e["idx"], Symbol):
+            if e["type"] == "func":
+                e["idx"] = func_ids.index[e["idx"]]
+
+            elif e["type"] == "global":
+                e["idx"] = global_ids.index(e["idx"])
+
+        if e["type"] == "func":
+            e["obj"] = module["funcs"][e["idx"]]
+
+        if e["type"] == "global":
+            e["obj"] = module["globals"][e["idx"]]
+
+    return create_module(module)

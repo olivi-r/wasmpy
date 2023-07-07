@@ -1,12 +1,12 @@
 from .module import create_module
+from .sections_binary import *
+from .values import read_uint
 from .native import (
     create_function,
     create_global,
     write_globals,
     get_global_object,
 )
-from .sections_binary import *
-from .values import read_uint
 import importlib
 
 # extend to add future binary formats
@@ -101,14 +101,14 @@ def read_module(buffer: object) -> dict:
             )
 
     for g in module["globals"]:
-        g["offset"] = create_global(*g["globaltype"], g["expr"])
+        g["offset"] = create_global(g["globaltype"][1], g["expr"])
 
     global_offset = write_globals()
     for g in module["globals"]:
         g["offset"] += global_offset
         g["obj"] = [
             g["globaltype"][0],
-            get_global_object(g["offset"], *g["globaltype"]),
+            get_global_object(g["offset"], g["globaltype"][1]),
         ]
 
     module["funcs"] += [

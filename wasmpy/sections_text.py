@@ -68,14 +68,14 @@ def read_type(expr: list) -> tuple:
 
 
 def read_func(expr: list) -> tuple:
-    funcid = None
+    funcidx = None
     export = None
     typeidx = None
     off = 1
-    if isinstance(expr[1], Symbol):
-        funcid = expr[1]
-        assert funcid.value().startswith("$")
-        off = 2
+    if isinstance(expr[off], Symbol):
+        funcidx = expr[off]
+        assert funcidx.value().startswith("$")
+        off += 1
 
     if (
         isinstance(expr[off], list)
@@ -142,22 +142,30 @@ def read_func(expr: list) -> tuple:
         if term in param_ids:
             body[i] = param_ids.index(term)
 
-    return {
-        "typeidx": typeidx,
-        "typeuse": typeuse,
-        "export": export,
-        "locals": (),
-        "body": body,
-    }
+    return (
+        funcidx,
+        export,
+        {
+            "typeidx": typeidx,
+            "typeuse": typeuse,
+            "locals": (),
+            "body": body,
+        },
+    )
 
 
 def read_global(expr: list) -> tuple:
     globalidx = None
+    export = None
     globaltype = None
-    mutable = False
+    mutable = "const"
     off = 1
     if isinstance(expr[off], Symbol) and expr[off].value().startswith("$"):
         globalidx = expr[off]
+        off += 1
+
+    if isinstance(expr[off], list) and expr[off][0].value() == "export":
+        export = expr[off][1]
         off += 1
 
     if isinstance(expr[off], Symbol):
@@ -166,8 +174,19 @@ def read_global(expr: list) -> tuple:
 
     elif isinstance(expr[off], list) and expr[off][0].value() == "mut":
         globaltype = valtypes[expr[off][1]]
-        mutable = True
+        mutable = "mut"
         off += 1
 
     init = expr[off:]
-    return globalidx, {"type": globaltype, "mutable": mutable, "init": init}
+    return (
+        globalidx,
+        export,
+        {"type": globaltype, "mutable": mutable, "init": flatten(init)},
+    )
+
+
+def read_export(expr: list) -> list:
+    name = expr[1]
+    type = expr[2][0].value()
+    idx = expr[2][1]
+    return {"name": name, "type": type, "idx": idx}

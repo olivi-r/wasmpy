@@ -57,16 +57,11 @@ class WebAssemblyTextLoader:
         if fullname in sys.modules:
             return
 
-        mod = types.ModuleType(fullname)
-        mod.__file__ = self.fname
-        mod.__name__ = fullname
-        mod.__loader__ = self
-        sys.modules[fullname] = mod
         with open(self.fname, "r") as fp:
-            mod._module = module_text.read_module(fp)
+            mod = module_text.read_module(fp)
+            mod.__file__ = self.fname
+            mod.__name__ = fullname
+            mod.__loader__ = self
 
-        mod.call = _call(mod._module)
-        if mod._module["start"] is not None:
-            mod.start = mod._module["start"]
-
+        sys.modules[fullname] = mod
         return mod

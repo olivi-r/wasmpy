@@ -358,6 +358,8 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 #endif
         registeredFuncs.push_back((void (*)())buf);
         globalTableAddr = (uint64_t)buf;
+        // flush table
+        globalTable = {};
         return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
     }
 

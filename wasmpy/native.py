@@ -7,7 +7,7 @@ if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     from . import x86 as nativelib
 
 
-def create_global(mut, globaltype, expr):
+def create_global(globaltype, expr):
     assert len(expr), "Missing initializer"
     value = create_function(globaltype, bytes(expr))()
     return nativelib.append_global(value, globaltype)
@@ -17,7 +17,7 @@ def write_globals():
     return nativelib.write_global_table()
 
 
-def get_global_object(offset, mut, globaltype):
+def get_global_object(offset, globaltype):
     if globaltype in (0x7F, 0x7D):
         return ctypes.cast(offset, ctypes.POINTER(ctypes.c_uint32))
 

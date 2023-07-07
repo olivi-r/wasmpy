@@ -1,63 +1,57 @@
 [![AppVeyor](https://img.shields.io/appveyor/build/olivi-r/wasmpy)](https://ci.appveyor.com/project/olivi-r/wasmpy)
 
 # wasmpy
-Interacting with WebAssembly code from python.
+WebAssembly from Python.
 
-Wasmpy is a fairly lightweight layer that sits between Python and the WebAssembly code. When attempting to import a WebAssembly file, the file is read and it is converted into native machine code for native speeds.
-
-This project is intended to be used in conjunction with [wasmpy-build](https://github.com/olivi-r/wasmpy-build), although it does support regular WebAssembly files too.
+Wasmpy is a lightweight layer that sits between Python and WebAssembly. When attempting to import a WebAssembly file, the file is converted into machine code for native speeds.
 
 ## Installing
-
 Install the latest version:
 
-```
+```sh
 python -m pip install wasmpy
 ```
 
 Or build and install from source:
 
-
-```
+```sh
 git clone https://github.com/olivi-r/wasmpy.git
 cd wasmpy
 python setup.py assemble
 python -m pip install .
 ```
 
-# Usage
-WasmPy defines import hooks to make the loading of WebAssembly binary files much easier! Just import the `wasmpy` library then you are good to go!
-### Example:
-If you have the following project setup:
+## Usage
+To get started, first import the `wasmpy` module to register the WebAssembly import hooks.
 
-```
-|- my_wasm_file.wasm
-|- main.py
-```
-Then in `main.py` the following code will load the WebAssembly file:
-```py
-import wasmpy
-import my_wasm_file
-```
-The hook also allows importing the files from submodules, eg:
-```
-|- main.py
-|- my_module
-|  |- my_wasm_file.wasm
-```
-Then 
-```py
-import wasmpy
-from my_module import my_wasm_file
+Then you can just run `import wasm_or_wat_file` to load a WebAssembly module.
+
+## Example
+file: `wasm_math.wat`
+```webassembly
+(module
+    (func (export "add") (param i32 i32) (result i32)
+        (i32.add (local.get 0) (local.get 1))
+    )
+)
 ```
 
-Functions can be called with the call function from the imported module:
-
-```py
-import wasmpy
-import wasm_math
-
-wasm_math.add(...)
+```python
+>>> import wasmpy
+>>> import wasm_math
+>>> wasm_math.add(45, 960)
+1005
+>>>
 ```
 
-Exported names that aren't valid Python identifiers such as `add two numbers` are converted to become valid `add_two_numbers`
+## Limitations
+Wasmpy is still in active development, and only supports x86/x86-64 Windows and Linux machines and lacks some key features:
+- floating point operations
+- control instructions
+- memories
+- tables
+- imports / exports (partial support)
+
+The translated machine code is also naively generated and may not be the most optimized.
+
+In future all of these limitations will be overcome and wasmpy will also offer support for [WASI](https://wasi.dev) and allow interfacing directly with CPython's [c-api](https://docs.python.org/3/c-api/index.html) similar to standard C/C++ Python extensions.
