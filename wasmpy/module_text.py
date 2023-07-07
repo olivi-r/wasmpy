@@ -107,7 +107,7 @@ def read_module(buffer: object) -> dict:
                     == func["typeuse"]
                 ), "type mismatch"
 
-            if isinstance(func["typeidx"], Symbol):
+            if isinstance(func["typeidx"], sexpdata.Symbol):
                 func["typeidx"] = type_ids.index(func["typeidx"])
 
             func["type"] = module["types"][func["typeidx"]]
@@ -128,7 +128,7 @@ def read_module(buffer: object) -> dict:
         module["funcs"][funcidx] = func["obj"]
 
     for e in module["exports"]:
-        if isinstance(e["idx"], Symbol):
+        if isinstance(e["idx"], sexpdata.Symbol):
             if e["type"] == "func":
                 e["idx"] = func_ids.index[e["idx"]]
 

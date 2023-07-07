@@ -1,16 +1,7 @@
 from . import module_binary
 from . import module_text
-import os, sys, types
-
-
-def _call(mod):
-    def call(f: str):
-        nonlocal mod
-        for e in mod["exports"]:
-            if e["name"] == f:
-                return e["obj"]
-
-    return call
+import sys
+import os
 
 
 class WebAssemblyBinaryLoader:

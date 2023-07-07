@@ -27,7 +27,6 @@ def create_module(module: dict) -> object:
     if module["start"] is not None:
         setattr(WebAssemblyModule, "__call__", module["start"])
         obj = WebAssemblyModule("module")
-        setattr(obj, "__doc__", module["start"].__doc__)
         obj()
 
     else:
