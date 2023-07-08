@@ -26,7 +26,7 @@ def get_global_object(offset, globaltype):
 
 
 def create_function(ret, code, arg=b"", local=b""):
-    func, ret = nativelib.create_function(
+    func = nativelib.create_function(
         struct.calcsize("P"), ret, code, arg, local
     )
 
@@ -51,16 +51,16 @@ def create_function(ret, code, arg=b"", local=b""):
 
     doc = f"({', '.join(param_doc)}) -> {ret}"
 
-    if ret == "i32":
+    if ret == 0x7F:
         ret = ctypes.c_uint32
 
-    elif ret == "i64":
+    elif ret == 0x7E:
         ret = ctypes.c_uint64
 
-    elif ret == "f32":
+    elif ret == 0x7D:
         ret = ctypes.c_float
 
-    elif ret == "f64":
+    elif ret == 0x7C:
         ret = ctypes.c_double
 
     else:

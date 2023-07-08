@@ -101,14 +101,13 @@ def read_module(buffer: object) -> dict:
 
     for funcidx, func in enumerate(module["funcs"]):
         if func["typeidx"] is not None:
+            if func["typeidx"] in type_ids:
+                func["typeidx"] = type_ids.index(func["typeidx"])
+
             if func["typeuse"] is not None:
                 assert (
-                    module["types"][type_ids.index(func["typeidx"])]
-                    == func["typeuse"]
+                    module["types"][func["typeidx"]] == func["typeuse"]
                 ), "type mismatch"
-
-            if isinstance(func["typeidx"], sexpdata.Symbol):
-                func["typeidx"] = type_ids.index(func["typeidx"])
 
             func["type"] = module["types"][func["typeidx"]]
 

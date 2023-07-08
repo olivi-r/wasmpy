@@ -128,7 +128,12 @@ class assemble(setuptools.Command):
         pass
 
     def run(self):
-        for source in listdir("wasmpy/x86") + listdir("wasmpy/x86/64"):
+        for source in (
+            listdir("wasmpy/x86")
+            + listdir("wasmpy/x86/64")
+            + listdir("wasmpy/x86/internal")
+            + listdir("wasmpy/x86/internal/64")
+        ):
             if os.path.isdir(source):
                 continue
 
@@ -180,7 +185,9 @@ class assemble(setuptools.Command):
                         ]
                     )
 
-        for source in listdir("wasmpy/x86/32"):
+        for source in listdir("wasmpy/x86/32") + listdir(
+            "wasmpy/x86/internal/32"
+        ):
             if os.path.isdir(source):
                 continue
 
@@ -254,8 +261,11 @@ class tidy(setuptools.Command):
             listdir("wasmpy/x86")
             + listdir("wasmpy/x86/64")
             + listdir("wasmpy/x86/32")
+            + listdir("wasmpy/x86/internal")
+            + listdir("wasmpy/x86/internal/64")
+            + listdir("wasmpy/x86/internal/32")
         ):
-            if not os.path.isfile(file):
+            if os.path.isdir(file):
                 continue
 
             if os.path.splitext(file)[1] != ".s":
@@ -347,9 +357,26 @@ class gen_opcodes(setuptools.Command):
                     "break;\n\t\t",
                     "}\n\t}\n\t",
                     "return concat({}, insts);\n",
-                    "}\n",
+                    "}\n\n",
                 )
             )
+
+            if bits == 8:
+                extra = listdir("wasmpy/x86/internal/64")
+
+            elif bits == 4:
+                extra = listdir("wasmpy/x86/internal/32")
+
+            for file in listdir("wasmpy/x86/internal") + extra:
+                if os.path.isdir(file):
+                    continue
+
+                name = os.path.basename(file)
+                if os.path.splitext(name)[1] == "":
+                    with open(file, "rb") as fp:
+                        out.write(
+                            f"bytes {name} = {{{', '.join(str(i) for i in fp.read() if i != 0x90)}}};\n"
+                        )
 
 
 class build_ext(setuptools.command.build_ext.build_ext):

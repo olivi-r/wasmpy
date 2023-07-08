@@ -7,6 +7,6 @@ dist
 *.pyd
 *.so
 wasmpy/x86/**/*
-!wasmpy/x86/*/
+!wasmpy/x86/**/
 !wasmpy/x86/**/*.s
 wasmpy/opcodes.cpp
