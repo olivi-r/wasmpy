@@ -2,7 +2,7 @@
 
 std::vector<void (*)()> registeredFuncs = {};
 bytes globalTable = {};
-uint64_t globalTableAddr = NULL;
+uint64_t globalTableAddr;
 
 bytes concat(bytes v0, std::vector<bytes> vn)
 {

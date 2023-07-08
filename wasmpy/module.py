@@ -3,7 +3,7 @@ import types
 
 def create_module(module: dict) -> object:
     WebAssemblyModule = type("WebAssemblyModule", (types.ModuleType,), {})
-
+    props = []
     for e in module["exports"]:
         if isinstance(e["obj"], list):
 
@@ -24,6 +24,8 @@ def create_module(module: dict) -> object:
         else:
             setattr(WebAssemblyModule, e["name"], e["obj"])
 
+        props.append(e["name"])
+
     if module["start"] is not None:
         setattr(WebAssemblyModule, "__call__", module["start"])
         obj = WebAssemblyModule("module")
@@ -31,5 +33,8 @@ def create_module(module: dict) -> object:
 
     else:
         obj = WebAssemblyModule("module")
+
+    for prop in props:
+        obj.__dict__.update({prop: getattr(obj, prop)})
 
     return obj
