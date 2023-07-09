@@ -6,6 +6,7 @@ from .native import (
     create_global,
     write_globals,
     get_global_object,
+    flush_globals,
 )
 import importlib
 
@@ -101,7 +102,9 @@ def read_module(buffer: object) -> dict:
             )
 
     for g in module["globals"]:
-        g["offset"] = create_global(g["globaltype"][1], g["expr"])
+        g["offset"] = create_global(
+            g["globaltype"][0] == "mut", g["globaltype"][1], g["expr"]
+        )
 
     global_offset = write_globals()
     for g in module["globals"]:
@@ -120,6 +123,8 @@ def read_module(buffer: object) -> dict:
         )
         for i, (locals, body) in enumerate(code)
     ]
+
+    flush_globals()
 
     for e in module["exports"]:
         if e["desc"][0] == "func":

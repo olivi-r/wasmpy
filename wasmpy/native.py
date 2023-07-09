@@ -6,12 +6,13 @@ import ctypes
 
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     from . import x86 as nativelib
+    from .x86 import flush_globals
 
 
-def create_global(globaltype, expr):
+def create_global(mut, globaltype, expr):
     assert len(expr), "Missing initializer"
     value = create_function(globaltype, bytes(expr))()
-    return nativelib.append_global(value, globaltype)
+    return nativelib.append_global(value, mut, globaltype)
 
 
 def write_globals():
@@ -53,10 +54,10 @@ def create_function(ret, code, arg=b"", local=b""):
     doc = f"({', '.join(param_doc)}) -> {ret}"
 
     if ret == 0x7F:
-        ret = ctypes.c_uint32
+        ret = ctypes.c_int32
 
     elif ret == 0x7E:
-        ret = ctypes.c_uint64
+        ret = ctypes.c_int64
 
     elif ret == 0x7D:
         ret = ctypes.c_float

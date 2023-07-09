@@ -15,6 +15,8 @@
 #include <Windows.h>
 #endif
 
+#define RET 0xC3
+
 typedef std::vector<uint8_t> bytes;
 
 template <typename T>

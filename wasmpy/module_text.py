@@ -6,6 +6,7 @@ from .native import (
     create_global,
     write_globals,
     get_global_object,
+    flush_globals,
 )
 import sexpdata
 import shutil
@@ -87,7 +88,7 @@ def read_module(buffer: object) -> dict:
                 g["init"][i] = global_ids.index(term)
 
         g["init"] = read_expr_text(g["init"])
-        g["offset"] = create_global(g["type"], g["init"])
+        g["offset"] = create_global(g["mutable"] == "mut", g["type"], g["init"])
 
     global_offset = write_globals()
     for globalidx, g in enumerate(module["globals"]):
@@ -125,6 +126,8 @@ def read_module(buffer: object) -> dict:
         )
 
         module["funcs"][funcidx] = func["obj"]
+
+    flush_globals()
 
     for e in module["exports"]:
         if isinstance(e["idx"], sexpdata.Symbol):
