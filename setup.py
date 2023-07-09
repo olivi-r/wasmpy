@@ -293,7 +293,7 @@ class gen_opcodes(setuptools.Command):
                 opcodes.update(
                     dict(
                         zip(
-                            group["instructions"],
+                            (i[0] for i in group["instructions"]),
                             (
                                 i + group["offset"]
                                 for i in range(len(group["instructions"]))

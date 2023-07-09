@@ -183,12 +183,13 @@ def read_instruction_binary(buffer: object) -> list:
 def read_instruction_text(source, offset: int) -> list:
     data = source[offset]
     if data in opcodes.opcodes:
-        if data not in opcodes.consumes:
-            return [opcodes.opcodes[data], 0]
+        op = opcodes.opcodes[data]
+        if op not in opcodes.consumes:
+            return [op, 0]
 
         else:
             return (
-                [opcodes.opcodes[data]]
-                + expand_bytes(source[offset + 1], opcodes.consumes[data] * 8)
+                [op]
+                + expand_bytes(source[offset + 1], opcodes.consumes[op] * 8)
                 + [1]
             )

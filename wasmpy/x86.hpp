@@ -17,7 +17,8 @@
 
 typedef std::vector<uint8_t> bytes;
 
-bytes concat(bytes v0, std::vector<bytes> vn);
+template <typename T>
+std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn);
 
 #include "opcodes.hpp"
 

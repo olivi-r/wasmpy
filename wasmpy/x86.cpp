@@ -4,12 +4,11 @@ std::vector<void (*)()> registeredFuncs = {};
 bytes globalTable = {};
 uint64_t globalTableAddr;
 
-bytes concat(bytes v0, std::vector<bytes> vn)
+template <typename T>
+std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn)
 {
     for (size_t i = 0; i < vn.size(); i++)
-    {
         v0.insert(v0.end(), vn.at(i).begin(), vn.at(i).end());
-    }
 
     return v0;
 }
@@ -156,127 +155,178 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 #endif
 
 #ifdef linux
-    for (Py_ssize_t i = 0; i < arglen - 6; i++)
-    {
-        Py_ssize_t offset = i * 8 + 16;
-        int argoff = 6;
+    int argoff = 6;
+    Py_ssize_t count = arglen - argoff;
+    int baseOffset = 16;
 #endif
 #ifdef _WIN32
-        for (Py_ssize_t i = 0; i < arglen - 4; i++)
-        {
-            Py_ssize_t offset = i * 8 + 48;
-            int argoff = 4;
+    int argoff = 4;
+    Py_ssize_t count = arglen - argoff;
+    int baseOffset = 48;
 #endif
-            // movq (%rbp + offset), %rax
-            code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
+    for (Py_ssize_t i = 0; i < count; i++)
+    {
+        Py_ssize_t offset = i * 8 + baseOffset;
+        // movq (%rbp + offset), %rax
+        code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
 
-            if (argbuf[i + argoff] == 0x7F || argbuf[i + argoff] == 0x7D)
-                code = concat(code, {param_32});
+        if (argbuf[i + argoff] == 0x7F || argbuf[i + argoff] == 0x7D)
+            code = concat(code, {param_32});
 
-            else if (argbuf[i + argoff] == 0x7E || argbuf[i + argoff] == 0x7C)
-                code = concat(code, {param_64});
-        }
-
-        return code;
+        else if (argbuf[i + argoff] == 0x7E || argbuf[i + argoff] == 0x7C)
+            code = concat(code, {param_64});
     }
 
-    static PyObject *createFunction(PyObject * self, PyObject * args)
+    return code;
+}
+
+static PyObject *createFunction(PyObject *self, PyObject *args)
+{
+    char plat, ret;
+    const char *codebuf, *argbuf, *localbuf;
+    Py_ssize_t codelen, arglen, locallen;
+    PyObject *consumes, *signatures;
+    if (!PyArg_ParseTuple(args, "bby#y#y#OO", &plat, &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen, &consumes, &signatures))
+        return NULL;
+
+    bytes code(codebuf, codelen + codebuf);
+
+    std::vector<wchar_t *> stack = {};
+    for (size_t i = 0; i < code.size(); i++)
     {
-        char plat, ret;
-        const char *codebuf, *argbuf, *localbuf;
-        Py_ssize_t codelen, arglen, locallen;
-        if (!PyArg_ParseTuple(args, "bby#y#y#", &plat, &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen))
-            return NULL;
+        uint8_t op = code.at(i);
+        PyObject *signature = PyDict_GetItem(signatures, PyLong_FromLong(op));
+        PyObject *operands = PyList_GetItem(signature, 0);
+        PyObject *results = PyList_GetItem(signature, 1);
+        Py_ssize_t operandsSize = PyList_Size(operands);
+        Py_ssize_t resultsSize = PyList_Size(results);
 
-        bytes loadLocals;
-        if (plat == 4)
-            loadLocals = regParam32(argbuf, arglen);
-
-        else if (plat == 8)
-            loadLocals = regParam64(argbuf, arglen);
-
-        else
-            return NULL;
-
-        for (Py_ssize_t i = 0; i < locallen; i++)
+        std::vector<wchar_t *> resultVector = {};
+        for (Py_ssize_t j = 0; j < operandsSize; j++)
         {
-            if (localbuf[i] == 0x7F || localbuf[i] == 0x7D)
-                loadLocals = concat(loadLocals, {local32});
+            PyObject *operand = PyList_GetItem(operands, j);
+            Py_ssize_t size = PyUnicode_GetLength(operand);
+            wchar_t *operandStr = PyUnicode_AsWideCharString(operand, &size);
 
-            if (localbuf[i] == 0x7E || localbuf[i] == 0x7C)
-                loadLocals = concat(loadLocals, {local64});
+            if (stack.size() != 0)
+            {
+                wchar_t *lastOp = stack.at(stack.size() - 1);
+                if (wcscmp(operandStr, lastOp) != 0 && wcscmp(operandStr, L"any") != 0 && wcscmp(lastOp, L"any") != 0)
+                {
+                    PyErr_SetString(PyExc_TypeError, "incorrect stack arguments");
+                    return NULL;
+                }
+            }
+            else
+            {
+                PyErr_SetString(PyExc_TypeError, "missing stack arguments");
+                return NULL;
+            }
+
+            stack.pop_back();
         }
 
-        bytes code(codebuf, codelen + codebuf);
+        for (Py_ssize_t j = 0; j < resultsSize; j++)
+        {
+            PyObject *result = PyList_GetItem(results, j);
+            Py_ssize_t size = PyUnicode_GetLength(result);
+            wchar_t *resultStr = PyUnicode_AsWideCharString(result, &size);
+            resultVector.push_back(resultStr);
+        }
 
-        bytes returnCode = {};
+        stack = concat(stack, {resultVector});
 
-        if (ret == 0x7F || ret == 0x7D)
-            returnCode = ret_v32;
-
-        else if (ret == 0x7E || ret == 0x7C)
-            returnCode = ret_v64;
-
-        auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat, globalTableAddr), returnCode, cleanupStack, {0xC3}}));
-        registeredFuncs.push_back(func);
-
-        return Py_BuildValue("O", PyLong_FromSize_t((size_t)func));
+        if (PyDict_Contains(consumes, PyLong_FromLong(op)))
+            i += PyLong_AsLong(PyDict_GetItem(consumes, PyLong_FromLong(op)));
     }
 
-    PyObject *appendGlobal(PyObject * self, PyObject * args)
+    bytes loadLocals;
+    if (plat == 4)
+        loadLocals = regParam32(argbuf, arglen);
+
+    else if (plat == 8)
+        loadLocals = regParam64(argbuf, arglen);
+
+    else
+        return NULL;
+
+    for (Py_ssize_t i = 0; i < locallen; i++)
     {
-        unsigned long long global;
-        char type;
-        if (!PyArg_ParseTuple(args, "Kb", &global, &type))
-            return NULL;
+        if (localbuf[i] == 0x7F || localbuf[i] == 0x7D)
+            loadLocals = concat(loadLocals, {local32});
 
-        size_t offset = globalTable.size();
-
-        if (type == 0x7F || type == 0x7D)
-            globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), 2, 0, 0, 0, 0}});
-
-        else if (type == 0x7E || type == 0x7C)
-            globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), (uint8_t)(global >> 32), (uint8_t)(global >> 40), (uint8_t)(global >> 48), (uint8_t)(global >> 56), 4}});
-
-        return Py_BuildValue("O", PyLong_FromSize_t(offset));
+        if (localbuf[i] == 0x7E || localbuf[i] == 0x7C)
+            loadLocals = concat(loadLocals, {local64});
     }
 
-    static PyObject *writeGlobalTable(PyObject * self, PyObject * args)
-    {
+    bytes returnCode = {};
+
+    if (ret == 0x7F || ret == 0x7D)
+        returnCode = pop_v32a;
+
+    else if (ret == 0x7E || ret == 0x7C)
+        returnCode = ret_v64;
+
+    auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat, globalTableAddr), returnCode, cleanupStack, {0xC3}}));
+    registeredFuncs.push_back(func);
+
+    return Py_BuildValue("O", PyLong_FromSize_t((size_t)func));
+}
+
+PyObject *appendGlobal(PyObject *self, PyObject *args)
+{
+    unsigned long long global;
+    char type;
+    if (!PyArg_ParseTuple(args, "Kb", &global, &type))
+        return NULL;
+
+    size_t offset = globalTable.size();
+
+    if (type == 0x7F || type == 0x7D)
+        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), 2, 0, 0, 0, 0}});
+
+    else if (type == 0x7E || type == 0x7C)
+        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), (uint8_t)(global >> 32), (uint8_t)(global >> 40), (uint8_t)(global >> 48), (uint8_t)(global >> 56), 4}});
+
+    return Py_BuildValue("O", PyLong_FromSize_t(offset));
+}
+
+static PyObject *writeGlobalTable(PyObject *self, PyObject *args)
+{
 #ifdef linux
-        size_t size = sysconf(_SC_PAGE_SIZE) * (1 + globalTable.size() / sysconf(_SC_PAGE_SIZE));
-        void *buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-        memcpy(buf, globalTable.data(), globalTable.size());
+    size_t size = sysconf(_SC_PAGE_SIZE) * (1 + globalTable.size() / sysconf(_SC_PAGE_SIZE));
+    void *buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    memcpy(buf, globalTable.data(), globalTable.size());
 #endif
 #ifdef _WIN32
-        SYSTEM_INFO sysinf;
-        GetSystemInfo(&sysinf);
-        size_t size = sysinf.dwPageSize * (1 + globalTable.size() / sysinf.dwPageSize);
-        void *buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
-        memcpy(buf, globalTable.data(), globalTable.size());
+    SYSTEM_INFO sysinf;
+    GetSystemInfo(&sysinf);
+    size_t size = sysinf.dwPageSize * (1 + globalTable.size() / sysinf.dwPageSize);
+    void *buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
+    memcpy(buf, globalTable.data(), globalTable.size());
 #endif
-        registeredFuncs.push_back((void (*)())buf);
-        globalTableAddr = (uint64_t)buf;
-        // flush table
-        globalTable = {};
-        return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
-    }
+    registeredFuncs.push_back((void (*)())buf);
+    globalTableAddr = (uint64_t)buf;
+    // flush table
+    globalTable = {};
+    return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
+}
 
-    static PyMethodDef methods[] = {
-        {"append_global", appendGlobal, METH_VARARGS, NULL},
-        {"create_function", createFunction, METH_VARARGS, NULL},
-        {"write_global_table", writeGlobalTable, METH_VARARGS, NULL},
-        {NULL, NULL, 0, NULL}};
+static PyMethodDef methods[] = {
+    {"append_global", appendGlobal, METH_VARARGS, NULL},
+    {"create_function", createFunction, METH_VARARGS, NULL},
+    {"write_global_table", writeGlobalTable, METH_NOARGS, NULL},
+    {NULL, NULL, 0, NULL}};
 
-    static struct PyModuleDef module = {
-        PyModuleDef_HEAD_INIT,
-        "x86",
-        NULL,
-        -1,
-        methods};
+static struct PyModuleDef module = {
+    PyModuleDef_HEAD_INIT,
+    "x86",
+    NULL,
+    -1,
+    methods};
 
-    PyMODINIT_FUNC PyInit_x86()
-    {
-        Py_AtExit(&freeFuncs);
-        return PyModule_Create(&module);
-    }
+PyMODINIT_FUNC PyInit_x86()
+{
+    Py_AtExit(&freeFuncs);
+    return PyModule_Create(&module);
+}

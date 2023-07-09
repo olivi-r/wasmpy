@@ -1,3 +1,4 @@
+from .opcodes import consumes, signatures
 import platform
 import struct
 import ctypes
@@ -27,7 +28,7 @@ def get_global_object(offset, globaltype):
 
 def create_function(ret, code, arg=b"", local=b""):
     func = nativelib.create_function(
-        struct.calcsize("P"), ret, code, arg, local
+        struct.calcsize("P"), ret, code, arg, local, consumes, signatures
     )
 
     params = []
