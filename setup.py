@@ -406,7 +406,7 @@ setuptools.setup(
     version="0.1.4",
     author="Olivia Ryan",
     author_email="olivia.r.dev@gmail.com",
-    description="Interactions between WebAssembly and Python",
+    description="WebAssembly from Python.",
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
