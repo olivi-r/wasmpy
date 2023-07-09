@@ -121,6 +121,9 @@ def read_module(buffer: object) -> dict:
                 func["body"][i] = global_ids.index(term)
 
         func["body"] = read_expr_text(func["body"])
+        if not func["type"][1]:
+            func["type"][1].append(0x40)
+
         func["obj"] = create_function(
             func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
         )

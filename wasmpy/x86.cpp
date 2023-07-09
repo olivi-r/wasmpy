@@ -2,6 +2,7 @@
 
 std::vector<void (*)()> registeredFuncs = {};
 bytes globalTable = {};
+bytes globalTypes = {};
 std::vector<int> globalMut = {};
 bytes localTypes = {};
 uint64_t globalTableAddr;
@@ -215,8 +216,10 @@ createFunction(PyObject *self, PyObject *args)
         loadLocals = regParam64(argbuf, arglen);
 
     else
+    {
+        PyErr_SetString(PyExc_EnvironmentError, "unsupported architecture bits");
         return NULL;
-
+    }
     for (Py_ssize_t i = 0; i < locallen; i++)
     {
         localTypes.push_back(localbuf[i]);
@@ -252,7 +255,7 @@ createFunction(PyObject *self, PyObject *args)
             }
 
             uint8_t localType = localTypes.at(localidx);
-            wchar_t *localStr;
+            const wchar_t *localStr;
 
             // local.set and local.tee
             if (op == 0x21 || op == 0x22)
@@ -292,7 +295,7 @@ createFunction(PyObject *self, PyObject *args)
                     return NULL;
                 }
 
-                operandVector.push_back(localStr);
+                operandVector.push_back((wchar_t *)localStr);
                 validateStack.pop_back();
             }
 
@@ -302,19 +305,19 @@ createFunction(PyObject *self, PyObject *args)
                 switch (localType)
                 {
                 case 0x7F:
-                    resultVector.push_back(L"i32");
+                    resultVector.push_back((wchar_t *)L"i32");
                     break;
 
                 case 0x7E:
-                    resultVector.push_back(L"i64");
+                    resultVector.push_back((wchar_t *)L"i64");
                     break;
 
                 case 0x7D:
-                    resultVector.push_back(L"f32");
+                    resultVector.push_back((wchar_t *)L"f32");
                     break;
 
                 case 0x7C:
-                    resultVector.push_back(L"f64");
+                    resultVector.push_back((wchar_t *)L"f64");
                     break;
 
                 default:
@@ -325,27 +328,96 @@ createFunction(PyObject *self, PyObject *args)
                 validateStack = concat(validateStack, {resultVector});
             }
         }
-        else
+        // global instruction validation
+        else if (op == 0x23 || op == 0x24)
         {
-            // global instruction validation
-            if (op == 0x23 || op == 0x24)
+            uint32_t globalidx = code.at(i + 4) << 24 | code.at(i + 3) << 16 | code.at(i + 2) << 8 | code.at(i + 1);
+
+            if (globalidx >= globalMut.size())
             {
-                uint32_t globalidx = code.at(i + 4) << 24 | code.at(i + 3) << 16 | code.at(i + 2) << 8 | code.at(i + 1);
-
-                if (globalidx >= globalMut.size())
-                {
-                    PyErr_SetString(PyExc_ValueError, "attempted access of undefined global");
-                    return NULL;
-                }
-
-                if (op == 0x24 && globalMut.at(globalidx) == 0)
-                {
-                    PyErr_SetString(PyExc_PermissionError, "attempted modification of immutable global");
-                    return NULL;
-                }
+                PyErr_SetString(PyExc_ValueError, "attempted access of undefined global");
+                return NULL;
             }
 
-            wchar_t *any = L"any";
+            if (op == 0x24 && globalMut.at(globalidx) == 0)
+            {
+                PyErr_SetString(PyExc_PermissionError, "attempted modification of immutable global");
+                return NULL;
+            }
+
+            const wchar_t *globalStr;
+            if (op == 0x24)
+            {
+                switch (globalTypes[globalidx])
+                {
+                case 0x7F:
+                    globalStr = L"i32";
+                    break;
+
+                case 0x7E:
+                    globalStr = L"i64";
+                    break;
+
+                case 0x7D:
+                    globalStr = L"f32";
+                    break;
+
+                case 0x7C:
+                    globalStr = L"f64";
+                    break;
+
+                default:
+                    PyErr_SetString(PyExc_TypeError, "unrecognized global type");
+                    return NULL;
+                }
+
+                if (validateStack.size() < 1)
+                {
+                    PyErr_SetString(PyExc_TypeError, "missing stack arguments");
+                    return NULL;
+                }
+                wchar_t *lastOp = validateStack.at(validateStack.size() - 1);
+                if (wcscmp(globalStr, lastOp) != 0)
+                {
+                    PyErr_SetString(PyExc_TypeError, "incorrect stack arguments");
+                    return NULL;
+                }
+
+                operandVector.push_back((wchar_t *)globalStr);
+                validateStack.pop_back();
+            }
+            if (op == 0x23)
+            {
+                switch (globalTypes[globalidx])
+                {
+                case 0x7F:
+                    resultVector.push_back((wchar_t *)L"i32");
+                    break;
+
+                case 0x7E:
+                    resultVector.push_back((wchar_t *)L"i64");
+                    break;
+
+                case 0x7D:
+                    resultVector.push_back((wchar_t *)L"f32");
+                    break;
+
+                case 0x7C:
+                    resultVector.push_back((wchar_t *)L"f64");
+                    break;
+
+                default:
+                    PyErr_SetString(PyExc_TypeError, "unrecognized global type");
+                    return NULL;
+                }
+
+                validateStack = concat(validateStack, {resultVector});
+            }
+        }
+        else
+        {
+
+            wchar_t *any = (wchar_t *)L"any";
 
             // stack validation to ensure argument types match operation signatures
             PyObject *signature = PyDict_GetItem(signatures, PyLong_FromLong(op));
@@ -413,18 +485,24 @@ createFunction(PyObject *self, PyObject *args)
             i += PyLong_AsLong(PyDict_GetItem(consumes, PyLong_FromLong(op)));
     }
 
-    if (validateStack.size() != 1)
+    if ((validateStack.size() != 1 && ret != 0x40) || (validateStack.size() != 0 && ret == 0x40))
     {
         PyErr_SetString(PyExc_ValueError, "stack not empty after execution");
         return NULL;
     }
 
-    wchar_t *retStr = validateStack.at(0);
-    if (wcscmp(retStr, L"i32") == 0 && ret != 0x7F || wcscmp(retStr, L"i64") == 0 && ret != 0x7E || wcscmp(retStr, L"f32") == 0 && ret != 0x7D || wcscmp(retStr, L"f64") == 0 && ret != 0x7C)
+    if (ret != 0x40)
     {
-        PyErr_SetString(PyExc_TypeError, "incorrect return type on stack");
-        return NULL;
+        wchar_t *retStr = validateStack.at(0);
+        if ((wcscmp(retStr, L"i32") == 0 && ret != 0x7F) || (wcscmp(retStr, L"i64") == 0 && ret != 0x7E) || (wcscmp(retStr, L"f32") == 0 && ret != 0x7D) || (wcscmp(retStr, L"f64") == 0 && ret != 0x7C))
+        {
+            PyErr_SetString(PyExc_TypeError, "incorrect return type on stack");
+            return NULL;
+        }
     }
+
+    // flush locals ready for next function
+    localTypes = {};
 
     bytes returnCode = {};
 
@@ -457,6 +535,14 @@ PyObject *appendGlobal(PyObject *self, PyObject *args)
     else if (type == 0x7E || type == 0x7C)
         globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), (uint8_t)(global >> 32), (uint8_t)(global >> 40), (uint8_t)(global >> 48), (uint8_t)(global >> 56), 4}});
 
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "unrecognized global type");
+        return NULL;
+    }
+
+    globalTypes.push_back(type);
+
     return Py_BuildValue("O", PyLong_FromSize_t(offset));
 }
 
@@ -482,6 +568,7 @@ static PyObject *writeGlobalTable(PyObject *self, PyObject *args)
 static PyObject *flushGlobals(PyObject *self, PyObject *args)
 {
     globalTable = {};
+    globalTypes = {};
     globalMut = {};
     Py_RETURN_NONE;
 }
