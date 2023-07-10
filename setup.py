@@ -1,9 +1,4 @@
-import setuptools.command.build_ext
-import subprocess
-import platform
-import struct
-import json
-import os
+import json, os, platform, setuptools.command.build_ext, struct, subprocess
 
 
 prefixed = {
@@ -23,7 +18,7 @@ prefixed = {
     "global.get": (
         "ll = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
         "ll *= 9;\n\t\t\t",
-        "ll += globalTableAddr;\n\t\t\t",
+        "ll += (uint64_t)globalTableAddr;\n\t\t\t",
         "lh = ll + 2;\n\t\t\t",
         "hl = ll + 4;\n\t\t\t",
         "hh = ll + 6;\n\t\t\t",
@@ -32,7 +27,7 @@ prefixed = {
     "global.set": (
         "ll = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
         "ll *= 9;\n\t\t\t",
-        "ll += globalTableAddr;\n\t\t\t",
+        "ll += (uint64_t)globalTableAddr;\n\t\t\t",
         "lh = ll + 2;\n\t\t\t",
         "hl = ll + 4;\n\t\t\t",
         "hh = ll + 6;\n\t\t\t",
@@ -310,7 +305,7 @@ class gen_opcodes(setuptools.Command):
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n',
                     '#include "x86.hpp"\n\n',
-                    "bytes decodeFunc(bytes buf, char plat, uint64_t globalTableAddr)\n{\n\t",
+                    "bytes decodeFunc(bytes buf, char plat, void *globalTableAddr)\n{\n\t",
                     "std::vector<bytes> insts = {};\n\t",
                     "int localidx;\n\t",
                     "uint64_t hh, hl, lh, ll, bits;\n\t"

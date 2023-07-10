@@ -1,6 +1,4 @@
-from .values import get_vec_len, read_sint, read_uint, read_f32, read_f64
-from .types import read_valtype
-from . import opcodes
+from . import opcodes, types, values
 
 
 def expand_bytes(n: int, bits: int = 32) -> list:
@@ -48,7 +46,7 @@ def read_instruction_binary(buffer: object) -> list:
 
     if data == 0x2:
         try:
-            rt = read_valtype(buffer)
+            rt = types.read_valtype(buffer)
 
         except TypeError:
             buffer.seek(-1, 1)
@@ -67,7 +65,7 @@ def read_instruction_binary(buffer: object) -> list:
 
     if data == 0x3:
         try:
-            rt = read_valtype(buffer)
+            rt = types.read_valtype(buffer)
 
         except TypeError:
             buffer.seek(-1, 1)
@@ -86,7 +84,7 @@ def read_instruction_binary(buffer: object) -> list:
 
     if data == 0x4:
         try:
-            rt = read_valtype(buffer)
+            rt = types.read_valtype(buffer)
 
         except TypeError:
             buffer.seek(-1, 1)
@@ -121,23 +119,26 @@ def read_instruction_binary(buffer: object) -> list:
         return ["end"]
 
     if data == 0xC:
-        return ["br", read_uint(buffer, 32)]
+        return ["br", values.read_uint(buffer, 32)]
 
     if data == 0xD:
-        return ["br_if", read_uint(buffer, 32)]
+        return ["br_if", values.read_uint(buffer, 32)]
 
     if data == 0xE:
-        l = [read_uint(buffer, 32) for _ in range(get_vec_len(buffer))]
-        return ["br_table", l, read_uint(buffer, 32)]
+        l = [
+            values.read_uint(buffer, 32)
+            for _ in range(values.get_vec_len(buffer))
+        ]
+        return ["br_table", l, values.read_uint(buffer, 32)]
 
     if data == 0xF:
         return ["return"]
 
     if data == 0x10:
-        return ["call", read_uint(buffer, 32)]
+        return ["call", values.read_uint(buffer, 32)]
 
     if data == 0x11:
-        x = read_uint(buffer, 32)
+        x = values.read_uint(buffer, 32)
         assert buffer.read(1)[0] == 0, "Invalid instruction."
         return ["call_indirect", x]
 
@@ -147,14 +148,14 @@ def read_instruction_binary(buffer: object) -> list:
 
     # Variable instructions
     if data in range(0x20, 0x25):
-        return [data] + expand_bytes(read_uint(buffer, 32))
+        return [data] + expand_bytes(values.read_uint(buffer, 32))
 
     # Memory instructions
     if data in range(0x28, 0x3F):
         return (
             [data]
-            + expand_bytes(read_uint(buffer, 32))  # align
-            + expand_bytes(read_uint(buffer, 32))  # offset
+            + expand_bytes(values.read_uint(buffer, 32))  # align
+            + expand_bytes(values.read_uint(buffer, 32))  # offset
         )
 
     if data in (0x3F, 0x40):
@@ -163,16 +164,16 @@ def read_instruction_binary(buffer: object) -> list:
 
     # Numeric instructions
     if data == 0x41:
-        return [data] + expand_bytes(read_sint(buffer, 32))
+        return [data] + expand_bytes(values.read_sint(buffer, 32))
 
     if data == 0x42:
-        return [data] + expand_bytes(read_sint(buffer, 64), 64)
+        return [data] + expand_bytes(values.read_sint(buffer, 64), 64)
 
     if data == 0x43:
-        return [data] + expand_bytes(read_f32(buffer))
+        return [data] + expand_bytes(values.read_f32(buffer))
 
     if data == 0x44:
-        return [data] + expand_bytes(read_f64(buffer))
+        return [data] + expand_bytes(values.read_f64(buffer))
 
     if data in range(0x45, 0xC0):
         return [data]

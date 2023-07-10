@@ -1,10 +1,11 @@
-from sexpdata import Symbol
+import sexpdata
+
 
 valtypes = {
-    Symbol("i32"): 0x7F,
-    Symbol("i64"): 0x7E,
-    Symbol("f32"): 0x7D,
-    Symbol("f64"): 0x7C,
+    sexpdata.Symbol("i32"): 0x7F,
+    sexpdata.Symbol("i64"): 0x7E,
+    sexpdata.Symbol("f32"): 0x7D,
+    sexpdata.Symbol("f64"): 0x7C,
 }
 
 
@@ -60,7 +61,7 @@ def read_type(expr: list) -> tuple:
 
     for ts in (t1, t2):
         for i, t in enumerate(ts):
-            t_sym = Symbol(t)
+            t_sym = sexpdata.Symbol(t)
             if t_sym in valtypes:
                 ts[i] = valtypes[t_sym]
 
@@ -72,14 +73,14 @@ def read_func(expr: list) -> tuple:
     export = None
     typeidx = None
     off = 1
-    if isinstance(expr[off], Symbol):
+    if isinstance(expr[off], sexpdata.Symbol):
         funcidx = expr[off]
         assert funcidx.value().startswith("$")
         off += 1
 
     if (
         isinstance(expr[off], list)
-        and isinstance(expr[off][0], Symbol)
+        and isinstance(expr[off][0], sexpdata.Symbol)
         and expr[off][0].value() == "export"
     ):
         export = expr[off][1]
@@ -87,7 +88,7 @@ def read_func(expr: list) -> tuple:
 
     if (
         isinstance(expr[off], list)
-        and isinstance(expr[off][0], Symbol)
+        and isinstance(expr[off][0], sexpdata.Symbol)
         and expr[off][0].value() == "type"
     ):
         typeidx = expr[off][1]
@@ -98,7 +99,7 @@ def read_func(expr: list) -> tuple:
     for sub_expr in expr[off:]:
         if (
             isinstance(sub_expr, list)
-            and isinstance(sub_expr[0], Symbol)
+            and isinstance(sub_expr[0], sexpdata.Symbol)
             and sub_expr[0].value() == "param"
         ):
             if sub_expr[1].value().startswith("$"):
@@ -117,7 +118,7 @@ def read_func(expr: list) -> tuple:
     result = None
     if (
         isinstance(expr[off], list)
-        and isinstance(expr[off][0], Symbol)
+        and isinstance(expr[off][0], sexpdata.Symbol)
         and expr[off][0].value() == "result"
     ):
         result = valtypes[expr[off][1]]
@@ -160,7 +161,9 @@ def read_global(expr: list) -> tuple:
     globaltype = None
     mutable = "const"
     off = 1
-    if isinstance(expr[off], Symbol) and expr[off].value().startswith("$"):
+    if isinstance(expr[off], sexpdata.Symbol) and expr[off].value().startswith(
+        "$"
+    ):
         globalidx = expr[off]
         off += 1
 
@@ -168,7 +171,7 @@ def read_global(expr: list) -> tuple:
         export = expr[off][1]
         off += 1
 
-    if isinstance(expr[off], Symbol):
+    if isinstance(expr[off], sexpdata.Symbol):
         globaltype = valtypes[expr[off]]
         off += 1
 

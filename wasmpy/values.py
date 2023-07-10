@@ -1,6 +1,5 @@
-import struct
-import math
-import re
+import math, re, struct
+
 
 f32 = struct.Struct("<f")
 f64 = struct.Struct("<d")

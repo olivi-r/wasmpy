@@ -1,11 +1,20 @@
 #include "x86.hpp"
 
-std::vector<void (*)()> registeredFuncs = {};
+std::vector<void *> registeredPages = {};
 bytes globalTable = {};
 bytes globalTypes = {};
 std::vector<int> globalMut = {};
 bytes localTypes = {};
-uint64_t globalTableAddr;
+void *globalTableAddr;
+void *errorPageAddr;
+
+bytes errorPage = {
+    1, 0, 0, 0, 0, 0, 0, 0, 0, // unreachable
+    2, 0, 0, 0, 0, 0, 0, 0, 0, // zero division
+    3, 0, 0, 0, 0, 0, 0, 0, 0, // zero division in remainder
+    4, 0, 0, 0, 0, 0, 0, 0, 0, // unrepresentable division result
+    5, 0, 0, 0, 0, 0, 0, 0, 0, // unrepresentable truncation result
+};
 
 template <typename T>
 std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn)
@@ -16,37 +25,48 @@ std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn)
     return v0;
 }
 
-void freeFuncs()
+void *writePage(bytes data)
 {
-    for (size_t i = 0; i < registeredFuncs.size(); i++)
-    {
+    void *buf;
 #ifdef linux
-        munmap((void *)registeredFuncs.at(i), sysconf(_SC_PAGE_SIZE));
+    size_t size = sysconf(_SC_PAGE_SIZE) * (1 + data.size() / sysconf(_SC_PAGE_SIZE));
+    buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 #endif
 #ifdef _WIN32
-        VirtualFree((void *)registeredFuncs.at(i), 0, MEM_RELEASE);
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    size_t size = sysinfo.dwPageSize * (1 + data.size() / sysinfo.dwPageSize);
+    buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
+#endif
+    memcpy(buf, data.data(), data.size());
+    registeredPages.push_back(buf);
+    return buf;
+}
+
+void freePages()
+{
+    for (size_t i = 0; i < registeredPages.size(); i++)
+    {
+#ifdef linux
+        munmap(registeredPages.at(i), sysconf(_SC_PAGE_SIZE));
+#endif
+#ifdef _WIN32
+        VirtualFree(registeredPages.at(i), 0, MEM_RELEASE);
 #endif
     }
 }
 
-auto writeFunction(bytes code)
+void *writeFunction(bytes code)
 {
+    void *buf = writePage(code);
 #ifdef linux
-    size_t size = sysconf(_SC_PAGE_SIZE) * (1 + code.size() / sysconf(_SC_PAGE_SIZE));
-    void *buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    memcpy(buf, code.data(), code.size());
     mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
 #endif
 #ifdef _WIN32
-    SYSTEM_INFO sysinf;
-    GetSystemInfo(&sysinf);
-    size_t size = sysinf.dwPageSize * (1 + code.size() / sysinf.dwPageSize);
-    void *buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
-    memcpy(buf, code.data(), code.size());
     DWORD dummy;
     VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
-    return reinterpret_cast<void (*)()>(buf);
+    return buf;
 }
 
 bytes regParam32(const char *argbuf, Py_ssize_t arglen)
@@ -193,9 +213,10 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 
 struct translation
 {
+    uint8_t opcode;
     std::vector<wchar_t *> arguments;
     std::vector<wchar_t *> results;
-    translation(std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : arguments(arguments), results(results){};
+    translation(uint8_t opcode, std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : opcode(opcode), arguments(arguments), results(results){};
 };
 
 static PyObject *
@@ -480,7 +501,7 @@ createFunction(PyObject *self, PyObject *args)
             validateStack = concat(validateStack, {resultVector});
         }
 
-        stack.push_back(new translation(operandVector, resultVector));
+        stack.push_back(new translation(op, operandVector, resultVector));
         if (PyDict_Contains(consumes, PyLong_FromLong(op)))
             i += PyLong_AsLong(PyDict_GetItem(consumes, PyLong_FromLong(op)));
     }
@@ -512,10 +533,7 @@ createFunction(PyObject *self, PyObject *args)
     else if (ret == 0x7E || ret == 0x7C)
         returnCode = ret_v64;
 
-    auto func = writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat, globalTableAddr), returnCode, cleanupStack, {RET}}));
-    registeredFuncs.push_back(func);
-
-    return Py_BuildValue("O", PyLong_FromSize_t((size_t)func));
+    return Py_BuildValue("O", PyLong_FromVoidPtr(writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat, globalTableAddr), returnCode, cleanupStack, {RET}}))));
 }
 
 PyObject *appendGlobal(PyObject *self, PyObject *args)
@@ -546,23 +564,11 @@ PyObject *appendGlobal(PyObject *self, PyObject *args)
     return Py_BuildValue("O", PyLong_FromSize_t(offset));
 }
 
-static PyObject *writeGlobalTable(PyObject *self, PyObject *args)
+static PyObject *writeGlobals(PyObject *self, PyObject *args)
 {
-#ifdef linux
-    size_t size = sysconf(_SC_PAGE_SIZE) * (1 + globalTable.size() / sysconf(_SC_PAGE_SIZE));
-    void *buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    memcpy(buf, globalTable.data(), globalTable.size());
-#endif
-#ifdef _WIN32
-    SYSTEM_INFO sysinf;
-    GetSystemInfo(&sysinf);
-    size_t size = sysinf.dwPageSize * (1 + globalTable.size() / sysinf.dwPageSize);
-    void *buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
-    memcpy(buf, globalTable.data(), globalTable.size());
-#endif
-    registeredFuncs.push_back((void (*)())buf);
-    globalTableAddr = (uint64_t)buf;
-    return Py_BuildValue("O", PyLong_FromSize_t((size_t)buf));
+    void *buf = writePage(globalTable);
+    globalTableAddr = buf;
+    return Py_BuildValue("O", PyLong_FromVoidPtr(buf));
 }
 
 static PyObject *flushGlobals(PyObject *self, PyObject *args)
@@ -574,10 +580,10 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
-    {"append_global", appendGlobal, METH_VARARGS, NULL},
     {"create_function", createFunction, METH_VARARGS, NULL},
+    {"append_global", appendGlobal, METH_VARARGS, NULL},
     {"flush_globals", flushGlobals, METH_NOARGS, NULL},
-    {"write_global_table", writeGlobalTable, METH_NOARGS, NULL},
+    {"write_globals", writeGlobals, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef module = {
@@ -589,6 +595,7 @@ static struct PyModuleDef module = {
 
 PyMODINIT_FUNC PyInit_x86()
 {
-    Py_AtExit(&freeFuncs);
+    errorPageAddr = writePage(errorPage);
+    Py_AtExit(&freePages);
     return PyModule_Create(&module);
 }

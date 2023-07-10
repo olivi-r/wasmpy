@@ -1,22 +1,26 @@
-from .opcodes import consumes, signatures
-import platform
-import struct
-import ctypes
+from . import opcodes
+import ctypes, platform, struct
+
+
+class Result32(ctypes.Structure):
+    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint32)]
+    _pack_ = 1
+
+
+class Result64(ctypes.Structure):
+    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint64)]
+    _pack_ = 1
 
 
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     from . import x86 as nativelib
-    from .x86 import flush_globals
+    from .x86 import flush_globals, write_globals
 
 
 def create_global(mut, globaltype, expr):
     assert len(expr), "Missing initializer"
     value = create_function(globaltype, bytes(expr))()
     return nativelib.append_global(value, mut, globaltype)
-
-
-def write_globals():
-    return nativelib.write_global_table()
 
 
 def get_global_object(offset, globaltype):
@@ -29,7 +33,13 @@ def get_global_object(offset, globaltype):
 
 def create_function(ret, code, arg=b"", local=b""):
     func = nativelib.create_function(
-        struct.calcsize("P"), ret, code, arg, local, consumes, signatures
+        struct.calcsize("P"),
+        ret,
+        code,
+        arg,
+        local,
+        opcodes.consumes,
+        opcodes.signatures,
     )
 
     params = []

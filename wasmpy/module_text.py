@@ -1,16 +1,6 @@
-from .instructions import read_expr_text
-from .module import create_module
-from .sections_text import *
-from .native import (
-    create_function,
-    create_global,
-    write_globals,
-    get_global_object,
-    flush_globals,
-)
+from . import instructions, module, native, sections_text
+import io, shutil
 import sexpdata
-import shutil
-import io
 
 
 def read_module(buffer: object) -> dict:
@@ -28,7 +18,7 @@ def read_module(buffer: object) -> dict:
         data = sexpdata.load(new_buffer)
         new_buffer.close()
 
-    module = {
+    mod_dict = {
         "custom": (),
         "types": [],
         "imports": (),
@@ -49,68 +39,70 @@ def read_module(buffer: object) -> dict:
     for expr in data:
         if isinstance(expr, list):
             if expr[0].value() == "type":
-                typeidx, type = read_type(expr)
-                module["types"].append(type)
+                typeidx, type = sections_text.read_type(expr)
+                mod_dict["types"].append(type)
                 type_ids.append(typeidx)
 
             elif expr[0].value() == "func":
-                funcidx, export, func = read_func(expr)
-                module["funcs"].append(func)
+                funcidx, export, func = sections_text.read_func(expr)
+                mod_dict["funcs"].append(func)
                 func_ids.append(funcidx)
                 if export is not None:
-                    module["exports"].append(
+                    mod_dict["exports"].append(
                         {
                             "name": export,
                             "type": "func",
-                            "idx": len(module["funcs"]) - 1,
+                            "idx": len(mod_dict["funcs"]) - 1,
                         }
                     )
 
             elif expr[0].value() == "global":
-                globalidx, export, global_ = read_global(expr)
-                module["globals"].append(global_)
+                globalidx, export, global_ = sections_text.read_global(expr)
+                mod_dict["globals"].append(global_)
                 global_ids.append(globalidx)
                 if export is not None:
-                    module["exports"].append(
+                    mod_dict["exports"].append(
                         {
                             "name": export,
                             "type": "global",
-                            "idx": len(module["globals"]) - 1,
+                            "idx": len(mod_dict["globals"]) - 1,
                         }
                     )
 
             elif expr[0].value() == "export":
-                module["exports"].append(read_export(expr))
+                mod_dict["exports"].append(sections_text.read_export(expr))
 
-    for g in module["globals"]:
+    for g in mod_dict["globals"]:
         for i, term in enumerate(g["init"]):
             if term in global_ids:
                 g["init"][i] = global_ids.index(term)
 
-        g["init"] = read_expr_text(g["init"])
-        g["offset"] = create_global(g["mutable"] == "mut", g["type"], g["init"])
+        g["init"] = instructions.read_expr_text(g["init"])
+        g["offset"] = native.create_global(
+            g["mutable"] == "mut", g["type"], g["init"]
+        )
 
-    global_offset = write_globals()
-    for globalidx, g in enumerate(module["globals"]):
+    global_offset = native.write_globals()
+    for globalidx, g in enumerate(mod_dict["globals"]):
         g["offset"] += global_offset
         g["obj"] = [
             g["mutable"],
-            get_global_object(g["offset"], g["type"]),
+            native.get_global_object(g["offset"], g["type"]),
         ]
 
-        module["globals"][globalidx] = g["obj"]
+        mod_dict["globals"][globalidx] = g["obj"]
 
-    for funcidx, func in enumerate(module["funcs"]):
+    for funcidx, func in enumerate(mod_dict["funcs"]):
         if func["typeidx"] is not None:
             if func["typeidx"] in type_ids:
                 func["typeidx"] = type_ids.index(func["typeidx"])
 
             if func["typeuse"] is not None:
                 assert (
-                    module["types"][func["typeidx"]] == func["typeuse"]
+                    mod_dict["types"][func["typeidx"]] == func["typeuse"]
                 ), "type mismatch"
 
-            func["type"] = module["types"][func["typeidx"]]
+            func["type"] = mod_dict["types"][func["typeidx"]]
 
         else:
             assert func["typeuse"] is not None, "missing type"
@@ -120,19 +112,19 @@ def read_module(buffer: object) -> dict:
             if term in global_ids:
                 func["body"][i] = global_ids.index(term)
 
-        func["body"] = read_expr_text(func["body"])
+        func["body"] = instructions.read_expr_text(func["body"])
         if not func["type"][1]:
             func["type"][1].append(0x40)
 
-        func["obj"] = create_function(
+        func["obj"] = native.create_function(
             func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
         )
 
-        module["funcs"][funcidx] = func["obj"]
+        mod_dict["funcs"][funcidx] = func["obj"]
 
-    flush_globals()
+    native.native.flush_globals()
 
-    for e in module["exports"]:
+    for e in mod_dict["exports"]:
         if isinstance(e["idx"], sexpdata.Symbol):
             if e["type"] == "func":
                 e["idx"] = func_ids.index[e["idx"]]
@@ -141,9 +133,9 @@ def read_module(buffer: object) -> dict:
                 e["idx"] = global_ids.index(e["idx"])
 
         if e["type"] == "func":
-            e["obj"] = module["funcs"][e["idx"]]
+            e["obj"] = mod_dict["funcs"][e["idx"]]
 
         if e["type"] == "global":
-            e["obj"] = module["globals"][e["idx"]]
+            e["obj"] = mod_dict["globals"][e["idx"]]
 
-    return create_module(module)
+    return module.create_module(mod_dict)

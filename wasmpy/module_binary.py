@@ -1,14 +1,6 @@
-from .module import create_module
-from .sections_binary import *
-from .values import read_uint
-from .native import (
-    create_function,
-    create_global,
-    write_globals,
-    get_global_object,
-    flush_globals,
-)
+from . import module, native, sections_binary, values
 import importlib
+
 
 # extend to add future binary formats
 preamble = [b"\0asm\x01\0\0\0"]
@@ -19,7 +11,7 @@ sects = [i for j in range(1, 12) for i in (0, j)] + [0]
 def read_module(buffer: object) -> dict:
     assert preamble[0] == buffer.read(8), "Invalid magic number or version."
 
-    module = {
+    mod_dict = {
         "custom": (),
         "types": (),
         "imports": (),
@@ -42,7 +34,7 @@ def read_module(buffer: object) -> dict:
         while upto < 23:
             id = buffer.read(1)[0]
             assert id < 12
-            length = read_uint(buffer, 32)
+            length = values.read_uint(buffer, 32)
 
             while sects[upto] != id:
                 upto += 1
@@ -53,87 +45,89 @@ def read_module(buffer: object) -> dict:
                 break
 
             if not id:
-                module["custom"] += (read_customsec(buffer, length),)
+                mod_dict["custom"] += (
+                    sections_binary.read_customsec(buffer, length),
+                )
 
             if id == 1:
-                module["types"] = read_typesec(buffer)
+                mod_dict["types"] = sections_binary.read_typesec(buffer)
 
             if id == 2:
-                module["imports"] = read_importsec(buffer)
+                mod_dict["imports"] = sections_binary.read_importsec(buffer)
 
             if id == 3:
-                typeidx = read_funcsec(buffer)
+                typeidx = sections_binary.read_funcsec(buffer)
 
             if id == 4:
-                module["tables"] = read_tablesec(buffer)
+                mod_dict["tables"] = sections_binary.read_tablesec(buffer)
 
             if id == 5:
-                module["mems"] = read_memsec(buffer)
+                mod_dict["mems"] = sections_binary.read_memsec(buffer)
 
             if id == 6:
-                module["globals"] = read_globalsec(buffer)
+                mod_dict["globals"] = sections_binary.read_globalsec(buffer)
 
             if id == 7:
-                module["exports"] = read_exportsec(buffer)
+                mod_dict["exports"] = sections_binary.read_exportsec(buffer)
 
             if id == 8:
-                module["start"] = read_startsec(buffer)
+                mod_dict["start"] = sections_binary.read_startsec(buffer)
 
             if id == 9:
-                module["elem"] = read_elemsec(buffer)
+                mod_dict["elem"] = sections_binary.read_elemsec(buffer)
 
             if id == 10:
-                code = read_codesec(buffer)
+                code = sections_binary.read_codesec(buffer)
 
             if id == 11:
-                module["data"] = read_datasec(buffer)
+                mod_dict["data"] = sections_binary.read_datasec(buffer)
 
     except IndexError as i:
         pass
 
-    for i in module["imports"]:
+    for i in mod_dict["imports"]:
         mod = importlib.import_module(i["module"])
         if i["desc"][0] == "func":
-            module["funcs"] += (
+            mod_dict["funcs"] += (
                 {
-                    "type": module["types"][i["desc"][1]],
+                    "type": mod_dict["types"][i["desc"][1]],
                     "obj": mod.call(i["name"]),
                 },
             )
 
-    for g in module["globals"]:
-        g["offset"] = create_global(
+    for g in mod_dict["globals"]:
+        g["offset"] = native.create_global(
             g["globaltype"][0] == "mut", g["globaltype"][1], g["expr"]
         )
 
-    global_offset = write_globals()
-    for g in module["globals"]:
+    global_offset = native.write_globals()
+    for g in mod_dict["globals"]:
         g["offset"] += global_offset
         g["obj"] = [
             g["globaltype"][0],
-            get_global_object(g["offset"], g["globaltype"][1]),
+            native.get_global_object(g["offset"], g["globaltype"][1]),
         ]
 
-    module["funcs"] += [
-        create_function(
-            module["types"][typeidx[i]][1][0],
+    mod_dict["funcs"] += [
+        native.create_function(
+            mod_dict["types"][typeidx[i]][1][0],
             bytes(body),
-            bytes(module["types"][typeidx[i]][0]),
+            bytes(mod_dict["types"][typeidx[i]][0]),
             bytes(locals),
         )
         for i, (locals, body) in enumerate(code)
     ]
 
-    flush_globals()
+    native.flush_globals()
 
-    for e in module["exports"]:
+    for e in mod_dict["exports"]:
         if e["desc"][0] == "func":
-            e["obj"] = module["funcs"][e["desc"][1]]
+            e["obj"] = mod_dict["funcs"][e["desc"][1]]
 
         elif e["desc"][0] == "global":
-            e["obj"] = module["globals"][e["desc"][1]]["obj"]
+            e["obj"] = mod_dict["globals"][e["desc"][1]]["obj"]
 
-    if module["start"] is not None:
-        module["start"] = module["funcs"][module["start"]]
+    if mod_dict["start"] is not None:
+        mod_dict["start"] = mod_dict["funcs"][mod_dict["start"]]
 
-    return create_module(module)
+    return module.create_module(mod_dict)

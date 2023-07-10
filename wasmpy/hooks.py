@@ -1,5 +1,4 @@
-from . import module_binary
-from . import module_text
+from . import module_binary, module_text
 import sys
 import os
 

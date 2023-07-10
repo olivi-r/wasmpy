@@ -3,7 +3,7 @@
 
 #include "x86.hpp"
 
-bytes decodeFunc(bytes buf, char plat, uint64_t globalTableAddr);
+bytes decodeFunc(bytes buf, char plat, void *globalTableAddr);
 
 extern bytes local32;
 extern bytes local64;
