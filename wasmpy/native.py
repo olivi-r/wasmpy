@@ -7,13 +7,23 @@ class ResultVoid(ctypes.Structure):
     _pack_ = 1
 
 
-class Result32(ctypes.Structure):
+class ResultI32(ctypes.Structure):
     _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint32)]
     _pack_ = 1
 
 
-class Result64(ctypes.Structure):
+class ResultF32(ctypes.Structure):
+    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_float)]
+    _pack_ = 1
+
+
+class ResultI64(ctypes.Structure):
     _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint64)]
+    _pack_ = 1
+
+
+class ResultF64(ctypes.Structure):
+    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_double)]
     _pack_ = 1
 
 
@@ -63,16 +73,16 @@ def create_function(ret, code, arg=b"", local=b""):
             params.append(ctypes.c_uint64)
 
     if ret == 0x7F:
-        ret = ctypes.POINTER(Result32)
+        ret = ctypes.POINTER(ResultI32)
 
     elif ret == 0x7E:
-        ret = ctypes.POINTER(Result64)
+        ret = ctypes.POINTER(ResultI64)
 
     elif ret == 0x7D:
-        ret = ctypes.POINTER(Result32)
+        ret = ctypes.POINTER(ResultF32)
 
     elif ret == 0x7C:
-        ret = ctypes.POINTER(Result64)
+        ret = ctypes.POINTER(ResultF64)
 
     else:
         ret = ctypes.POINTER(ResultVoid)

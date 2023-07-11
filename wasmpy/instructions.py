@@ -189,10 +189,13 @@ def read_instruction_text(source, offset: int) -> list:
         else:
             immediate = source[offset + 1]
             if op in (0x43, 0x44):
-                # 32 bit floating point immediate
                 if isinstance(immediate, float):
-                    # inf, canonical nan, or regular float
-                    return [op] + list(struct.pack("<f", immediate))
+                    # 32 bit floating point immediate
+                    if op == 0x43:
+                        return [op] + list(struct.pack("<f", immediate)) + [1]
+
+                    else:
+                        return [op] + list(struct.pack("<d", immediate)) + [1]
 
                 nan = re.match(
                     r"(?P<sign>[+-]?)nan:0x(?P<n>(([0-9a-fA-F]_?)+[0-9a-fA-F]|[0-9a-fA-F]))",
@@ -226,10 +229,10 @@ def read_instruction_text(source, offset: int) -> list:
 
                     immediate_value |= int(nan.group("n"), 16)
                     if op == 0x43:
-                        return [op] + expand_bytes(immediate_value)
+                        return [op] + expand_bytes(immediate_value) + [1]
 
                     else:
-                        return [op] + expand_bytes(immediate_value, 64)
+                        return [op] + expand_bytes(immediate_value, 64) + [1]
 
                 else:
                     hexfloat = re.match(
@@ -251,10 +254,10 @@ def read_instruction_text(source, offset: int) -> list:
                             value *= 2 ** int(hexfloat.group("e"))
 
                         if op == 0x43:
-                            return [op] + list(struct.pack("<f", value))
+                            return [op] + list(struct.pack("<f", value)) + [1]
 
                         else:
-                            return [op] + list(struct.pack("<f", value))
+                            return [op] + list(struct.pack("<d", value)) + [1]
 
                     else:
                         raise ValueError(
