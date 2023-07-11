@@ -3,20 +3,39 @@ import io, shutil
 import sexpdata
 
 
-def read_module(buffer: object) -> dict:
+def read_module(buffer: io.FileIO) -> dict:
+    original = buffer.read()
+    buffer.close()
+    comment_depth = 0
+    stripped = ""
+    skip = False
+    for i, value in enumerate(original):
+        if skip:
+            skip = False
+            continue
+
+        if i != len(original) - 1:
+            if value == "(" and original[i + 1] == ";":
+                comment_depth += 1
+                skip = True
+
+            elif value == ";" and original[i + 1] == ")":
+                comment_depth -= 1
+                skip = True
+
+            elif comment_depth == 0:
+                stripped += value
+
+        elif comment_depth == 0:
+            stripped += value
+
     try:
-        data = sexpdata.load(buffer)
+        data = sexpdata.loads(stripped)
 
     except AssertionError:
         # Handle case where (module ...) omitted
-        buffer.seek(0)
-        new_buffer = io.StringIO()
-        new_buffer.write("(module\n")
-        shutil.copyfileobj(buffer, new_buffer)
-        new_buffer.write("\n)")
-        new_buffer.seek(0)
-        data = sexpdata.load(new_buffer)
-        new_buffer.close()
+        stripped = "(module\n" + stripped + "\n)"
+        data = sexpdata.loads(stripped)
 
     mod_dict = {
         "custom": (),

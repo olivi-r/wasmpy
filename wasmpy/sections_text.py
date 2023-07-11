@@ -73,13 +73,14 @@ def read_func(expr: list) -> tuple:
     export = None
     typeidx = None
     off = 1
-    if isinstance(expr[off], sexpdata.Symbol):
+    if off < len(expr) and isinstance(expr[off], sexpdata.Symbol):
         funcidx = expr[off]
         assert funcidx.value().startswith("$")
         off += 1
 
     if (
-        isinstance(expr[off], list)
+        off < len(expr)
+        and isinstance(expr[off], list)
         and isinstance(expr[off][0], sexpdata.Symbol)
         and expr[off][0].value() == "export"
     ):
@@ -87,7 +88,8 @@ def read_func(expr: list) -> tuple:
         off += 1
 
     if (
-        isinstance(expr[off], list)
+        off < len(expr)
+        and isinstance(expr[off], list)
         and isinstance(expr[off][0], sexpdata.Symbol)
         and expr[off][0].value() == "type"
     ):
@@ -117,7 +119,8 @@ def read_func(expr: list) -> tuple:
 
     result = None
     if (
-        isinstance(expr[off], list)
+        off < len(expr)
+        and isinstance(expr[off], list)
         and isinstance(expr[off][0], sexpdata.Symbol)
         and expr[off][0].value() == "result"
     ):
@@ -137,7 +140,8 @@ def read_func(expr: list) -> tuple:
     for sub_expr in expr[off:]:
         body.append(flatten(sub_expr))
 
-    body = unfold(body)
+    if body:
+        body = unfold(body)
 
     # occurs with single instruction without immediates i.e. unreachable, nop
     if not isinstance(body, list):
