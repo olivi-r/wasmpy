@@ -385,7 +385,7 @@ class gen_opcodes(setuptools.Command):
 
 class build_ext(setuptools.command.build_ext.build_ext):
     def run(self):
-        gen_opcodes.run(self)
+        self.run_command("gen_opcodes")
         setuptools.command.build_ext.build_ext.run(self)
 
 
