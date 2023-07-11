@@ -100,7 +100,7 @@ def read_module(buffer: object) -> dict:
             g["globaltype"][0] == "mut", g["globaltype"][1], g["expr"]
         )
 
-    global_offset = native.write_globals()
+    global_offset = native.nativelib.write_globals()
     for g in mod_dict["globals"]:
         g["offset"] += global_offset
         g["obj"] = [
@@ -118,7 +118,7 @@ def read_module(buffer: object) -> dict:
         for i, (locals, body) in enumerate(code)
     ]
 
-    native.flush_globals()
+    native.nativelib.flush_globals()
 
     for e in mod_dict["exports"]:
         if e["desc"][0] == "func":

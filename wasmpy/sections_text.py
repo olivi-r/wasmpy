@@ -139,6 +139,10 @@ def read_func(expr: list) -> tuple:
 
     body = unfold(body)
 
+    # occurs with single instruction without immediates i.e. unreachable, nop
+    if not isinstance(body, list):
+        body = [body]
+
     for i, term in enumerate(body):
         if term in param_ids:
             body[i] = param_ids.index(term)

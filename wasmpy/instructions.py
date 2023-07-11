@@ -38,10 +38,7 @@ def read_instruction_binary(buffer: object) -> list:
     data = buffer.read(1)[0]
 
     # Control instructions
-    if data == 0x0:
-        return ["unreachable"]
-
-    if data == 0x1:
+    if data in (0, 1):
         return [data]
 
     if data == 0x2:
@@ -189,8 +186,18 @@ def read_instruction_text(source, offset: int) -> list:
             return [op, 0]
 
         else:
+            immediate = source[offset + 1]
+
+            sign = 1
+            if isinstance(immediate, str) and immediate[0] in ("+", "-"):
+                sign, *immediate = immediate
+                immediate = "".join(immediate)
+                if sign == "-":
+                    sign = -1
+
+            if isinstance(immediate, str) and immediate.startswith("0x"):
+                immediate = sign * int(immediate[2:], 16)
+
             return (
-                [op]
-                + expand_bytes(source[offset + 1], opcodes.consumes[op] * 8)
-                + [1]
+                [op] + expand_bytes(immediate, opcodes.consumes[op] * 8) + [1]
             )

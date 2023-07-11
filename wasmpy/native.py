@@ -29,10 +29,10 @@ def create_global(mut, globaltype, expr):
 
 def get_global_object(offset, globaltype):
     if globaltype in (0x7F, 0x7D):
-        return ctypes.cast(offset, ctypes.POINTER(ctypes.c_uint32))
+        return ctypes.cast(offset, ctypes.POINTER(ctypes.c_int32))
 
     if globaltype in (0x7E, 0x7C):
-        return ctypes.cast(offset, ctypes.POINTER(ctypes.c_uint64))
+        return ctypes.cast(offset, ctypes.POINTER(ctypes.c_int64))
 
 
 def create_function(ret, code, arg=b"", local=b""):

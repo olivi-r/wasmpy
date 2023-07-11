@@ -30,6 +30,9 @@ def read_functype(buffer: object) -> tuple:
     ), f"Malformed function type at {buffer.tell() - 1}"
     t1 = [buffer.read(1)[0] for _ in range(values.get_vec_len(buffer))]
     t2 = [buffer.read(1)[0] for _ in range(values.get_vec_len(buffer))]
+    if len(t2) == 0:
+        t2.append(0x40)
+
     return t1, t2
 
 

@@ -39,15 +39,18 @@ global_64 = (
     global_32
     + ", (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
 )
-error = "(uint8_t)(errorPageAddr + {o}), (uint8_t)((errorPageAddr + {o}) >> 8), (uint8_t)((errorPageAddr + {o}) >> 16), (uint8_t)((errorPageAddr + {o}) >> 24), (uint8_t)((errorPageAddr + {o}) >> 32), (uint8_t)((errorPageAddr + {o}) >> 40), (uint8_t)((errorPageAddr + {o}) >> 48), (uint8_t)((errorPageAddr + {o}) >> 56)"
-
+error_32 = "(uint8_t)(errorPageAddr + {o}), (uint8_t)((errorPageAddr + {o}) >> 8), (uint8_t)((errorPageAddr + {o}) >> 16), (uint8_t)((errorPageAddr + {o}) >> 24)"
+error_64 = (
+    error_32
+    + ", (uint8_t)((errorPageAddr + {o}) >> 32), (uint8_t)((errorPageAddr + {o}) >> 40), (uint8_t)((errorPageAddr + {o}) >> 48), (uint8_t)((errorPageAddr + {o}) >> 56)"
+)
 
 replacements = {
     "unreachable": (
-        (
-            "0, 0, 0, 0, 0, 0, 0, 255",
-            error.format(o=9),
-        ),
+        # 64 bit replacements
+        ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=9)),
+        # 32 bit replacements
+        ("0, 0, 0, 255", error_32.format(o=9)),
     ),
     "local.get": (
         (
@@ -114,20 +117,18 @@ replacements = {
         ("255, 255", "buf.at(i + 7), buf.at(i + 8)"),
     ),
     "i32.div_s": (
-        (
-            "0, 0, 0, 0, 0, 0, 0, 255",
-            error.format(o=10),
-        ),
+        # 64 bit replacements
+        ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=10)),
+        ("255, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=11)),
+        # 32 bit replacements
+        ("0, 0, 0, 255", error_32.format(o=10)),
+        ("255, 0, 0, 255", error_32.format(o=11)),
     ),
     "i32.div_u": (
-        (
-            "0, 0, 0, 0, 0, 0, 0, 255",
-            error.format(o=10),
-        ),
-        (
-            "255, 0, 0, 0, 0, 0, 0, 255",
-            error.format(o=11),
-        ),
+        # 64 bit replacements
+        ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=10)),
+        # 32 bit replacements
+        ("0, 0, 0, 255", error_32.format(o=10)),
     ),
 }
 

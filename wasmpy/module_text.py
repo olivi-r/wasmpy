@@ -1,4 +1,4 @@
-from . import instructions, module, native, sections_text
+from . import instructions, module, native, sections_text, values
 import io, shutil
 import sexpdata
 
@@ -105,7 +105,9 @@ def read_module(buffer: object) -> dict:
             func["type"] = mod_dict["types"][func["typeidx"]]
 
         else:
-            assert func["typeuse"] is not None, "missing type"
+            if func["typeuse"] is None:
+                func["typeuse"] = ([], [])
+
             func["type"] = func["typeuse"]
 
         for i, term in enumerate(func["body"]):
@@ -125,6 +127,7 @@ def read_module(buffer: object) -> dict:
     native.nativelib.flush_globals()
 
     for e in mod_dict["exports"]:
+        e["name"] = values.sanitize(e["name"])
         if isinstance(e["idx"], sexpdata.Symbol):
             if e["type"] == "func":
                 e["idx"] = func_ids.index[e["idx"]]

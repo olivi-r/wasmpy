@@ -560,12 +560,22 @@ createFunction(PyObject *self, PyObject *args)
 
     bytes returnCode = {};
 
-    if (ret == 0x7F || ret == 0x7D)
-        returnCode = concat(ret_v32, {{0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 32), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 40), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 48), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 56), 0x48, 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24), (uint8_t)(((uint64_t)errorPageAddr) >> 32), (uint8_t)(((uint64_t)errorPageAddr) >> 40), (uint8_t)(((uint64_t)errorPageAddr) >> 48), (uint8_t)(((uint64_t)errorPageAddr) >> 56)}});
+    if (plat == 4)
+    {
+        if (ret == 0x7F || ret == 0x7D)
+            returnCode = concat(ret_v32, {{0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24)}});
 
-    else if (ret == 0x7E || ret == 0x7C)
-        returnCode = concat(ret_v64, {{0x48, 0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 32), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 40), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 48), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 56), 0x48, 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24), (uint8_t)(((uint64_t)errorPageAddr) >> 32), (uint8_t)(((uint64_t)errorPageAddr) >> 40), (uint8_t)(((uint64_t)errorPageAddr) >> 48), (uint8_t)(((uint64_t)errorPageAddr) >> 56)}});
+        else if (ret == 0x7E || ret == 0x7C)
+            returnCode = concat(ret_v64, {{0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), 0x89, 0xD0, 0xA3, (uint8_t)((uint64_t)errorPageAddr + 5), (uint8_t)(((uint64_t)errorPageAddr + 5) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 5) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 5) >> 24), 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24)}});
+    }
+    else
+    {
+        if (ret == 0x7F || ret == 0x7D)
+            returnCode = concat(ret_v32, {{0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 32), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 40), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 48), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 56), 0x48, 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24), (uint8_t)(((uint64_t)errorPageAddr) >> 32), (uint8_t)(((uint64_t)errorPageAddr) >> 40), (uint8_t)(((uint64_t)errorPageAddr) >> 48), (uint8_t)(((uint64_t)errorPageAddr) >> 56)}});
 
+        else if (ret == 0x7E || ret == 0x7C)
+            returnCode = concat(ret_v64, {{0x48, 0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 32), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 40), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 48), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 56), 0x48, 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24), (uint8_t)(((uint64_t)errorPageAddr) >> 32), (uint8_t)(((uint64_t)errorPageAddr) >> 40), (uint8_t)(((uint64_t)errorPageAddr) >> 48), (uint8_t)(((uint64_t)errorPageAddr) >> 56)}});
+    }
     return Py_BuildValue("O", PyLong_FromVoidPtr(writeFunction(concat(initStack, {loadLocals, concat({}, decodeFunc(code, plat, globalTableAddr, (uint64_t)errorPageAddr)), returnCode, cleanupStack, {RET}}))));
 }
 
