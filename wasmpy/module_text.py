@@ -82,7 +82,7 @@ def read_module(buffer: object) -> dict:
             g["mutable"] == "mut", g["type"], g["init"]
         )
 
-    global_offset = native.write_globals()
+    global_offset = native.nativelib.write_globals()
     for globalidx, g in enumerate(mod_dict["globals"]):
         g["offset"] += global_offset
         g["obj"] = [
@@ -122,7 +122,7 @@ def read_module(buffer: object) -> dict:
 
         mod_dict["funcs"][funcidx] = func["obj"]
 
-    native.native.flush_globals()
+    native.nativelib.flush_globals()
 
     for e in mod_dict["exports"]:
         if isinstance(e["idx"], sexpdata.Symbol):

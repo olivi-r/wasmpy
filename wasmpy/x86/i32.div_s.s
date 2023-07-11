@@ -9,11 +9,15 @@ pop %ax
 shl $16, %eax
 pop %ax
 cmp $0, %ecx
-je end
+jne nezero
+movq $0xff00000000000000, %rax
+mov %rbp, %rsp
+pop %rbp
+ret
+nezero:
 movl $0, %edx
 idiv %ecx
 push %ax
 shr $16, %eax
 push %ax
 pushw $2
-end:

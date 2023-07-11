@@ -39,9 +39,16 @@ global_64 = (
     global_32
     + ", (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
 )
+error = "(uint8_t)(errorPageAddr + {o}), (uint8_t)((errorPageAddr + {o}) >> 8), (uint8_t)((errorPageAddr + {o}) >> 16), (uint8_t)((errorPageAddr + {o}) >> 24), (uint8_t)((errorPageAddr + {o}) >> 32), (uint8_t)((errorPageAddr + {o}) >> 40), (uint8_t)((errorPageAddr + {o}) >> 48), (uint8_t)((errorPageAddr + {o}) >> 56)"
 
 
 replacements = {
+    "unreachable": (
+        (
+            "0, 0, 0, 0, 0, 0, 0, 255",
+            error.format(o=9),
+        ),
+    ),
     "local.get": (
         (
             "255, 0, 255, 0",
@@ -106,6 +113,22 @@ replacements = {
         ("255, 0", "buf.at(i + 5), buf.at(i + 6)"),
         ("255, 255", "buf.at(i + 7), buf.at(i + 8)"),
     ),
+    "i32.div_s": (
+        (
+            "0, 0, 0, 0, 0, 0, 0, 255",
+            error.format(o=10),
+        ),
+    ),
+    "i32.div_u": (
+        (
+            "0, 0, 0, 0, 0, 0, 0, 255",
+            error.format(o=10),
+        ),
+        (
+            "255, 0, 0, 0, 0, 0, 0, 255",
+            error.format(o=11),
+        ),
+    ),
 }
 
 
@@ -123,12 +146,7 @@ class assemble(setuptools.Command):
         pass
 
     def run(self):
-        for source in (
-            listdir("wasmpy/x86")
-            + listdir("wasmpy/x86/64")
-            + listdir("wasmpy/x86/internal")
-            + listdir("wasmpy/x86/internal/64")
-        ):
+        for source in listdir("wasmpy/x86") + listdir("wasmpy/x86/64"):
             if os.path.isdir(source):
                 continue
 
@@ -180,9 +198,7 @@ class assemble(setuptools.Command):
                         ]
                     )
 
-        for source in listdir("wasmpy/x86/32") + listdir(
-            "wasmpy/x86/internal/32"
-        ):
+        for source in listdir("wasmpy/x86/32"):
             if os.path.isdir(source):
                 continue
 
@@ -256,9 +272,6 @@ class tidy(setuptools.Command):
             listdir("wasmpy/x86")
             + listdir("wasmpy/x86/64")
             + listdir("wasmpy/x86/32")
-            + listdir("wasmpy/x86/internal")
-            + listdir("wasmpy/x86/internal/64")
-            + listdir("wasmpy/x86/internal/32")
         ):
             if os.path.isdir(file):
                 continue
@@ -305,7 +318,7 @@ class gen_opcodes(setuptools.Command):
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n',
                     '#include "x86.hpp"\n\n',
-                    "bytes decodeFunc(bytes buf, char plat, void *globalTableAddr)\n{\n\t",
+                    "std::vector<bytes> decodeFunc(bytes buf, char plat, void *globalTableAddr, uint64_t errorPageAddr)\n{\n\t",
                     "std::vector<bytes> insts = {};\n\t",
                     "int localidx;\n\t",
                     "uint64_t hh, hl, lh, ll, bits;\n\t"
@@ -351,27 +364,22 @@ class gen_opcodes(setuptools.Command):
                     "default:\n\t\t\t",
                     "break;\n\t\t",
                     "}\n\t}\n\t",
-                    "return concat({}, insts);\n",
+                    "return insts;\n",
                     "}\n\n",
                 )
             )
 
-            if bits == 8:
-                extra = listdir("wasmpy/x86/internal/64")
-
-            elif bits == 4:
-                extra = listdir("wasmpy/x86/internal/32")
-
-            for file in listdir("wasmpy/x86/internal") + extra:
+            for file in listdir("wasmpy/x86") + extra:
                 if os.path.isdir(file):
                     continue
 
                 name = os.path.basename(file)
-                if os.path.splitext(name)[1] == "":
-                    with open(file, "rb") as fp:
-                        out.write(
-                            f"bytes {name} = {{{', '.join(str(i) for i in fp.read() if i != 0x90)}}};\n"
-                        )
+                if name not in opcodes:
+                    if os.path.splitext(name)[1] == "":
+                        with open(file, "rb") as fp:
+                            out.write(
+                                f"bytes {name} = {{{', '.join(str(i) for i in fp.read() if i != 0x90)}}};\n"
+                            )
 
 
 class build_ext(setuptools.command.build_ext.build_ext):

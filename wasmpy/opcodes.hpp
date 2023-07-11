@@ -3,12 +3,12 @@
 
 #include "x86.hpp"
 
-bytes decodeFunc(bytes buf, char plat, void *globalTableAddr);
+std::vector<bytes> decodeFunc(bytes buf, char plat, void *globalTableAddr, uint64_t errorPageAddr);
 
 extern bytes local32;
 extern bytes local64;
+extern bytes ret_v32;
 extern bytes ret_v64;
-extern bytes pop_v32a;
 extern bytes param_32;
 extern bytes param_64;
 extern bytes initStack;

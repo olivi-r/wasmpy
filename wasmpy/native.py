@@ -2,6 +2,11 @@ from . import opcodes
 import ctypes, platform, struct
 
 
+class ResultVoid(ctypes.Structure):
+    _fields_ = [("errno", ctypes.c_byte)]
+    _pack_ = 1
+
+
 class Result32(ctypes.Structure):
     _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint32)]
     _pack_ = 1
@@ -14,7 +19,6 @@ class Result64(ctypes.Structure):
 
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     from . import x86 as nativelib
-    from .x86 import flush_globals, write_globals
 
 
 def create_global(mut, globaltype, expr):
@@ -32,7 +36,7 @@ def get_global_object(offset, globaltype):
 
 
 def create_function(ret, code, arg=b"", local=b""):
-    func = nativelib.create_function(
+    address = nativelib.create_function(
         struct.calcsize("P"),
         ret,
         code,
@@ -43,41 +47,63 @@ def create_function(ret, code, arg=b"", local=b""):
     )
 
     params = []
-    param_doc = []
+    param_clear = []
     for i, a in enumerate(arg):
+        param_clear.append(f"p{i}")
         if a == 0x7F:
             params.append(ctypes.c_uint32)
-            param_doc.append(f"p{i}: i32")
 
         if a == 0x7E:
             params.append(ctypes.c_uint64)
-            param_doc.append(f"p{i}: i64")
 
         if a == 0x7D:
             params.append(ctypes.c_uint32)
-            param_doc.append(f"p{i}: f32")
 
         if a == 0x7C:
             params.append(ctypes.c_uint64)
-            param_doc.append(f"p{i}: f64")
-
-    doc = f"({', '.join(param_doc)}) -> {ret}"
 
     if ret == 0x7F:
-        ret = ctypes.c_int32
+        ret = ctypes.POINTER(Result32)
 
     elif ret == 0x7E:
-        ret = ctypes.c_int64
+        ret = ctypes.POINTER(Result64)
 
     elif ret == 0x7D:
-        ret = ctypes.c_float
+        ret = ctypes.POINTER(Result32)
 
     elif ret == 0x7C:
-        ret = ctypes.c_double
+        ret = ctypes.POINTER(Result64)
 
     else:
-        ret = None
+        ret = ctypes.POINTER(ResultVoid)
 
-    func = ctypes.CFUNCTYPE(ret, *params)(func)
-    func.__doc__ = doc
-    return func
+    func = ctypes.CFUNCTYPE(ret, *params)(address)
+
+    def ensure(result):
+        if result.contents.errno == 0:
+            if not isinstance(result.contents, ResultVoid):
+                return result.contents.value
+
+        elif result.contents.errno == 1:
+            raise RuntimeError("unreachable")
+
+        elif result.contents.errno == 2:
+            raise ZeroDivisionError("division by zero")
+
+        elif result.contents.errno == 3:
+            raise RuntimeError("division overflow")
+
+        elif result.contents.errno == 4:
+            raise ZeroDivisionError("integer modulo by zero")
+
+        elif result.contents.errno == 5:
+            raise FloatingPointError("unrepresentable truncation result")
+
+    wrapper = staticmethod(
+        eval(
+            f"lambda {', '.join(param_clear)}: ensure(func({', '.join(param_clear)}))",
+            {"ensure": ensure, "func": func},
+        )
+    )
+
+    return wrapper

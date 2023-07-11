@@ -1,6 +1,6 @@
 .globl _start
 _start:
-pop %ax
+pop %dx
 pop %dx
 shl $16, %edx
 pop %dx

@@ -12,8 +12,13 @@
     },
     "opcodes": [
         {
-            "offset": 1,
+            "offset": 0,
             "instructions": [
+                [
+                    "unreachable",
+                    [],
+                    []
+                ],
                 [
                     "nop",
                     [],

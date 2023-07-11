@@ -9,11 +9,13 @@ void *globalTableAddr;
 void *errorPageAddr;
 
 bytes errorPage = {
-    1, 0, 0, 0, 0, 0, 0, 0, 0, // unreachable
-    2, 0, 0, 0, 0, 0, 0, 0, 0, // zero division
-    3, 0, 0, 0, 0, 0, 0, 0, 0, // zero division in remainder
-    4, 0, 0, 0, 0, 0, 0, 0, 0, // unrepresentable division result
-    5, 0, 0, 0, 0, 0, 0, 0, 0, // unrepresentable truncation result
+    0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
+    1,                         // unreachable
+    2,                         // division by zero
+    3,                         // division overflow
+    4,                         // integer modulo by zero
+    5,                         // unrepresentable truncation result
+    0, 0, 0, 0, 0, 0, 0, 0,    // padding
 };
 
 template <typename T>
@@ -211,12 +213,13 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
     return code;
 }
 
-struct translation
+struct operation
 {
     uint8_t opcode;
     std::vector<wchar_t *> arguments;
     std::vector<wchar_t *> results;
-    translation(uint8_t opcode, std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : opcode(opcode), arguments(arguments), results(results){};
+    long consumes;
+    operation(uint8_t opcode, std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : opcode(opcode), arguments(arguments), results(results), consumes(0){};
 };
 
 static PyObject *
@@ -254,7 +257,7 @@ createFunction(PyObject *self, PyObject *args)
 
     bytes code(codebuf, codelen + codebuf);
 
-    std::vector<translation *> stack = {};
+    std::vector<operation *> stack = {};
 
     std::vector<wchar_t *> validateStack = {};
     for (size_t i = 0; i < code.size(); i++)
@@ -501,9 +504,13 @@ createFunction(PyObject *self, PyObject *args)
             validateStack = concat(validateStack, {resultVector});
         }
 
-        stack.push_back(new translation(op, operandVector, resultVector));
+        stack.push_back(new operation(op, operandVector, resultVector));
         if (PyDict_Contains(consumes, PyLong_FromLong(op)))
-            i += PyLong_AsLong(PyDict_GetItem(consumes, PyLong_FromLong(op)));
+        {
+            long opConsumes = PyLong_AsLong(PyDict_GetItem(consumes, PyLong_FromLong(op)));
+            stack.at(stack.size() - 1)->consumes = opConsumes;
+            i += opConsumes;
+        }
     }
 
     if ((validateStack.size() != 1 && ret != 0x40) || (validateStack.size() != 0 && ret == 0x40))
@@ -522,18 +529,44 @@ createFunction(PyObject *self, PyObject *args)
         }
     }
 
+    // stack optimizations
+    // keep results in registers to minimize push/pop operations
+    // int usedRegs = 0;
+    // bool reg_d_64 = 0, reg_si_64 = 0;
+    // for (size_t i = 0; i < stack.size() - 1; i++)
+    // {
+    //     operation *current = stack.at(i);
+    //     operation *next = stack.at(i + 1);
+    //     bytes joiningCode = {};
+    //     if (current->results.size() != 0)
+    //     {
+    //         if (usedRegs == 2 && next->arguments.size() != 3)
+    //         {
+    //             if (reg_d_64)
+    //                 joiningCode = concat(joiningCode, {(push_d_64)});
+
+    //             else
+    //                 joiningCode = concat(joiningCode, {(push_d_32)});
+
+    //             joiningCode = concat(joiningCode, {(mov_si_d)});
+    //             if (reg_d_64)
+    //                 joiningCode = concat(joiningCode, {(mov_di_b)});
+    //         }
+    //     }
+    // }
+
     // flush locals ready for next function
     localTypes = {};
 
     bytes returnCode = {};
 
     if (ret == 0x7F || ret == 0x7D)
-        returnCode = pop_v32a;
+        returnCode = concat(ret_v32, {{0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 32), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 40), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 48), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 56), 0x48, 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24), (uint8_t)(((uint64_t)errorPageAddr) >> 32), (uint8_t)(((uint64_t)errorPageAddr) >> 40), (uint8_t)(((uint64_t)errorPageAddr) >> 48), (uint8_t)(((uint64_t)errorPageAddr) >> 56)}});
 
     else if (ret == 0x7E || ret == 0x7C)
-        returnCode = ret_v64;
+        returnCode = concat(ret_v64, {{0x48, 0xA3, (uint8_t)((uint64_t)errorPageAddr + 1), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 8), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 16), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 24), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 32), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 40), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 48), (uint8_t)(((uint64_t)errorPageAddr + 1) >> 56), 0x48, 0xB8, (uint8_t)(uint64_t)errorPageAddr, (uint8_t)(((uint64_t)errorPageAddr) >> 8), (uint8_t)(((uint64_t)errorPageAddr) >> 16), (uint8_t)(((uint64_t)errorPageAddr) >> 24), (uint8_t)(((uint64_t)errorPageAddr) >> 32), (uint8_t)(((uint64_t)errorPageAddr) >> 40), (uint8_t)(((uint64_t)errorPageAddr) >> 48), (uint8_t)(((uint64_t)errorPageAddr) >> 56)}});
 
-    return Py_BuildValue("O", PyLong_FromVoidPtr(writeFunction(concat(initStack, {loadLocals, decodeFunc(code, plat, globalTableAddr), returnCode, cleanupStack, {RET}}))));
+    return Py_BuildValue("O", PyLong_FromVoidPtr(writeFunction(concat(initStack, {loadLocals, concat({}, decodeFunc(code, plat, globalTableAddr, (uint64_t)errorPageAddr)), returnCode, cleanupStack, {RET}}))));
 }
 
 PyObject *appendGlobal(PyObject *self, PyObject *args)
@@ -596,6 +629,8 @@ static struct PyModuleDef module = {
 PyMODINIT_FUNC PyInit_x86()
 {
     errorPageAddr = writePage(errorPage);
+    PyObject *m = PyModule_Create(&module);
+    PyModule_AddObject(m, "error_page_address", PyLong_FromVoidPtr(errorPageAddr));
     Py_AtExit(&freePages);
-    return PyModule_Create(&module);
+    return m;
 }
