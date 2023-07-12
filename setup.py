@@ -3,20 +3,20 @@ import json, os, platform, setuptools.command.build_ext, struct, subprocess
 
 prefixed = {
     "local.get": (
-        "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
         "localidx *= 10;\n\t\t\t",
         "localidx += 10;\n\t\t\t",
     ),
     "local.set": (
-        "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
         "localidx *= 10;\n\t\t\t",
     ),
     "local.tee": (
-        "localidx = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
         "localidx *= 10;\n\t\t\t",
     ),
     "global.get": (
-        "ll = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
         "ll *= 9;\n\t\t\t",
         "ll += (uint64_t)globalTableAddr;\n\t\t\t",
         "lh = ll + 2;\n\t\t\t",
@@ -25,7 +25,7 @@ prefixed = {
         "bits = ll + 8;\n\t\t\t",
     ),
     "global.set": (
-        "ll = buf.at(i + 4) << 24 | buf.at(i + 3) << 16 | buf.at(i + 2) << 8 | buf.at(i + 1);\n\t\t\t",
+        "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
         "ll *= 9;\n\t\t\t",
         "ll += (uint64_t)globalTableAddr;\n\t\t\t",
         "lh = ll + 2;\n\t\t\t",
@@ -46,6 +46,56 @@ error_64 = (
 )
 
 replacements = {
+    "ret_v32": (
+        (
+            "0, 0, 0, 0, 0, 0, 0, 255",
+            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24), (uint8_t)((errorPageAddr + 1) >> 32), (uint8_t)((errorPageAddr + 1) >> 40), (uint8_t)((errorPageAddr + 1) >> 48), (uint8_t)((errorPageAddr + 1) >> 56)",
+        ),
+        (
+            "255, 0, 0, 0, 0, 0, 0, 255",
+            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24), (uint8_t)(errorPageAddr >> 32), (uint8_t)(errorPageAddr >> 40), (uint8_t)(errorPageAddr >> 48), (uint8_t)(errorPageAddr >> 56)",
+        ),
+        (
+            "0, 0, 0, 255",
+            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24)",
+        ),
+        (
+            "255, 0, 0, 255",
+            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24)",
+        ),
+    ),
+    "ret_v64": (
+        (
+            "0, 0, 0, 0, 0, 0, 0, 255",
+            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24), (uint8_t)((errorPageAddr + 1) >> 32), (uint8_t)((errorPageAddr + 1) >> 40), (uint8_t)((errorPageAddr + 1) >> 48), (uint8_t)((errorPageAddr + 1) >> 56)",
+        ),
+        (
+            "255, 0, 0, 0, 0, 0, 0, 255",
+            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24), (uint8_t)(errorPageAddr >> 32), (uint8_t)(errorPageAddr >> 40), (uint8_t)(errorPageAddr >> 48), (uint8_t)(errorPageAddr >> 56)",
+        ),
+        (
+            "0, 0, 0, 255",
+            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24)",
+        ),
+        (
+            "255, 0, 0, 255",
+            "(uint8_t)(errorPageAddr + 5), (uint8_t)((errorPageAddr + 5) >> 8), (uint8_t)((errorPageAddr + 5) >> 16), (uint8_t)((errorPageAddr + 5) >> 24)",
+        ),
+        (
+            "0, 255, 0, 255",
+            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24)",
+        ),
+    ),
+    "ret_void": (
+        (
+            "0, 0, 0, 0, 0, 0, 0, 255",
+            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24), (uint8_t)(errorPageAddr >> 32), (uint8_t)(errorPageAddr >> 40), (uint8_t)(errorPageAddr >> 48), (uint8_t)(errorPageAddr >> 56)",
+        ),
+        (
+            "0, 0, 0, 255",
+            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24)",
+        ),
+    ),
     "unreachable": (
         # 64 bit replacements
         ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=9)),
@@ -97,24 +147,24 @@ replacements = {
         ("255, 255, 0, 255", global_32.format(b="hh")),
     ),
     "i32.const": (
-        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
-        ("255, 255", "buf.at(i + 3), buf.at(i + 4)"),
+        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
+        ("255, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
     ),
     "i64.const": (
-        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
-        ("0, 255", "buf.at(i + 3), buf.at(i + 4)"),
-        ("255, 0", "buf.at(i + 5), buf.at(i + 6)"),
-        ("255, 255", "buf.at(i + 7), buf.at(i + 8)"),
+        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
+        ("0, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
+        ("255, 0", "buf.at(offset + 5), buf.at(offset + 6)"),
+        ("255, 255", "buf.at(offset + 7), buf.at(offset + 8)"),
     ),
     "f32.const": (
-        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
-        ("255, 255", "buf.at(i + 3), buf.at(i + 4)"),
+        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
+        ("255, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
     ),
     "f64.const": (
-        ("0, 0", "buf.at(i + 1), buf.at(i + 2)"),
-        ("0, 255", "buf.at(i + 3), buf.at(i + 4)"),
-        ("255, 0", "buf.at(i + 5), buf.at(i + 6)"),
-        ("255, 255", "buf.at(i + 7), buf.at(i + 8)"),
+        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
+        ("0, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
+        ("255, 0", "buf.at(offset + 5), buf.at(offset + 6)"),
+        ("255, 255", "buf.at(offset + 7), buf.at(offset + 8)"),
     ),
     "i32.div_s": (
         # 64 bit replacements
@@ -319,12 +369,11 @@ class gen_opcodes(setuptools.Command):
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n',
                     '#include "x86.hpp"\n\n',
-                    "std::vector<bytes> decodeFunc(bytes buf, char plat, void *globalTableAddr, uint64_t errorPageAddr)\n{\n\t",
-                    "std::vector<bytes> insts = {};\n\t",
+                    "bytes decodeOperation(bytes buf, size_t offset, char plat)\n{\n\t",
+                    "bytes insts = {};\n\t",
                     "int localidx;\n\t",
                     "uint64_t hh, hl, lh, ll, bits;\n\t"
-                    "for (size_t i = 0; i < buf.size(); i++)\n\t{\n\t\t",
-                    "switch (buf.at(i))\n\t\t{\n\t\t",
+                    "switch (buf.at(offset))\n\t{\n\t",
                 )
             )
 
@@ -344,31 +393,20 @@ class gen_opcodes(setuptools.Command):
                     with open(file, "rb") as fp:
                         data = ", ".join(str(i) for i in fp.read() if i != 0x90)
 
-                    # alter binary data of instructions that take arguments
+                    # apply replacements
                     if inst in replacements:
                         for replacement in replacements[inst]:
                             data = data.replace(*replacement)
 
-                    out.write(f"case {opcodes[inst]}:\n\t\t\t")
+                    out.write(f"case {opcodes[inst]}:\n\t\t")
                     if inst in prefixed:
                         out.write("".join(prefixed[inst]))
 
-                    out.write(f"insts.push_back({{{data}}});\n\t\t\t")
+                    out.write(f"insts = {{{data}}};\n\t\t")
 
-                    if inst in consumes:
-                        out.write(f"i += {consumes[inst]};\n\t\t\t")
+                    out.write("break;\n\n\t")
 
-                    out.write("break;\n\n\t\t")
-
-            out.writelines(
-                (
-                    "default:\n\t\t\t",
-                    "break;\n\t\t",
-                    "}\n\t}\n\t",
-                    "return insts;\n",
-                    "}\n\n",
-                )
-            )
+            out.write("default:\n\t\tbreak;\n\t}\n\treturn insts;\n}\n\n")
 
             for file in listdir("wasmpy/x86") + extra:
                 if os.path.isdir(file):
@@ -376,11 +414,22 @@ class gen_opcodes(setuptools.Command):
 
                 name = os.path.basename(file)
                 if name not in opcodes:
+                    with open(file, "rb") as fp:
+                        data = ", ".join(str(i) for i in fp.read() if i != 0x90)
+
                     if os.path.splitext(name)[1] == "":
-                        with open(file, "rb") as fp:
+                        # apply replacements
+                        if name in replacements:
+                            for replacement in replacements[name]:
+                                data = data.replace(*replacement)
+
+                        if name in ("ret_v32", "ret_v64", "ret_void"):
                             out.write(
-                                f"bytes {name} = {{{', '.join(str(i) for i in fp.read() if i != 0x90)}}};\n"
+                                f"\nbytes {name}(uint64_t errorPageAddr)\n{{\n\treturn {{{data}}};\n}}\n"
                             )
+
+                        else:
+                            out.write(f"bytes {name} = {{{data}}};\n")
 
 
 class build_ext(setuptools.command.build_ext.build_ext):

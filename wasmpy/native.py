@@ -109,11 +109,11 @@ def create_function(ret, code, arg=b"", local=b""):
         elif result.contents.errno == 5:
             raise FloatingPointError("unrepresentable truncation result")
 
-    wrapper = staticmethod(
-        eval(
-            f"lambda {', '.join(param_clear)}: ensure(func({', '.join(param_clear)}))",
-            {"ensure": ensure, "func": func},
-        )
+    wrapper = eval(
+        f"lambda {', '.join(['_'] + param_clear)}: ensure(func({', '.join(param_clear)}))",
+        {"ensure": ensure, "func": func},
     )
 
+    wrapper.addr = address
+    wrapper.func = func
     return wrapper

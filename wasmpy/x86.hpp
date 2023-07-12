@@ -19,6 +19,9 @@
 
 typedef std::vector<uint8_t> bytes;
 
+extern uint64_t globalTableAddr;
+extern uint64_t errorPageAddr;
+
 template <typename T>
 std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn);
 

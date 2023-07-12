@@ -1,4 +1,4 @@
-[![AppVeyor](https://img.shields.io/appveyor/build/olivi-r/wasmpy)](https://ci.appveyor.com/project/olivi-r/wasmpy)
+[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/6jo7yag38m5ilv6h?svg=true)](https://ci.appveyor.com/project/olivi-r/wasmpy)
 
 # wasmpy
 WebAssembly in Python.
