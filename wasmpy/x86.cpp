@@ -30,7 +30,7 @@ std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn)
 void *writePage(bytes data)
 {
     void *buf;
-#ifdef linux
+#ifdef __linux__
     size_t size = sysconf(_SC_PAGE_SIZE) * (1 + data.size() / sysconf(_SC_PAGE_SIZE));
     buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 #endif
@@ -49,7 +49,7 @@ void freePages()
 {
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
-#ifdef linux
+#ifdef __linux__
         munmap(registeredPages.at(i), sysconf(_SC_PAGE_SIZE));
 #endif
 #ifdef _WIN32
@@ -61,7 +61,7 @@ void freePages()
 void *writeFunction(bytes code)
 {
     void *buf = writePage(code);
-#ifdef linux
+#ifdef __linux__
     mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
 #endif
 #ifdef _WIN32
@@ -102,7 +102,7 @@ bytes regParam32(const char *argbuf, Py_ssize_t arglen)
 bytes regParam64(const char *argbuf, Py_ssize_t arglen)
 {
     bytes code = {};
-#ifdef linux
+#ifdef __linux__
     for (int i = 0; i < std::min((int)arglen, 6); i++)
     {
         localTypes.push_back(argbuf[i]);
@@ -185,7 +185,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
     }
 #endif
 
-#ifdef linux
+#ifdef __linux__
     int argoff = 6;
     Py_ssize_t count = arglen - argoff;
     int baseOffset = 16;

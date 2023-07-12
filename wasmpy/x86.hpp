@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <vector>
 
-#ifdef linux
+#ifdef __linux__
 #include <sys/mman.h>
 #endif
 #ifdef _WIN32
