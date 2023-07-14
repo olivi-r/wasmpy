@@ -91,6 +91,16 @@ def read_module(buffer: io.FileIO) -> dict:
             elif expr[0].value() == "export":
                 mod_dict["exports"].append(sections_text.read_export(expr))
 
+            elif expr[0].value() == "start":
+                if mod_dict["start"] is not None:
+                    raise ValueError("Duplicate start symbol")
+
+                try:
+                    mod_dict["start"] = expr[1]
+
+                except IndexError:
+                    raise ValueError("Invalid start symbol")
+
     for g in mod_dict["globals"]:
         for i, term in enumerate(g["init"]):
             if term in global_ids:
@@ -142,6 +152,19 @@ def read_module(buffer: io.FileIO) -> dict:
         )
 
         mod_dict["funcs"][funcidx] = func["obj"]
+
+    if mod_dict["start"] is not None:
+        try:
+            if mod_dict["start"] in type_ids:
+                mod_dict["start"] = mod_dict["funcs"][
+                    type_ids.index(mod_dict["start"])
+                ]
+
+            else:
+                mod_dict["start"] = mod_dict["funcs"][mod_dict["start"]]
+
+        except (IndexError, TypeError):
+            raise ValueError("Invalid start symbol")
 
     native.nativelib.flush_globals()
 
