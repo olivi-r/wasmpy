@@ -1,17 +1,16 @@
-#ifndef WASIP1_H
-#define WASIP1_H
+#ifndef WASI_UNSTABLE_H
+#define WASI_UNSTABLE_H
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 #include "wasi_common.h"
 
-    const wasi_rights_t wasi_rights_sock_accept = 1 << 29;
-    const wasi_whence_t wasi_whence_set = 0;
-    const wasi_whence_t wasi_whence_cur = 1;
-    const wasi_whence_t wasi_whence_end = 2;
+    const wasi_whence_t wasi_whence_cur = 0;
+    const wasi_whence_t wasi_whence_end = 1;
+    const wasi_whence_t wasi_whence_set = 2;
 
-    typedef uint64_t wasi_linkcount_t;
+    typedef uint32_t wasi_linkcount_t;
 
     typedef struct
     {
@@ -27,6 +26,7 @@ extern "C"
 
     typedef struct
     {
+        wasi_userdata_t identifier;
         wasi_clockid_t id;
         wasi_timestamp_t timeout;
         wasi_timestamp_t precision;
@@ -50,10 +50,12 @@ extern "C"
         wasi_subscription_u_t u;
     } wasi_subscription_t;
 
+#define API_FUNC EXPORT wasi_errno_t
+#define API_VOID EXPORT void
+
     API_FUNC wasi_fd_filestat_get(wasi_fd_t fd, wasi_filestat_t *buf);
     API_FUNC wasi_path_filestat_get(wasi_fd_t fd, wasi_lookupflags_t flags, const char *path, wasi_filestat_t *buf);
     API_FUNC wasi_poll_oneoff(const wasi_subscription_t *in, wasi_event_t *out, wasi_size_t nsubscriptions, wasi_size_t *nevents);
-    API_FUNC wasi_sock_accept(wasi_fd_t fd, wasi_fdflags_t flags, wasi_fd_t *opened_sock);
 
 #ifdef __cplusplus
 }
