@@ -3,8 +3,10 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-x64-ubuntu"
+      WASI_BUILD: make
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       APPVEYOR_JOB_NAME: "python37-x64-vs2015"
+      WASI_BUILD: msbuild wasmpy.sln
 
 stack: python 3.7
 
@@ -12,12 +14,10 @@ init:
 - cmd: set PATH=C:\msys64\mingw64\bin;%PATH%
 - cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
 
-install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble sdist
+install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble
 
-build_script: python -m cibuildwheel --output-dir wheelhouse
+build_script: %WASI_BUILD% && python -m cibuildwheel --output-dir dist
 
 artifacts:
-  - path: "wheelhouse\\*.whl"
-    name: Wheels
   - path: "dist\\*"
-    name: Dists
+    name: Wheels
