@@ -505,6 +505,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: MIT License",
     ],
-    python_requires=">=3.6",
     license="MIT",
+    python_requires=">=3.6",
+    install_requires=["sexpdata"],
 )
