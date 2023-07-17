@@ -12,12 +12,25 @@ Install the latest version:
 python -m pip install wasmpy
 ```
 
-Or build and install from source (This requires MinGW-w64 to be on `PATH` in Windows):
+Or build and install from source:
 
+### Linux
 ```sh
 git clone https://github.com/olivi-r/wasmpy.git
 cd wasmpy
-python setup.py assemble
+make
+python3 setup.py assemble
+python3 -m pip install .
+```
+
+### Windows
+```sh
+git clone https://github.com/olivi-r/wasmpy.git
+cd wasmpy
+```
+Build `wasmpy.sln` then:
+```sh
+python setup.py tidy assemble
 python -m pip install .
 ```
 

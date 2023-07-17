@@ -1,11 +1,19 @@
-__pycache__
+# folders
 wasmpy.egg-info
+__pycache__
+.vscode
 build
 dist
 .env
-.vscode
-*.pyd
+.vs
+
+# files
 *.so
+*.dll
+*.pyd
+*.exp
+*.lib
+*.pdb
 wasmpy/x86/**/*
 !wasmpy/x86/**/
 !wasmpy/x86/**/*.s

@@ -319,6 +319,13 @@ class tidy(setuptools.Command):
         if os.path.exists("wasmpy/opcodes.cpp"):
             os.remove("wasmpy/opcodes.cpp")
 
+        for file in listdir("wasmpy/wasi"):
+            if os.path.isdir(file):
+                continue
+
+            if os.path.splitext(file)[1] in (".exp", ".lib", ".pdb"):
+                os.remove(file)
+
         for file in (
             listdir("wasmpy/x86")
             + listdir("wasmpy/x86/64")
