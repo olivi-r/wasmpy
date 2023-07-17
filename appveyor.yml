@@ -16,8 +16,8 @@ init:
 
 install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble
 
-build_script: 
-- cmd: %WASI_BUILD% && python -m cibuildwheel --output-dir dist
+build_script:
+- cmd: $WASI_BUILD && python -m cibuildwheel --output-dir dist
 
 artifacts:
   - path: "dist\\*"
