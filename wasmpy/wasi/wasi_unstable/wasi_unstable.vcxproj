@@ -30,7 +30,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{f8e78d55-5fdc-46e5-bb9b-b13712b271e6}</ProjectGuid>
     <RootNamespace>wasiunstable</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
