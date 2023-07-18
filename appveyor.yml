@@ -3,10 +3,10 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       APPVEYOR_JOB_NAME: "python37-x64-vs2015"
-      CIBW_BEFORE_BUILD: msbuild wasmpy.sln
+      CIBW_BEFORE_ALL: msbuild wasmpy.sln /property:Configuration=Release
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-x64-ubuntu"
-      CIBW_BEFORE_BUILD: make
+      CIBW_BEFORE_ALL: make
 
 stack: python 3.7
 

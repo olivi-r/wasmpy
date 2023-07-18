@@ -14,6 +14,8 @@ dist
 *.exp
 *.lib
 *.pdb
+*.ipdb
+*.iobj
 wasmpy/x86/**/*
 !wasmpy/x86/**/
 !wasmpy/x86/**/*.s

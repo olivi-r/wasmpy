@@ -323,7 +323,13 @@ class tidy(setuptools.Command):
             if os.path.isdir(file):
                 continue
 
-            if os.path.splitext(file)[1] in (".exp", ".lib", ".pdb"):
+            if os.path.splitext(file)[1] in (
+                ".exp",
+                ".lib",
+                ".pdb",
+                ".ipdb",
+                ".iobj",
+            ):
                 os.remove(file)
 
         for file in (

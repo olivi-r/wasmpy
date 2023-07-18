@@ -16,10 +16,5 @@ build/wasi_unstable.o: build/wasi
 build/wasi_common.o: build/wasi
 	cc -fPIC -c wasmpy/wasi/wasi_common.c -o build/wasi/wasi_common.o
 
-.PHONY: build/wasi
 build/wasi:
 	mkdir -p build/wasi
-
-.PHONY: clean
-clean:
-	rm -rf build/wasi
