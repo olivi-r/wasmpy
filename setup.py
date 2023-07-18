@@ -465,14 +465,12 @@ if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     ]
 
 
-wasi_files = []
+wasi_files = ["wasi_unstable", "wasi_snapshot_preview1"]
 if platform.system() == "Linux":
-    wasi_files.append("wasi/wasi_unstable.so")
-    wasi_files.append("wasi/wasi_snapshot_preview1.so")
+    wasi_files = [i + ".so" for i in wasi_files]
 
 elif platform.system() == "Windows":
-    wasi_files.append("wasi/wasi_unstable.dll")
-    wasi_files.append("wasi/wasi_snapshot_preview1.dll")
+    wasi_files = [i + ".dll" for i in wasi_files]
 
 
 with open("README.md", "r") as fp:
@@ -487,8 +485,8 @@ setuptools.setup(
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
-    packages=["wasmpy"],
-    package_data={"wasmpy": ["opcodes.json"] + wasi_files},
+    packages=["wasmpy", "wasmpy.wasi"],
+    package_data={"wasmpy": ["opcodes.json"], "wasmpy.wasi": wasi_files},
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={
