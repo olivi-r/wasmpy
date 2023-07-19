@@ -451,18 +451,27 @@ class build_ext(setuptools.command.build_ext.build_ext):
         setuptools.command.build_ext.build_ext.run(self)
 
 
-ext = []
+ext = [
+    setuptools.Extension(
+        "wasmpy.wasi.unstable",
+        sources=["wasmpy/wasi/unstable.c", "wasmpy/wasi/common.c"],
+        py_limited_api=True,
+    ),
+    setuptools.Extension(
+        "wasmpy.wasi.snapshot_preview1",
+        sources=["wasmpy/wasi/snapshot_preview1.c", "wasmpy/wasi/common.c"],
+        py_limited_api=True,
+    ),
+]
+
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
-    ext = [
+    ext.append(
         setuptools.Extension(
             "wasmpy.x86",
-            sources=[
-                "wasmpy/x86.cpp",
-                "wasmpy/opcodes.cpp",
-            ],
+            sources=["wasmpy/x86.cpp", "wasmpy/opcodes.cpp"],
             py_limited_api=True,
         )
-    ]
+    )
 
 
 wasi_files = ["wasi_unstable", "wasi_snapshot_preview1"]
@@ -485,8 +494,8 @@ setuptools.setup(
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
-    packages=["wasmpy", "wasmpy.wasi"],
-    package_data={"wasmpy": ["opcodes.json"], "wasmpy.wasi": wasi_files},
+    packages=["wasmpy"],
+    package_data={"wasmpy": ["opcodes.json"]},
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={

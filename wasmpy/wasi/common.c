@@ -1,4 +1,4 @@
-#include "wasi_common.h"
+#include "common.h"
 
 const wasi_clockid_t wasi_clockid_realtime = 0;
 const wasi_clockid_t wasi_clockid_monotonic = 1;
@@ -262,6 +262,11 @@ API wasi_errno_t wasi_fd_fdstat_set_rights(wasi_fd_t fd, wasi_rights_t fs_rights
     return wasi_errno_nosys;
 }
 
+API wasi_errno_t wasi_fd_filestat_get(wasi_fd_t fd, wasi_filestat_t *buf)
+{
+    return wasi_errno_nosys;
+}
+
 API wasi_errno_t wasi_fd_filestat_set_size(wasi_fd_t fd, wasi_filesize_t size)
 {
     return wasi_errno_nosys;
@@ -332,6 +337,11 @@ API wasi_errno_t wasi_path_create_directory(wasi_fd_t fd, const char *path)
     return wasi_errno_nosys;
 }
 
+API wasi_errno_t wasi_path_filestat_get(wasi_fd_t fd, wasi_lookupflags_t flags, const char *path, wasi_filestat_t *buf)
+{
+    return wasi_errno_nosys;
+}
+
 API wasi_errno_t wasi_path_filestat_set_times(wasi_fd_t fd, wasi_lookupflags_t flags, const char *path, wasi_timestamp_t atim, wasi_timestamp_t mtim, wasi_fstflags_t fst_flags)
 {
     return wasi_errno_nosys;
@@ -368,6 +378,11 @@ API wasi_errno_t wasi_path_symlink(const char *old_path, wasi_fd_t fd, const cha
 }
 
 API wasi_errno_t wasi_path_unlink_file(wasi_fd_t fd, const char *path)
+{
+    return wasi_errno_nosys;
+}
+
+API wasi_errno_t wasi_poll_oneoff(const wasi_subscription_t *in, wasi_event_t *out, wasi_size_t nsubscriptions, wasi_size_t *nevents)
 {
     return wasi_errno_nosys;
 }

@@ -1,10 +1,11 @@
-#ifndef WASI_COMMON_H
-#define WASI_COMMON_H
+#ifndef COMMON_H
+#define COMMON_H
 #ifdef _WIN32
 #define API __declspec(dllexport)
 #else
 #define API __attribute__((visibility("default")))
 #endif
+#include <Python.h>
 #include <stdint.h>
 
 typedef uint32_t wasi_size_t;
@@ -206,6 +207,24 @@ extern const wasi_oflags_t wasi_oflags_directory;
 extern const wasi_oflags_t wasi_oflags_excl;
 extern const wasi_oflags_t wasi_oflags_trunc;
 
+#ifdef WASI_UNSTABLE
+typedef uint32_t wasi_linkcount_t;
+#else
+typedef uint64_t wasi_linkcount_t;
+#endif
+
+typedef struct
+{
+    wasi_device_t dev;
+    wasi_inode_t ino;
+    wasi_filetype_t filetype;
+    wasi_linkcount_t nlink;
+    wasi_filesize_t size;
+    wasi_timestamp_t atim;
+    wasi_timestamp_t mtim;
+    wasi_timestamp_t ctim;
+} wasi_filestat_t;
+
 typedef uint64_t wasi_userdata_t;
 typedef uint8_t wasi_eventtype_t;
 extern const wasi_eventtype_t wasi_eventtype_clock;
@@ -234,8 +253,36 @@ extern const wasi_subclockflags_t wasi_subclockflags_subscription_clock_abstime;
 
 typedef struct
 {
+#ifdef WASI_UNSTABLE
+    wasi_userdata_t identifier;
+#endif
+    wasi_clockid_t id;
+    wasi_timestamp_t timeout;
+    wasi_timestamp_t precision;
+    wasi_subclockflags_t flags;
+} wasi_subscription_clock_t;
+
+typedef struct
+{
     wasi_fd_t file_descriptor;
 } wasi_subscription_fd_readwrite_t;
+
+typedef struct
+{
+    wasi_eventtype_t tag;
+    union
+    {
+        wasi_subscription_clock_t clock;
+        wasi_subscription_fd_readwrite_t fd_read;
+        wasi_subscription_fd_readwrite_t fd_write;
+    } u;
+} wasi_subscription_u_t;
+
+typedef struct
+{
+    wasi_userdata_t userdata;
+    wasi_subscription_u_t u;
+} wasi_subscription_t;
 
 typedef uint32_t wasi_exitcode_t;
 
