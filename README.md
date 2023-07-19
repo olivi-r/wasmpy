@@ -33,27 +33,12 @@ File: `wasm_math.wat`
 ```
 
 # Building From Source
-## Linux
+On Windows this requires the [mingw-w64](https://www.mingw-w64.org/downloads/) `as` tool to be on PATH.
 ```sh
 git clone https://github.com/olivi-r/wasmpy.git
 cd wasmpy
-make
 python3 setup.py assemble
 python3 -m pip install .
-```
-
-## Windows
-Required components:
-- MSVC v140 - VS 2015 C++ build tools (v14.00)
-- Windows 10 SDK (10.0.18362.0)
-```sh
-git clone https://github.com/olivi-r/wasmpy.git
-cd wasmpy
-```
-Build `wasmpy.sln` with  Visual Studio then:
-```sh
-python setup.py assemble
-python -m pip install .
 ```
 
 # Limitations
