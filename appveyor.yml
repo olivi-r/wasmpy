@@ -18,7 +18,7 @@ init:
 install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble
 
 build_script:
-  - ps: $BUILD_SCRIPT
+  - ps: $env:BUILD_SCRIPT
   - sh: $BUILD_SCRIPT
 
 artifacts:
