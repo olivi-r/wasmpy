@@ -1,22 +1,23 @@
 environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      APPVEYOR_JOB_NAME: "python37-x64-vs2015"
       CIBW_SKIP: pp*
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      APPVEYOR_JOB_NAME: "python37-x64-ubuntu"
       CIBW_SKIP: pp*
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      BUILD_SCRIPT: python setup.py sdist
 
 stack: python 3.7
 
 init:
-- cmd: set PATH=C:\msys64\mingw64\bin;%PATH%
-- cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
+  - cmd: set PATH=C:\msys64\mingw64\bin;%PATH%
+  - cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
+  - sh: export BUILD_SCRIPT=${BUILD_SCRIPT:-"python -m cibuildwheel --output-dir dist"}
 
 install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble
 
-build_script: python -m cibuildwheel --output-dir dist
+build_script:
+  -sh: $BUILD_SCRIPT
 
 artifacts:
   - path: "dist\\*"
-    name: Wheels

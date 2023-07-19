@@ -5,18 +5,10 @@ __pycache__
 build
 dist
 .env
-.vs
 
 # files
 *.so
-*.dll
 *.pyd
-*.exp
-*.lib
-*.pdb
-*.ipdb
-*.iobj
 wasmpy/x86/**/*
-!wasmpy/x86/**/
 !wasmpy/x86/**/*.s
 wasmpy/opcodes.cpp

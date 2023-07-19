@@ -494,7 +494,7 @@ setuptools.setup(
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
-    packages=["wasmpy"],
+    packages=["wasmpy", "wasmpy.wasi"],
     package_data={"wasmpy": ["opcodes.json"]},
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},

@@ -5,6 +5,8 @@
 #else
 #define API __attribute__((visibility("default")))
 #endif
+#define PY_SSIZE_T_CLEAN
+#define Py_LIMITED_API 0x03060000
 #include <Python.h>
 #include <stdint.h>
 
