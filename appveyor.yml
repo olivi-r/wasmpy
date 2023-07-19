@@ -1,9 +1,9 @@
 environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      CIBW_SKIP: pp*
+      CIBW_BUILD: cp36-*
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      CIBW_SKIP: pp*
+      CIBW_BUILD: cp36-*
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       BUILD_SCRIPT: python setup.py sdist
 
@@ -16,8 +16,7 @@ init:
 
 install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble
 
-build_script:
-  -sh: $BUILD_SCRIPT
+build_script: $BUILD_SCRIPT
 
 artifacts:
   - path: "dist\\*"
