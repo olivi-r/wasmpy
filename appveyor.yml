@@ -19,7 +19,6 @@ install: python -m pip install cibuildwheel==2.13.1 && python setup.py assemble
 
 build_script:
   - ps: Invoke-Expression $env:BUILD_SCRIPT
-  - sh: $BUILD_SCRIPT
 
 artifacts:
   - path: "dist\\*"
