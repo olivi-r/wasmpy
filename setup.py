@@ -485,13 +485,9 @@ elif platform.system() == "Windows":
 with open("README.md", "r") as fp:
     description = fp.read()
 
-version = os.environ.get("version")
-if version is not None:
-    version = os.path.splitext(version)[0]
-
 setuptools.setup(
     name="wasmpy",
-    version=version,
+    version="0.1.4",
     author="Olivia Ryan",
     author_email="olivia.r.dev@gmail.com",
     description="WebAssembly from Python.",
