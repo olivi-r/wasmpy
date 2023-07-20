@@ -453,13 +453,14 @@ class build_ext(setuptools.command.build_ext.build_ext):
 
 ext = [
     setuptools.Extension(
-        "wasmpy.wasi.unstable",
-        sources=["wasmpy/wasi/unstable.c", "wasmpy/wasi/common.c"],
+        "wasmpy.wasi_unstable",
+        sources=["wasmpy/wasi.c"],
+        define_macros=[("WASI_UNSTABLE", None)],
         py_limited_api=True,
     ),
     setuptools.Extension(
-        "wasmpy.wasi.snapshot_preview1",
-        sources=["wasmpy/wasi/snapshot_preview1.c", "wasmpy/wasi/common.c"],
+        "wasmpy.wasi_snapshot_preview1",
+        sources=["wasmpy/wasi.c"],
         py_limited_api=True,
     ),
 ]
@@ -474,14 +475,6 @@ if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     )
 
 
-wasi_files = ["wasi_unstable", "wasi_snapshot_preview1"]
-if platform.system() == "Linux":
-    wasi_files = [i + ".so" for i in wasi_files]
-
-elif platform.system() == "Windows":
-    wasi_files = [i + ".dll" for i in wasi_files]
-
-
 with open("README.md", "r") as fp:
     description = fp.read()
 
@@ -494,7 +487,7 @@ setuptools.setup(
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
-    packages=["wasmpy", "wasmpy.wasi"],
+    packages=["wasmpy"],
     package_data={"wasmpy": ["opcodes.json"]},
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},

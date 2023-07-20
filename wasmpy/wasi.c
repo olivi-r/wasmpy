@@ -1,10 +1,42 @@
-#include "common.h"
+#define PY_SSIZE_T_CLEAN
+#define Py_LIMITED_API 0x03060000
+#include <Python.h>
+#include <stdint.h>
 
+static PyMethodDef methods[] = {
+    {NULL, NULL, 0, NULL}};
+
+static PyModuleDef module = {
+    PyModuleDef_HEAD_INIT,
+#ifdef WASI_UNSTABLE
+    "wasi_unstable",
+#else
+    "wasi_snapshot_preview1",
+#endif
+    NULL,
+    -1,
+    methods};
+
+#ifdef WASI_UNSTABLE
+PyMODINIT_FUNC PyInit_wasi_unstable(void)
+#else
+PyMODINIT_FUNC PyInit_wasi_snapshot_preview1(void)
+#endif
+{
+    return PyModule_Create(&module);
+}
+
+typedef uint32_t wasi_size_t;
+typedef uint64_t wasi_filesize_t;
+typedef uint64_t wasi_timestamp_t;
+
+typedef uint32_t wasi_clockid_t;
 const wasi_clockid_t wasi_clockid_realtime = 0;
 const wasi_clockid_t wasi_clockid_monotonic = 1;
 const wasi_clockid_t wasi_clockid_process_cputime_id = 2;
 const wasi_clockid_t wasi_clockid_thread_cputime_id = 3;
 
+typedef uint16_t wasi_errno_t;
 const wasi_errno_t wasi_errno_success = 0;
 const wasi_errno_t wasi_errno_2big = 1;
 const wasi_errno_t wasi_errno_access = 2;
@@ -83,6 +115,7 @@ const wasi_errno_t wasi_errno_txtbsy = 74;
 const wasi_errno_t wasi_errno_xdev = 75;
 const wasi_errno_t wasi_errno_notcapable = 76;
 
+typedef uint64_t wasi_rights_t;
 const wasi_rights_t wasi_rights_fd_datasync = 1 << 0;
 const wasi_rights_t wasi_rights_fd_read = 1 << 1;
 const wasi_rights_t wasi_rights_fd_seek = 1 << 2;
@@ -112,7 +145,44 @@ const wasi_rights_t wasi_rights_path_remove_directory = 1 << 25;
 const wasi_rights_t wasi_rights_path_unlink_file = 1 << 26;
 const wasi_rights_t wasi_rights_poll_fd_readwrite = 1 << 27;
 const wasi_rights_t wasi_rights_sock_shutdown = 1 << 28;
+#ifndef WASI_UNSTABLE
+const wasi_rights_t wasi_rights_sock_accept = 1 << 29;
+#endif
 
+typedef uint32_t wasi_fd_t;
+
+typedef struct
+{
+    uint8_t *buf;
+    wasi_size_t buf_len;
+} wasi_iovec_t;
+
+typedef struct
+{
+    const uint8_t *buf;
+    wasi_size_t buf_len;
+} wasi_ciovec_t;
+
+typedef wasi_iovec_t *wasi_iovec_array_t;
+typedef wasi_ciovec_t *wasi_ciovec_array_t;
+typedef int64_t wasi_filedelta_t;
+
+typedef uint8_t wasi_whence_t;
+#ifdef WASI_UNSTABLE
+const wasi_whence_t wasi_whence_cur = 0;
+const wasi_whence_t wasi_whence_end = 1;
+const wasi_whence_t wasi_whence_set = 2;
+#else
+const wasi_whence_t wasi_whence_set = 0;
+const wasi_whence_t wasi_whence_cur = 1;
+const wasi_whence_t wasi_whence_end = 2;
+#endif
+
+typedef uint64_t wasi_dircookie_t;
+typedef uint32_t wasi_dirnamlen_t;
+typedef uint64_t wasi_inode_t;
+
+typedef uint8_t wasi_filetype_t;
 const wasi_filetype_t wasi_filetype_unknown = 0;
 const wasi_filetype_t wasi_filetype_block_device = 1;
 const wasi_filetype_t wasi_filetype_character_device = 2;
@@ -122,6 +192,15 @@ const wasi_filetype_t wasi_filetype_socket_dgram = 5;
 const wasi_filetype_t wasi_filetype_socket_stream = 6;
 const wasi_filetype_t wasi_filetype_symbolic_link = 7;
 
+typedef struct
+{
+    wasi_dircookie_t d_next;
+    wasi_inode_t d_ino;
+    wasi_dirnamlen_t d_namlen;
+    wasi_filetype_t d_type;
+} wasi_dirent_t;
+
+typedef uint8_t wasi_advice_t;
 const wasi_advice_t wasi_advice_normal = 0;
 const wasi_advice_t wasi_advice_sequential = 1;
 const wasi_advice_t wasi_advice_random = 2;
@@ -129,32 +208,119 @@ const wasi_advice_t wasi_advice_willneed = 3;
 const wasi_advice_t wasi_advice_dontneed = 4;
 const wasi_advice_t wasi_advice_noreuse = 5;
 
+typedef uint16_t wasi_fdflags_t;
 const wasi_fdflags_t wasi_fdflags_append = 1 << 0;
 const wasi_fdflags_t wasi_fdflags_dsync = 1 << 1;
 const wasi_fdflags_t wasi_fdflags_nonblock = 1 << 2;
 const wasi_fdflags_t wasi_fdflags_rsync = 1 << 3;
 const wasi_fdflags_t wasi_fdflags_sync = 1 << 4;
 
+typedef struct
+{
+    wasi_filetype_t fs_filetype;
+    wasi_fdflags_t fs_flags;
+    wasi_rights_t fs_rights_base;
+    wasi_rights_t fs_rights_inheriting;
+} wasi_fdstat_t;
+
+typedef uint64_t wasi_device_t;
+
+typedef uint16_t wasi_fstflags_t;
 const wasi_fstflags_t wasi_fstflags_atim = 1 << 0;
 const wasi_fstflags_t wasi_fstflags_atim_now = 1 << 1;
 const wasi_fstflags_t wasi_fstflags_mtim = 1 << 2;
 const wasi_fstflags_t wasi_fstflags_mtim_now = 1 << 3;
 
+typedef uint32_t wasi_lookupflags_t;
 const wasi_lookupflags_t wasi_lookupflags_symlink_follow = 1 << 0;
 
+typedef uint16_t wasi_oflags_t;
 const wasi_oflags_t wasi_oflags_creat = 1 << 0;
 const wasi_oflags_t wasi_oflags_directory = 1 << 1;
 const wasi_oflags_t wasi_oflags_excl = 1 << 2;
 const wasi_oflags_t wasi_oflags_trunc = 1 << 3;
 
+#ifdef WASI_UNSTABLE
+typedef uint32_t wasi_linkcount_t;
+#else
+typedef uint64_t wasi_linkcount_t;
+#endif
+
+typedef struct
+{
+    wasi_device_t dev;
+    wasi_inode_t ino;
+    wasi_filetype_t filetype;
+    wasi_linkcount_t nlink;
+    wasi_filesize_t size;
+    wasi_timestamp_t atim;
+    wasi_timestamp_t mtim;
+    wasi_timestamp_t ctim;
+} wasi_filestat_t;
+
+typedef uint64_t wasi_userdata_t;
+
+typedef uint8_t wasi_eventtype_t;
 const wasi_eventtype_t wasi_eventtype_clock = 0;
 const wasi_eventtype_t wasi_eventtype_fd_read = 1;
 const wasi_eventtype_t wasi_eventtype_fd_write = 2;
 
+typedef uint16_t wasi_eventrwflags_t;
 const wasi_eventrwflags_t wasi_eventrwflags_fd_readwrite_hangup = 1 << 0;
 
+typedef struct
+{
+    wasi_filesize_t nbytes;
+    wasi_eventrwflags_t flags;
+} wasi_event_fd_readwrite_t;
+
+typedef struct
+{
+    wasi_userdata_t userdata;
+    wasi_errno_t error;
+    wasi_eventtype_t type;
+    wasi_event_fd_readwrite_t fd_readwrite;
+} wasi_event_t;
+
+typedef uint16_t wasi_subclockflags_t;
 const wasi_subclockflags_t wasi_subclockflags_subscription_clock_abstime = 1 << 0;
 
+typedef struct
+{
+#ifdef WASI_UNSTABLE
+    wasi_userdata_t identifier;
+#endif
+    wasi_clockid_t id;
+    wasi_timestamp_t timeout;
+    wasi_timestamp_t precision;
+    wasi_subclockflags_t flags;
+} wasi_subscription_clock_t;
+
+typedef struct
+{
+    wasi_fd_t file_descriptor;
+} wasi_subscription_fd_readwrite_t;
+
+typedef struct
+{
+    wasi_eventtype_t tag;
+    union
+    {
+        wasi_subscription_clock_t clock;
+        wasi_subscription_fd_readwrite_t fd_read;
+        wasi_subscription_fd_readwrite_t fd_write;
+    } u;
+} wasi_subscription_u_t;
+
+typedef struct
+{
+    wasi_userdata_t userdata;
+    wasi_subscription_u_t u;
+} wasi_subscription_t;
+
+typedef uint32_t wasi_exitcode_t;
+
+typedef uint8_t wasi_signal_t;
 const wasi_signal_t wasi_signal_none = 0;
 const wasi_signal_t wasi_signal_hup = 1;
 const wasi_signal_t wasi_signal_int = 2;
@@ -187,15 +353,41 @@ const wasi_signal_t wasi_signal_poll = 28;
 const wasi_signal_t wasi_signal_pwr = 29;
 const wasi_signal_t wasi_signal_sys = 30;
 
+typedef uint16_t wasi_riflags_t;
 const wasi_riflags_t wasi_riflags_recv_peek = 1 << 0;
 const wasi_riflags_t wasi_riflags_recv_waitall = 1 << 1;
 
+typedef uint16_t wasi_roflags_t;
 const wasi_roflags_t wasi_roflags_recv_data_truncated = 1 << 0;
 
+typedef uint16_t wasi_siflags_t;
+
+typedef uint8_t wasi_sdflags_t;
 const wasi_sdflags_t wasi_sdflags_rd = 1 << 0;
 const wasi_sdflags_t wasi_sdflags_wr = 1 << 1;
 
+typedef uint8_t wasi_preopentype_t;
 const wasi_preopentype_t wasi_preopentype_dir = 0;
+
+typedef struct
+{
+    wasi_size_t pr_name_len;
+} wasi_prestat_dir_t;
+
+typedef struct
+{
+    wasi_preopentype_t tag;
+    union
+    {
+        wasi_prestat_dir_t dir;
+    } u;
+} wasi_prestat_t;
+
+#ifdef _WIN32
+#define API __declspec(dllexport)
+#else
+#define API __attribute__((visibility("default")))
+#endif
 
 API wasi_errno_t wasi_args_get(uint8_t **argv, uint8_t *argv_buf)
 {
@@ -403,6 +595,13 @@ API wasi_errno_t wasi_random_get(uint8_t *buf, wasi_size_t buf_len)
 {
     return wasi_errno_nosys;
 }
+
+#ifndef WASI_UNSTABLE
+API wasi_errno_t wasi_sock_accept(wasi_fd_t fd, wasi_fdflags_t flags, wasi_fd_t *ok)
+{
+    return wasi_errno_nosys;
+}
+#endif
 
 API wasi_errno_t wasi_sock_recv(wasi_fd_t fd, wasi_iovec_array_t ri_data, wasi_riflags_t ri_flags, wasi_size_t *ro_datalen, wasi_roflags_t *ro_flags)
 {
