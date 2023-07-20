@@ -1,5 +1,5 @@
 from . import module, native, sections_binary, values
-import importlib
+import ctypes, importlib
 
 
 # extend to add future binary formats
@@ -86,14 +86,18 @@ def read_module(buffer: object) -> dict:
         pass
 
     for i in mod_dict["imports"]:
-        mod = importlib.import_module(i["module"])
-        if i["desc"][0] == "func":
-            mod_dict["funcs"] += (
-                {
-                    "type": mod_dict["types"][i["desc"][1]],
-                    "obj": mod.call(i["name"]),
-                },
-            )
+        if i["module"] == "capi":
+            mod_dict["funcs"] += (getattr(ctypes.pythonapi, i["name"]),)
+
+        else:
+            mod = importlib.import_module(i["module"])
+            if i["desc"][0] == "func":
+                mod_dict["funcs"] += (
+                    {
+                        "type": mod_dict["types"][i["desc"][1]],
+                        "obj": getattr(mod, i["name"]),
+                    },
+                )
 
     for g in mod_dict["globals"]:
         g["offset"] = native.create_global(

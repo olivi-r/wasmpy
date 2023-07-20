@@ -1,5 +1,5 @@
 from . import instructions, module, native, sections_text, values
-import io, shutil
+import ctypes, io
 import sexpdata
 
 
@@ -52,8 +52,10 @@ def read_module(buffer: io.FileIO) -> dict:
     }
 
     type_ids = []
-    func_ids = []
     global_ids = []
+
+    import_funcs = {"funcs": [], "ids": []}
+    funcs = {"funcs": [], "ids": []}
 
     for expr in data:
         if isinstance(expr, list):
@@ -62,18 +64,24 @@ def read_module(buffer: io.FileIO) -> dict:
                 mod_dict["types"].append(type)
                 type_ids.append(typeidx)
 
+            elif expr[0].value() == "import":
+                type, mod, name, importidx, desc = sections_text.read_import(
+                    expr
+                )
+                if type == "func":
+                    if mod == "capi":
+                        import_funcs["ids"].append(importidx)
+                        desc["obj"] = getattr(ctypes.pythonapi, name)
+                        import_funcs["funcs"].append(
+                            getattr(ctypes.pythonapi, name)
+                        )
+
+                    # TODO: .wasm imports
+
             elif expr[0].value() == "func":
-                funcidx, export, func = sections_text.read_func(expr)
-                mod_dict["funcs"].append(func)
-                func_ids.append(funcidx)
-                if export is not None:
-                    mod_dict["exports"].append(
-                        {
-                            "name": export,
-                            "type": "func",
-                            "idx": len(mod_dict["funcs"]) - 1,
-                        }
-                    )
+                funcidx, func = sections_text.read_func(expr)
+                funcs["funcs"].append(func)
+                funcs["ids"].append(funcidx)
 
             elif expr[0].value() == "global":
                 globalidx, export, global_ = sections_text.read_global(expr)
@@ -101,6 +109,9 @@ def read_module(buffer: io.FileIO) -> dict:
                 except IndexError:
                     raise ValueError("Invalid start symbol")
 
+    func_ids = import_funcs["ids"] + funcs["ids"]
+    mod_dict["funcs"] = import_funcs["funcs"] + funcs["funcs"]
+
     for g in mod_dict["globals"]:
         for i, term in enumerate(g["init"]):
             if term in global_ids:
@@ -122,6 +133,18 @@ def read_module(buffer: io.FileIO) -> dict:
         mod_dict["globals"][globalidx] = g["obj"]
 
     for funcidx, func in enumerate(mod_dict["funcs"]):
+        if not isinstance(func, dict):
+            continue
+
+        if func["export"] is not None:
+            mod_dict["exports"].append(
+                {
+                    "name": func["export"],
+                    "type": "func",
+                    "idx": funcidx,
+                }
+            )
+
         if func["typeidx"] is not None:
             if func["typeidx"] in type_ids:
                 func["typeidx"] = type_ids.index(func["typeidx"])
@@ -172,7 +195,7 @@ def read_module(buffer: io.FileIO) -> dict:
         e["name"] = values.sanitize(e["name"])
         if isinstance(e["idx"], sexpdata.Symbol):
             if e["type"] == "func":
-                e["idx"] = func_ids.index[e["idx"]]
+                e["idx"] = func_ids.index(e["idx"])
 
             elif e["type"] == "global":
                 e["idx"] = global_ids.index(e["idx"])

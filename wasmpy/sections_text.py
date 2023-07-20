@@ -68,25 +68,10 @@ def read_type(expr: list) -> tuple:
     return typeidx, (t1, t2)
 
 
-def read_func(expr: list) -> tuple:
-    funcidx = None
-    export = None
+def read_typeuse(expr: list) -> tuple:
     typeidx = None
-    off = 1
-    if off < len(expr) and isinstance(expr[off], sexpdata.Symbol):
-        funcidx = expr[off]
-        assert funcidx.value().startswith("$")
-        off += 1
 
-    if (
-        off < len(expr)
-        and isinstance(expr[off], list)
-        and isinstance(expr[off][0], sexpdata.Symbol)
-        and expr[off][0].value() == "export"
-    ):
-        export = expr[off][1]
-        off += 1
-
+    off = 0
     if (
         off < len(expr)
         and isinstance(expr[off], list)
@@ -136,6 +121,55 @@ def read_func(expr: list) -> tuple:
     else:
         typeuse = None
 
+    return typeidx, typeuse, param_ids, off
+
+
+def read_import(expr: list) -> tuple:
+    mod = expr[1]
+    name = expr[2]
+
+    off = 1
+
+    importidx = None
+    if isinstance(expr[3][1], sexpdata.Symbol) and expr[3][
+        1
+    ].value().startswith("$"):
+        importidx = expr[3][1]
+        off += 1
+
+    if expr[3][0].value() == "func":
+        typeidx, typeuse, _, _ = read_typeuse(expr[off:])
+        return (
+            "func",
+            mod,
+            name,
+            importidx,
+            {"typeidx": typeidx, "typeuse": typeuse},
+        )
+
+
+def read_func(expr: list) -> tuple:
+    funcidx = None
+    export = None
+    typeidx = None
+    off = 1
+    if off < len(expr) and isinstance(expr[off], sexpdata.Symbol):
+        funcidx = expr[off]
+        assert funcidx.value().startswith("$")
+        off += 1
+
+    if (
+        off < len(expr)
+        and isinstance(expr[off], list)
+        and isinstance(expr[off][0], sexpdata.Symbol)
+        and expr[off][0].value() == "export"
+    ):
+        export = expr[off][1]
+        off += 1
+
+    typeidx, typeuse, param_ids, o = read_typeuse(expr[off:])
+    off += o
+
     body = []
     for sub_expr in expr[off:]:
         body.append(flatten(sub_expr))
@@ -153,8 +187,8 @@ def read_func(expr: list) -> tuple:
 
     return (
         funcidx,
-        export,
         {
+            "export": export,
             "typeidx": typeidx,
             "typeuse": typeuse,
             "locals": (),
