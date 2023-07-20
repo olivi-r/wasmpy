@@ -4,6 +4,5 @@ graft wasmpy/x86
 exclude wasmpy/*.cpp
 include wasmpy/*.hpp
 include wasmpy/x86.cpp
-include wasmpy/wasi/*.h
 recursive-exclude wasmpy/x86 *.o
 recursive-exclude wasmpy/x86 *.tmp
