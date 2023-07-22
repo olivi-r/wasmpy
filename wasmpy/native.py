@@ -56,21 +56,7 @@ def create_function(ret, code, arg=b"", local=b""):
         opcodes.signatures,
     )
 
-    params = []
-    param_clear = []
-    for i, a in enumerate(arg):
-        param_clear.append(f"p{i}")
-        if a == 0x7F:
-            params.append(ctypes.c_uint32)
-
-        if a == 0x7E:
-            params.append(ctypes.c_uint64)
-
-        if a == 0x7D:
-            params.append(ctypes.c_uint32)
-
-        if a == 0x7C:
-            params.append(ctypes.c_uint64)
+    params, param_clear = gen_params(arg)
 
     if ret == 0x7F:
         ret = ctypes.POINTER(ResultI32)
@@ -87,33 +73,63 @@ def create_function(ret, code, arg=b"", local=b""):
     else:
         ret = ctypes.POINTER(ResultVoid)
 
-    func = ctypes.CFUNCTYPE(ret, *params)(address)
+    return wrap_function(ctypes.CFUNCTYPE(ret, *params)(address), param_clear)
 
-    def ensure(result):
-        if result.contents.errno == 0:
-            if not isinstance(result.contents, ResultVoid):
-                return result.contents.value
 
-        elif result.contents.errno == 1:
-            raise RuntimeError("unreachable")
+def gen_params(arg):
+    params = []
+    param_clear = []
+    for i, a in enumerate(arg):
+        param_clear.append(f"p{i}")
+        if a == 0x7F:
+            params.append(ctypes.c_uint32)
 
-        elif result.contents.errno == 2:
-            raise ZeroDivisionError("division by zero")
+        if a == 0x7E:
+            params.append(ctypes.c_uint64)
 
-        elif result.contents.errno == 3:
-            raise RuntimeError("division overflow")
+        if a == 0x7D:
+            params.append(ctypes.c_uint32)
 
-        elif result.contents.errno == 4:
-            raise ZeroDivisionError("integer modulo by zero")
+        if a == 0x7C:
+            params.append(ctypes.c_uint64)
 
-        elif result.contents.errno == 5:
-            raise FloatingPointError("unrepresentable truncation result")
+    return params, param_clear
 
-    wrapper = eval(
-        f"lambda {', '.join(['_'] + param_clear)}: ensure(func({', '.join(param_clear)}))",
-        {"ensure": ensure, "func": func},
-    )
 
-    wrapper.addr = address
+def wrap_function(func, param_clear, raw=False):
+    if raw:
+        wrapper = eval(
+            f"lambda {', '.join(['_'] + param_clear)}: func({', '.join(param_clear)})",
+            {"func": func},
+        )
+
+    else:
+        # ensure result structs
+        wrapper = eval(
+            f"lambda {', '.join(['_'] + param_clear)}: ensure(func({', '.join(param_clear)}))",
+            {"ensure": ensure, "func": func},
+        )
+
     wrapper.func = func
     return wrapper
+
+
+def ensure(result):
+    if result.contents.errno == 0:
+        if not isinstance(result.contents, ResultVoid):
+            return result.contents.value
+
+    elif result.contents.errno == 1:
+        raise RuntimeError("unreachable")
+
+    elif result.contents.errno == 2:
+        raise ZeroDivisionError("division by zero")
+
+    elif result.contents.errno == 3:
+        raise RuntimeError("division overflow")
+
+    elif result.contents.errno == 4:
+        raise ZeroDivisionError("integer modulo by zero")
+
+    elif result.contents.errno == 5:
+        raise FloatingPointError("unrepresentable truncation result")

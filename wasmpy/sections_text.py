@@ -135,10 +135,14 @@ def read_import(expr: list) -> tuple:
         1
     ].value().startswith("$"):
         importidx = expr[3][1]
-        off += 1
 
     if expr[3][0].value() == "func":
-        typeidx, typeuse, _, _ = read_typeuse(expr[off:])
+        if importidx is None:
+            typeidx, typeuse, _, _ = read_typeuse(expr[3][1:])
+
+        else:
+            typeidx, typeuse, _, _ = read_typeuse(expr[3][2:])
+
         return (
             "func",
             mod,

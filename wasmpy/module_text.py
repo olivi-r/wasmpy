@@ -72,9 +72,7 @@ def read_module(buffer: io.FileIO) -> dict:
                     if mod == "capi":
                         import_funcs["ids"].append(importidx)
                         desc["obj"] = getattr(ctypes.pythonapi, name)
-                        import_funcs["funcs"].append(
-                            getattr(ctypes.pythonapi, name)
-                        )
+                        import_funcs["funcs"].append(desc)
 
                     # TODO: .wasm imports
 
@@ -133,10 +131,7 @@ def read_module(buffer: io.FileIO) -> dict:
         mod_dict["globals"][globalidx] = g["obj"]
 
     for funcidx, func in enumerate(mod_dict["funcs"]):
-        if not isinstance(func, dict):
-            continue
-
-        if func["export"] is not None:
+        if "export" in func and func["export"] is not None:
             mod_dict["exports"].append(
                 {
                     "name": func["export"],
@@ -162,17 +157,41 @@ def read_module(buffer: io.FileIO) -> dict:
 
             func["type"] = func["typeuse"]
 
-        for i, term in enumerate(func["body"]):
-            if term in global_ids:
-                func["body"][i] = global_ids.index(term)
+        if "obj" not in func:
+            for i, term in enumerate(func["body"]):
+                if term in global_ids:
+                    func["body"][i] = global_ids.index(term)
 
-        func["body"] = instructions.read_expr_text(func["body"])
-        if not func["type"][1]:
-            func["type"][1].append(0x40)
+            func["body"] = instructions.read_expr_text(func["body"])
+            if not func["type"][1]:
+                func["type"][1].append(0x40)
 
-        func["obj"] = native.create_function(
-            func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
-        )
+            func["obj"] = native.create_function(
+                func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
+            )
+
+        else:
+            if not hasattr(func["obj"], "func"):
+                params, param_clear = native.gen_params(func["type"][0])
+                func["obj"].argtypes = params
+                if not func["type"][1]:
+                    func["obj"].restype = None
+
+                elif func["type"][1][0] == 0x7F:
+                    func["obj"].restype = ctypes.c_uint32
+
+                elif func["type"][1][0] == 0x7E:
+                    func["obj"].restype = ctypes.c_uint64
+
+                elif func["type"][1][0] == 0x7D:
+                    func["obj"].restype = ctypes.c_float
+
+                elif func["type"][1][0] == 0x7C:
+                    func["obj"].restype = ctypes.c_double
+
+                func["obj"] = native.wrap_function(
+                    func["obj"], param_clear, True
+                )
 
         mod_dict["funcs"][funcidx] = func["obj"]
 
