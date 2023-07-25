@@ -396,6 +396,7 @@ API wasi_errno_t wasi_args_get(uint8_t **argv, uint8_t *argv_buf)
 
 API wasi_errno_t wasi_args_sizes_get(wasi_size_t *argc, wasi_size_t *argv_buf_size)
 {
+    *argc = 0;
     *argv_buf_size = 0;
     return wasi_errno_success;
 }
