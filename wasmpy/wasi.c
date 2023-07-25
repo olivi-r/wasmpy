@@ -391,12 +391,13 @@ typedef struct
 
 API wasi_errno_t wasi_args_get(uint8_t **argv, uint8_t *argv_buf)
 {
-    return wasi_errno_nosys;
+    return wasi_errno_success;
 }
 
 API wasi_errno_t wasi_args_sizes_get(wasi_size_t *argc, wasi_size_t *argv_buf_size)
 {
-    return wasi_errno_nosys;
+    *argv_buf_size = 0;
+    return wasi_errno_success;
 }
 
 API wasi_errno_t wasi_environ_get(uint8_t **environ, uint8_t *envrion_buf)
