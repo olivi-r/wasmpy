@@ -1,5 +1,5 @@
 import ctypes, platform, struct
-from . import util
+from . import nativelib, util
 
 
 class ResultVoid(ctypes.Structure):
@@ -25,10 +25,6 @@ class ResultI64(ctypes.Structure):
 class ResultF64(ctypes.Structure):
     _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_double)]
     _pack_ = 1
-
-
-if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
-    from . import x86 as nativelib
 
 
 def create_global(mut, globaltype, expr):

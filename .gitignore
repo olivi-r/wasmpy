@@ -1,14 +1,13 @@
-# folders
 wasmpy.egg-info
+wasmpy/x86/**/*
+!wasmpy/*/lib/*
+!wasmpy/*/lib/
+!wasmpy/**/*.s
+**/opcodes.cpp
 __pycache__
 .vscode
+*.pyd
 build
 dist
 .env
-
-# files
 *.so
-*.pyd
-wasmpy/x86/**/*
-!wasmpy/x86/**/*.s
-wasmpy/opcodes.cpp

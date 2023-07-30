@@ -1,4 +1,4 @@
-#include "x86.hpp"
+#include "lib.hpp"
 
 std::vector<void *> registeredPages = {};
 bytes globalTable = {};
@@ -632,12 +632,12 @@ static PyMethodDef methods[] = {
 
 static PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
-    "x86",
+    "nativelib",
     NULL,
     -1,
     methods};
 
-PyMODINIT_FUNC PyInit_x86()
+PyMODINIT_FUNC PyInit_nativelib()
 {
     errorPageAddr = (uint64_t)writePage(errorPage);
     PyObject *m = PyModule_Create(&module);

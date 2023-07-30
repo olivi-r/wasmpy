@@ -1,6 +1,6 @@
 from . import binary, text
-import sys
+import sys as _sys
 
 
-sys.meta_path.insert(0, text.WebAssemblyTextLoader())
-sys.meta_path.insert(0, binary.WebAssemblyBinaryLoader())
+_sys.meta_path.insert(0, text.WebAssemblyTextLoader())
+_sys.meta_path.insert(0, binary.WebAssemblyBinaryLoader())

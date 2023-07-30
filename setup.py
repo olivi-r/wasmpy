@@ -316,21 +316,8 @@ class tidy(setuptools.Command):
         pass
 
     def run(self):
-        if os.path.exists("wasmpy/opcodes.cpp"):
-            os.remove("wasmpy/opcodes.cpp")
-
-        for file in listdir("wasmpy/wasi"):
-            if os.path.isdir(file):
-                continue
-
-            if os.path.splitext(file)[1] in (
-                ".exp",
-                ".lib",
-                ".pdb",
-                ".ipdb",
-                ".iobj",
-            ):
-                os.remove(file)
+        if os.path.exists("wasmpy/x86/lib/opcodes.cpp"):
+            os.remove("wasmpy/x86/lib/opcodes.cpp")
 
         for file in (
             listdir("wasmpy/x86")
@@ -374,14 +361,13 @@ class gen_opcodes(setuptools.Command):
                     )
                 )
 
-        with open("wasmpy/opcodes.cpp", "w+") as out:
+        with open("wasmpy/x86/lib/opcodes.cpp", "w+") as out:
             bits = struct.calcsize("P")
 
             out.writelines(
                 (
                     "// auto-generated\n\n",
-                    '#include "opcodes.hpp"\n',
-                    '#include "x86.hpp"\n\n',
+                    '#include "opcodes.hpp"\n\n',
                     "bytes decodeOperation(bytes buf, size_t offset, char plat)\n{\n\t",
                     "bytes insts = {};\n\t",
                     "int localidx;\n\t",
@@ -468,8 +454,8 @@ ext = [
 if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
     ext.append(
         setuptools.Extension(
-            "wasmpy.x86",
-            sources=["wasmpy/x86.cpp", "wasmpy/opcodes.cpp"],
+            "wasmpy.nativelib",
+            sources=["wasmpy/x86/lib/lib.cpp", "wasmpy/x86/lib/opcodes.cpp"],
             py_limited_api=True,
         )
     )
