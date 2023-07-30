@@ -640,8 +640,6 @@ static PyModuleDef module = {
 PyMODINIT_FUNC PyInit_nativelib()
 {
     errorPageAddr = (uint64_t)writePage(errorPage);
-    PyObject *m = PyModule_Create(&module);
-    PyModule_AddObject(m, "error_page_address", PyLong_FromVoidPtr((void *)(errorPageAddr)));
     Py_AtExit(&freePages);
-    return m;
+    return PyModule_Create(&module);
 }
