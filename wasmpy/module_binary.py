@@ -122,6 +122,16 @@ def read_module(buffer: object) -> dict:
         for i, (locals, body) in enumerate(code)
     ]
 
+    function_base_addr = native.nativelib.write_function_page()
+    for funcidx, func in enumerate(mod_dict["funcs"]):
+        if isinstance(func, dict):
+            obj = ctypes.CFUNCTYPE(func["ret"], *func["params"])(
+                function_base_addr + func["address"]
+            )
+            mod_dict["funcs"][funcidx] = native.wrap_function(
+                obj, func["param_clear"]
+            )
+
     native.nativelib.flush_globals()
 
     for e in mod_dict["exports"]:

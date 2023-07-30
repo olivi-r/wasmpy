@@ -18,6 +18,8 @@ bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0,    // padding
 };
 
+bytes text = {};
+
 template <typename T>
 std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn)
 {
@@ -58,17 +60,24 @@ void freePages()
     }
 }
 
-void *writeFunction(bytes code)
+size_t writeFunction(bytes code)
 {
-    void *buf = writePage(code);
+    size_t offset = text.size();
+    text = concat(text, {code});
+    return offset;
+}
+
+static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
+{
+    void *buf = writePage(text);
 #ifdef __linux__
-    mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
+    mprotect(buf, text.size(), PROT_READ | PROT_EXEC);
 #endif
 #ifdef _WIN32
     DWORD dummy;
-    VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);
+    VirtualProtect(buf, text.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
-    return buf;
+    return PyLong_FromVoidPtr(buf);
 }
 
 bytes regParam32(const char *argbuf, Py_ssize_t arglen)
@@ -223,8 +232,7 @@ struct operation
     operation(uint8_t opcode, std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : opcode(opcode), arguments(arguments), results(results), consumes(0){};
 };
 
-static PyObject *
-createFunction(PyObject *self, PyObject *args)
+static PyObject *createFunction(PyObject *self, PyObject *args)
 {
     char plat, ret;
     const char *codebuf, *argbuf, *localbuf;
@@ -568,10 +576,10 @@ createFunction(PyObject *self, PyObject *args)
         else
             returnCode = ret_void(errorPageAddr);
     }
-    return Py_BuildValue("O", PyLong_FromVoidPtr(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode}))));
+    return Py_BuildValue("O", PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode}))));
 }
 
-PyObject *appendGlobal(PyObject *self, PyObject *args)
+static PyObject *appendGlobal(PyObject *self, PyObject *args)
 {
     unsigned long long global;
     int mut;
@@ -615,13 +623,14 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
-    {"create_function", createFunction, METH_VARARGS, NULL},
     {"append_global", appendGlobal, METH_VARARGS, NULL},
+    {"create_function", createFunction, METH_VARARGS, NULL},
     {"flush_globals", flushGlobals, METH_NOARGS, NULL},
+    {"write_function_page", writeFunctionPage, METH_NOARGS, NULL},
     {"write_globals", writeGlobals, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
-static struct PyModuleDef module = {
+static PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
     "x86",
     NULL,

@@ -166,7 +166,7 @@ def read_module(buffer: io.FileIO) -> dict:
             if not func["type"][1]:
                 func["type"][1].append(0x40)
 
-            func["obj"] = native.create_function(
+            func["_obj"] = native.create_function(
                 func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
             )
 
@@ -192,6 +192,14 @@ def read_module(buffer: io.FileIO) -> dict:
                 func["obj"] = native.wrap_function(
                     func["obj"], param_clear, True
                 )
+
+    function_base_addr = native.nativelib.write_function_page()
+    for funcidx, func in enumerate(mod_dict["funcs"]):
+        if "_obj" in func:
+            obj = ctypes.CFUNCTYPE(
+                func["_obj"]["ret"], *func["_obj"]["params"]
+            )(function_base_addr + func["_obj"]["address"])
+            func["obj"] = native.wrap_function(obj, func["_obj"]["param_clear"])
 
         mod_dict["funcs"][funcidx] = func["obj"]
 

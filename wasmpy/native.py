@@ -73,7 +73,12 @@ def create_function(ret, code, arg=b"", local=b""):
     else:
         ret = ctypes.POINTER(ResultVoid)
 
-    return wrap_function(ctypes.CFUNCTYPE(ret, *params)(address), param_clear)
+    return {
+        "ret": ret,
+        "params": params,
+        "address": address,
+        "param_clear": param_clear,
+    }
 
 
 def gen_params(arg):
