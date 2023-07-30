@@ -1,5 +1,5 @@
-from . import opcodes
 import ctypes, platform, struct
+from . import util
 
 
 class ResultVoid(ctypes.Structure):
@@ -52,8 +52,8 @@ def create_function(ret, code, arg=b"", local=b""):
         code,
         arg,
         local,
-        opcodes.consumes,
-        opcodes.signatures,
+        util.consumes,
+        util.signatures,
     )
 
     params, param_clear = gen_params(arg)

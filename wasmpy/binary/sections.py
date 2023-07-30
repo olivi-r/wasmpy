@@ -1,4 +1,5 @@
 from . import instructions, types, values
+from .. import util
 
 
 def read_customsec(buffer: object, length: int) -> tuple:
@@ -88,7 +89,7 @@ def read_exportsec(buffer: object) -> tuple:
     """Read an export section from buffer."""
     ex = ()
     for _ in range(values.get_vec_len(buffer)):
-        export = {"name": values.sanitize(values.read_name(buffer))}
+        export = {"name": util.sanitize(values.read_name(buffer))}
         desc = buffer.read(1)[0]
         assert desc in range(4)
         if not desc:

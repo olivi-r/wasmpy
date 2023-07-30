@@ -1,6 +1,6 @@
-from . import hooks
+from . import binary, text
 import sys
 
 
-sys.meta_path.insert(0, hooks.WebAssemblyTextLoader())
-sys.meta_path.insert(0, hooks.WebAssemblyBinaryLoader())
+sys.meta_path.insert(0, text.WebAssemblyTextLoader())
+sys.meta_path.insert(0, binary.WebAssemblyBinaryLoader())

@@ -1,4 +1,5 @@
-from . import module, native, sections_binary, values
+from . import sections, values
+from .. import native, util
 import ctypes, importlib
 
 
@@ -45,42 +46,40 @@ def read_module(buffer: object) -> dict:
                 break
 
             if not id:
-                mod_dict["custom"] += (
-                    sections_binary.read_customsec(buffer, length),
-                )
+                mod_dict["custom"] += (sections.read_customsec(buffer, length),)
 
             if id == 1:
-                mod_dict["types"] = sections_binary.read_typesec(buffer)
+                mod_dict["types"] = sections.read_typesec(buffer)
 
             if id == 2:
-                mod_dict["imports"] = sections_binary.read_importsec(buffer)
+                mod_dict["imports"] = sections.read_importsec(buffer)
 
             if id == 3:
-                typeidx = sections_binary.read_funcsec(buffer)
+                typeidx = sections.read_funcsec(buffer)
 
             if id == 4:
-                mod_dict["tables"] = sections_binary.read_tablesec(buffer)
+                mod_dict["tables"] = sections.read_tablesec(buffer)
 
             if id == 5:
-                mod_dict["mems"] = sections_binary.read_memsec(buffer)
+                mod_dict["mems"] = sections.read_memsec(buffer)
 
             if id == 6:
-                mod_dict["globals"] = sections_binary.read_globalsec(buffer)
+                mod_dict["globals"] = sections.read_globalsec(buffer)
 
             if id == 7:
-                mod_dict["exports"] = sections_binary.read_exportsec(buffer)
+                mod_dict["exports"] = sections.read_exportsec(buffer)
 
             if id == 8:
-                mod_dict["start"] = sections_binary.read_startsec(buffer)
+                mod_dict["start"] = sections.read_startsec(buffer)
 
             if id == 9:
-                mod_dict["elem"] = sections_binary.read_elemsec(buffer)
+                mod_dict["elem"] = sections.read_elemsec(buffer)
 
             if id == 10:
-                code = sections_binary.read_codesec(buffer)
+                code = sections.read_codesec(buffer)
 
             if id == 11:
-                mod_dict["data"] = sections_binary.read_datasec(buffer)
+                mod_dict["data"] = sections.read_datasec(buffer)
 
     except IndexError as i:
         pass
@@ -144,4 +143,4 @@ def read_module(buffer: object) -> dict:
     if mod_dict["start"] is not None:
         mod_dict["start"] = mod_dict["funcs"][mod_dict["start"]]
 
-    return module.create_module(mod_dict)
+    return util.create_module(mod_dict)

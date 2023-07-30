@@ -1,9 +1,10 @@
-from . import instructions, module, native, sections_text, values
-import ctypes, io
+from . import instructions, sections
+from .. import native, util
 import sexpdata
+import ctypes
 
 
-def read_module(buffer: io.FileIO) -> dict:
+def read_module(buffer: object) -> dict:
     original = buffer.read()
     buffer.close()
     comment_depth = 0
@@ -60,14 +61,12 @@ def read_module(buffer: io.FileIO) -> dict:
     for expr in data:
         if isinstance(expr, list):
             if expr[0].value() == "type":
-                typeidx, type = sections_text.read_type(expr)
+                typeidx, type = sections.read_type(expr)
                 mod_dict["types"].append(type)
                 type_ids.append(typeidx)
 
             elif expr[0].value() == "import":
-                type, mod, name, importidx, desc = sections_text.read_import(
-                    expr
-                )
+                type, mod, name, importidx, desc = sections.read_import(expr)
                 if type == "func":
                     if mod == "capi":
                         import_funcs["ids"].append(importidx)
@@ -77,12 +76,12 @@ def read_module(buffer: io.FileIO) -> dict:
                     # TODO: .wasm imports
 
             elif expr[0].value() == "func":
-                funcidx, func = sections_text.read_func(expr)
+                funcidx, func = sections.read_func(expr)
                 funcs["funcs"].append(func)
                 funcs["ids"].append(funcidx)
 
             elif expr[0].value() == "global":
-                globalidx, export, global_ = sections_text.read_global(expr)
+                globalidx, export, global_ = sections.read_global(expr)
                 mod_dict["globals"].append(global_)
                 global_ids.append(globalidx)
                 if export is not None:
@@ -95,7 +94,7 @@ def read_module(buffer: io.FileIO) -> dict:
                     )
 
             elif expr[0].value() == "export":
-                mod_dict["exports"].append(sections_text.read_export(expr))
+                mod_dict["exports"].append(sections.read_export(expr))
 
             elif expr[0].value() == "start":
                 if mod_dict["start"] is not None:
@@ -219,7 +218,7 @@ def read_module(buffer: io.FileIO) -> dict:
     native.nativelib.flush_globals()
 
     for e in mod_dict["exports"]:
-        e["name"] = values.sanitize(e["name"])
+        e["name"] = util.sanitize(e["name"])
         if isinstance(e["idx"], sexpdata.Symbol):
             if e["type"] == "func":
                 e["idx"] = func_ids.index(e["idx"])
@@ -233,4 +232,4 @@ def read_module(buffer: io.FileIO) -> dict:
         if e["type"] == "global":
             e["obj"] = mod_dict["globals"][e["idx"]]
 
-    return module.create_module(mod_dict)
+    return util.create_module(mod_dict)
