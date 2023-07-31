@@ -35,8 +35,7 @@ void *writePage(bytes data)
 #ifdef __linux__
     size_t size = sysconf(_SC_PAGE_SIZE) * (1 + data.size() / sysconf(_SC_PAGE_SIZE));
     buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-#endif
-#ifdef _WIN32
+#elif _WIN32
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     size_t size = sysinfo.dwPageSize * (1 + data.size() / sysinfo.dwPageSize);
@@ -53,8 +52,7 @@ void freePages()
     {
 #ifdef __linux__
         munmap(registeredPages.at(i), sysconf(_SC_PAGE_SIZE));
-#endif
-#ifdef _WIN32
+#elif _WIN32
         VirtualFree(registeredPages.at(i), 0, MEM_RELEASE);
 #endif
     }
@@ -72,11 +70,11 @@ static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
     void *buf = writePage(text);
 #ifdef __linux__
     mprotect(buf, text.size(), PROT_READ | PROT_EXEC);
-#endif
-#ifdef _WIN32
+#elif _WIN32
     DWORD dummy;
     VirtualProtect(buf, text.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
+    text = {}; // flush function code
     return PyLong_FromVoidPtr(buf);
 }
 
@@ -157,8 +155,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
                 code = concat(code, {param_64_linux_5_win_3});
         }
     }
-#endif
-#ifdef _WIN32
+#elif _WIN32
     for (int i = 0; i < min(arglen, 4); i++)
     {
         localTypes.push_back(argbuf[i]);
@@ -193,13 +190,11 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
         }
     }
 #endif
-
 #ifdef __linux__
     int argoff = 6;
     Py_ssize_t count = arglen - argoff;
     int baseOffset = 16;
-#endif
-#ifdef _WIN32
+#elif _WIN32
     int argoff = 4;
     Py_ssize_t count = arglen - argoff;
     int baseOffset = 48;

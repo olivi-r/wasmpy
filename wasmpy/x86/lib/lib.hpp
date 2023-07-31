@@ -1,5 +1,5 @@
-#ifndef X86_H
-#define X86_H
+#ifndef LIB_H
+#define LIB_H
 
 #define PY_SSIZE_T_CLEAN
 #define Py_LIMITED_API 0x03060000
@@ -10,12 +10,11 @@
 
 #ifdef __linux__
 #include <sys/mman.h>
-#endif
-#ifdef _WIN32
+#elif _WIN32
 #include <Windows.h>
+#else
+#error Unknown system
 #endif
-
-#define RET 0xC3
 
 typedef std::vector<uint8_t> bytes;
 

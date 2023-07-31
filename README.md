@@ -7,7 +7,7 @@ Wasmpy is a lightweight layer that sits between Python and WebAssembly. When att
 
 # Installing
 ```sh
-python -m pip install wasmpy
+python3 -m pip install wasmpy
 ```
 
 # Usage
