@@ -1,12 +1,14 @@
 #include "lib.hpp"
 
 std::vector<void *> registeredPages = {};
+std::vector<size_t> registeredPageSizes = {};
 bytes globalTable = {};
 bytes globalTypes = {};
 std::vector<int> globalMut = {};
 bytes localTypes = {};
 uint64_t globalTableAddr;
 uint64_t errorPageAddr;
+uint32_t page_size;
 
 bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
@@ -32,17 +34,15 @@ std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn)
 void *writePage(bytes data)
 {
     void *buf;
+    size_t size = page_size * (1 + data.size() / page_size);
 #ifdef __linux__
-    size_t size = sysconf(_SC_PAGE_SIZE) * (1 + data.size() / sysconf(_SC_PAGE_SIZE));
     buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 #elif _WIN32
-    SYSTEM_INFO sysinfo;
-    GetSystemInfo(&sysinfo);
-    size_t size = sysinfo.dwPageSize * (1 + data.size() / sysinfo.dwPageSize);
     buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
 #endif
     memcpy(buf, data.data(), data.size());
     registeredPages.push_back(buf);
+    registeredPageSizes.push_back(size);
     return buf;
 }
 
@@ -51,7 +51,7 @@ void freePages()
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
 #ifdef __linux__
-        munmap(registeredPages.at(i), sysconf(_SC_PAGE_SIZE));
+        munmap(registeredPages.at(i), registeredPageSizes.at(i));
 #elif _WIN32
         VirtualFree(registeredPages.at(i), 0, MEM_RELEASE);
 #endif
@@ -217,7 +217,7 @@ bytes regParam64(const char *argbuf, Py_ssize_t arglen)
     return code;
 }
 
-struct operation
+typedef struct operation
 {
     uint8_t opcode;
     std::vector<wchar_t *> arguments;
@@ -225,7 +225,7 @@ struct operation
     long consumes;
     bytes code;
     operation(uint8_t opcode, std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : opcode(opcode), arguments(arguments), results(results), consumes(0){};
-};
+} operation;
 
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
@@ -634,6 +634,14 @@ static PyModuleDef module = {
 
 PyMODINIT_FUNC PyInit_nativelib()
 {
+#ifdef __linux__
+    page_size = sysconf(_SC_PAGE_SIZE);
+#elif _WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    page_size = sysinfo.dwPageSize;
+#endif
+
     errorPageAddr = (uint64_t)writePage(errorPage);
     Py_AtExit(&freePages);
     return PyModule_Create(&module);
