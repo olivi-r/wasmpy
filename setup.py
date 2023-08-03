@@ -1,186 +1,25 @@
 import json, os, platform, setuptools.command.build_ext, struct, subprocess
 
 
-prefixed = {
-    "local.get": (
-        "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
-        "localidx *= 10;\n\t\t\t",
-        "localidx += 10;\n\t\t\t",
-    ),
-    "local.set": (
-        "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
-        "localidx *= 10;\n\t\t\t",
-    ),
-    "local.tee": (
-        "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
-        "localidx *= 10;\n\t\t\t",
-    ),
-    "global.get": (
-        "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
-        "ll *= 9;\n\t\t\t",
-        "ll += (uint64_t)globalTableAddr;\n\t\t\t",
-        "lh = ll + 2;\n\t\t\t",
-        "hl = ll + 4;\n\t\t\t",
-        "hh = ll + 6;\n\t\t\t",
-        "bits = ll + 8;\n\t\t\t",
-    ),
-    "global.set": (
-        "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\t",
-        "ll *= 9;\n\t\t\t",
-        "ll += (uint64_t)globalTableAddr;\n\t\t\t",
-        "lh = ll + 2;\n\t\t\t",
-        "hl = ll + 4;\n\t\t\t",
-        "hh = ll + 6;\n\t\t\t",
-    ),
-}
-
-global_32 = "(uint8_t){b}, (uint8_t)({b} >> 8), (uint8_t)({b} >> 16), (uint8_t)({b} >> 24)"
-global_64 = (
-    global_32
-    + ", (uint8_t)({b} >> 32), (uint8_t)({b} >> 40), (uint8_t)({b} >> 48), (uint8_t)({b} >> 56)"
-)
-error_32 = "(uint8_t)(errorPageAddr + {o}), (uint8_t)((errorPageAddr + {o}) >> 8), (uint8_t)((errorPageAddr + {o}) >> 16), (uint8_t)((errorPageAddr + {o}) >> 24)"
-error_64 = (
-    error_32
-    + ", (uint8_t)((errorPageAddr + {o}) >> 32), (uint8_t)((errorPageAddr + {o}) >> 40), (uint8_t)((errorPageAddr + {o}) >> 48), (uint8_t)((errorPageAddr + {o}) >> 56)"
-)
-
-replacements = {
-    "ret_v32": (
-        (
-            "0, 0, 0, 0, 0, 0, 0, 255",
-            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24), (uint8_t)((errorPageAddr + 1) >> 32), (uint8_t)((errorPageAddr + 1) >> 40), (uint8_t)((errorPageAddr + 1) >> 48), (uint8_t)((errorPageAddr + 1) >> 56)",
-        ),
-        (
-            "255, 0, 0, 0, 0, 0, 0, 255",
-            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24), (uint8_t)(errorPageAddr >> 32), (uint8_t)(errorPageAddr >> 40), (uint8_t)(errorPageAddr >> 48), (uint8_t)(errorPageAddr >> 56)",
-        ),
-        (
-            "0, 0, 0, 255",
-            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24)",
-        ),
-        (
-            "255, 0, 0, 255",
-            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24)",
-        ),
-    ),
-    "ret_v64": (
-        (
-            "0, 0, 0, 0, 0, 0, 0, 255",
-            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24), (uint8_t)((errorPageAddr + 1) >> 32), (uint8_t)((errorPageAddr + 1) >> 40), (uint8_t)((errorPageAddr + 1) >> 48), (uint8_t)((errorPageAddr + 1) >> 56)",
-        ),
-        (
-            "255, 0, 0, 0, 0, 0, 0, 255",
-            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24), (uint8_t)(errorPageAddr >> 32), (uint8_t)(errorPageAddr >> 40), (uint8_t)(errorPageAddr >> 48), (uint8_t)(errorPageAddr >> 56)",
-        ),
-        (
-            "0, 0, 0, 255",
-            "(uint8_t)(errorPageAddr + 1), (uint8_t)((errorPageAddr + 1) >> 8), (uint8_t)((errorPageAddr + 1) >> 16), (uint8_t)((errorPageAddr + 1) >> 24)",
-        ),
-        (
-            "255, 0, 0, 255",
-            "(uint8_t)(errorPageAddr + 5), (uint8_t)((errorPageAddr + 5) >> 8), (uint8_t)((errorPageAddr + 5) >> 16), (uint8_t)((errorPageAddr + 5) >> 24)",
-        ),
-        (
-            "0, 255, 0, 255",
-            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24)",
-        ),
-    ),
-    "ret_void": (
-        (
-            "0, 0, 0, 0, 0, 0, 0, 255",
-            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24), (uint8_t)(errorPageAddr >> 32), (uint8_t)(errorPageAddr >> 40), (uint8_t)(errorPageAddr >> 48), (uint8_t)(errorPageAddr >> 56)",
-        ),
-        (
-            "0, 0, 0, 255",
-            "(uint8_t)errorPageAddr, (uint8_t)(errorPageAddr >> 8), (uint8_t)(errorPageAddr >> 16), (uint8_t)(errorPageAddr >> 24)",
-        ),
-    ),
-    "unreachable": (
-        # 64 bit replacements
-        ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=9)),
-        # 32 bit replacements
-        ("0, 0, 0, 255", error_32.format(o=9)),
-    ),
-    "local.get": (
-        (
-            "255, 0, 255, 0",
-            "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
-        ),
-    ),
-    "local.set": (
-        (
-            "255, 0, 255, 0",
-            "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
-        ),
-    ),
-    "local.tee": (
-        (
-            "255, 0, 255, 0",
-            "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)",
-        ),
-    ),
-    "global.get": (
-        # 64 bit replacements
-        ("0, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="ll")),
-        ("255, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="lh")),
-        ("0, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hl")),
-        ("255, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hh")),
-        ("255, 255, 255, 255, 0, 0, 0, 0", global_64.format(b="bits")),
-        # 32 bit replacements
-        ("0, 0, 0, 255", global_32.format(b="ll")),
-        ("255, 0, 0, 255", global_32.format(b="lh")),
-        ("0, 255, 0, 255", global_32.format(b="hl")),
-        ("255, 255, 0, 255", global_32.format(b="hh")),
-        ("255, 255, 255, 255", global_32.format(b="bits")),
-    ),
-    "global.set": (
-        # 64 bit replacements
-        ("0, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="ll")),
-        ("255, 0, 0, 255, 0, 0, 0, 0", global_64.format(b="lh")),
-        ("0, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hl")),
-        ("255, 255, 0, 255, 0, 0, 0, 0", global_64.format(b="hh")),
-        # 32 bit replacements
-        ("0, 0, 0, 255", global_32.format(b="ll")),
-        ("255, 0, 0, 255", global_32.format(b="lh")),
-        ("0, 255, 0, 255", global_32.format(b="hl")),
-        ("255, 255, 0, 255", global_32.format(b="hh")),
-    ),
-    "i32.const": (
-        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
-        ("255, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
-    ),
-    "i64.const": (
-        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
-        ("0, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
-        ("255, 0", "buf.at(offset + 5), buf.at(offset + 6)"),
-        ("255, 255", "buf.at(offset + 7), buf.at(offset + 8)"),
-    ),
-    "f32.const": (
-        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
-        ("255, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
-    ),
-    "f64.const": (
-        ("0, 0", "buf.at(offset + 1), buf.at(offset + 2)"),
-        ("0, 255", "buf.at(offset + 3), buf.at(offset + 4)"),
-        ("255, 0", "buf.at(offset + 5), buf.at(offset + 6)"),
-        ("255, 255", "buf.at(offset + 7), buf.at(offset + 8)"),
-    ),
-    "i32.div_s": (
-        # 64 bit replacements
-        ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=10)),
-        ("255, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=11)),
-        # 32 bit replacements
-        ("0, 0, 0, 255", error_32.format(o=10)),
-        ("255, 0, 0, 255", error_32.format(o=11)),
-    ),
-    "i32.div_u": (
-        # 64 bit replacements
-        ("0, 0, 0, 0, 0, 0, 0, 255", error_64.format(o=10)),
-        # 32 bit replacements
-        ("0, 0, 0, 255", error_32.format(o=10)),
-    ),
-}
+opcodes = {}
+with open(
+    os.path.join(os.path.dirname(__file__), "wasmpy", "opcodes.json")
+) as fp:
+    data = json.load(fp)
+    prefixes = data["prefixes"]
+    replacements = data["replacements"]
+    for group in data["opcodes"]:
+        opcodes.update(
+            dict(
+                zip(
+                    (i[0] for i in group["instructions"]),
+                    (
+                        i + group["offset"]
+                        for i in range(len(group["instructions"]))
+                    ),
+                )
+            )
+        )
 
 
 def listdir(path: str) -> list:
@@ -198,10 +37,13 @@ class assemble(setuptools.Command):
             "T",
             "comma separated list of targets to assemble, defaults to current "
             "Python's architecture, e.g. --targets=x86_64,...",
-        )
+        ),
+        ("verbose", "v", "increase output verbosity"),
     ]
 
     def initialize_options(self):
+        self.verbose = None
+
         if is_x86():
             if struct.calcsize("P") == 4:
                 self.targets = "x86"
@@ -219,6 +61,10 @@ class assemble(setuptools.Command):
                 f"wasmpy/{target}"
             ):
                 raise ValueError(f"Unknown architecture: {target}")
+
+    def log(self, out):
+        if self.verbose is not None:
+            print(" ".join(out))
 
     def run(self):
         args = {
@@ -244,16 +90,20 @@ class assemble(setuptools.Command):
                 if os.path.splitext(source)[1].lower() == ".s":
                     name = os.path.splitext(source)[0]
                     cmd = arg[0] + [name + ".o", source]
+                    self.log(cmd)
                     subprocess.call(cmd)
 
                     if platform.system() == "Linux":
                         cmd = arg[1] + [name, name + ".o"]
+                        self.log(cmd)
                         subprocess.call(cmd)
 
                     elif platform.system() == "Windows":
                         cmd = arg[2] + [name + ".tmp", name + ".o"]
+                        self.log(cmd)
                         subprocess.call(cmd)
                         cmd = arg[3] + [name + ".tmp", name]
+                        self.log(cmd)
                         subprocess.call(cmd)
 
 
@@ -293,29 +143,15 @@ class gen_opcodes(setuptools.Command):
 
     def run(self):
         # generate opcodes.cpp
-        opcodes = {}
-        with open(
-            os.path.join(os.path.dirname(__file__), "wasmpy", "opcodes.json")
-        ) as fp:
-            data = json.load(fp)
-            for group in data["opcodes"]:
-                opcodes.update(
-                    dict(
-                        zip(
-                            (i[0] for i in group["instructions"]),
-                            (
-                                i + group["offset"]
-                                for i in range(len(group["instructions"]))
-                            ),
-                        )
-                    )
-                )
+        if is_x86():
+            if struct.calcsize("P") == 4:
+                machine = "x86"
 
-        if struct.calcsize("P") == 4:
-            machine = "x86"
+            else:
+                machine = "x86_64"
 
         else:
-            machine = "x86_64"
+            raise ValueError("Unknown architecture")
 
         with open(f"wasmpy/arch/{machine}/lib/opcodes.cpp", "w+") as out:
             out.writelines(
@@ -346,8 +182,8 @@ class gen_opcodes(setuptools.Command):
                             data = data.replace(*replacement)
 
                     out.write(f"case {opcodes[inst]}:\n\t\t")
-                    if inst in prefixed:
-                        out.write("".join(prefixed[inst]))
+                    if inst in prefixes:
+                        out.write("".join(prefixes[inst]))
 
                     out.write(f"insts = {{{data}}};\n\t\t")
 
