@@ -192,7 +192,14 @@ def is_x86() -> bool:
 
 
 class assemble(setuptools.Command):
-    user_options = [("targets=", "T", None)]
+    user_options = [
+        (
+            "targets=",
+            "T",
+            "comma separated list of targets to assemble, defaults to current "
+            "Python's architecture, e.g. --targets=x86_64,...",
+        )
+    ]
 
     def initialize_options(self):
         if is_x86():
