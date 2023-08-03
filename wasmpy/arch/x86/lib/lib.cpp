@@ -118,11 +118,11 @@ typedef struct operation
 
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
-    char plat, ret;
+    char ret;
     const char *codebuf, *argbuf, *localbuf;
     Py_ssize_t codelen, arglen, locallen;
     PyObject *consumes, *signatures;
-    if (!PyArg_ParseTuple(args, "bby#y#y#OO", &plat, &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen, &consumes, &signatures))
+    if (!PyArg_ParseTuple(args, "by#y#y#OO", &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen, &consumes, &signatures))
         return NULL;
 
     bytes loadLocals = regParam(argbuf, arglen);
@@ -417,7 +417,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     for (size_t i = 0; i < stack.size(); i++)
     {
         operation *current = stack.at(i);
-        current->code = decodeOperation(code, offset, plat);
+        current->code = decodeOperation(code, offset);
         funcBody = concat(funcBody, {current->code});
         offset += current->consumes;
         offset += 1;

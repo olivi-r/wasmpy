@@ -1,5 +1,5 @@
-import ctypes, platform, struct
 from . import nativelib, util
+import ctypes
 
 
 class ResultVoid(ctypes.Structure):
@@ -43,7 +43,6 @@ def get_global_object(offset, globaltype):
 
 def create_function(ret, code, arg=b"", local=b""):
     address = nativelib.create_function(
-        struct.calcsize("P"),
         ret,
         code,
         arg,

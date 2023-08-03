@@ -1309,11 +1309,11 @@
         }
     ],
     "prefixes": {
-        "local.get": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\tlocalidx *= 10;\n\t\t\tlocalidx += 10;\n\t\t\t",
-        "local.set": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\tlocalidx *= 10;\n\t\t\t",
-        "local.tee": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\tlocalidx *= 10;\n\t\t\t",
-        "global.get": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\tll *= 9;\n\t\t\tll += (uint64_t)globalTableAddr;\n\t\t\tlh = ll + 2;\n\t\t\thl = ll + 4;\n\t\t\thh = ll + 6;\n\t\t\tbits = ll + 8;\n\t\t\t",
-        "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\t\tll *= 9;\n\t\t\tll += (uint64_t)globalTableAddr;\n\t\t\tlh = ll + 2;\n\t\t\thl = ll + 4;\n\t\t\thh = ll + 6;\n\t\t\t"
+        "global.get": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\tbits = ll + 8;\n\t\t",
+        "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\t",
+        "local.get": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\tlocalidx += 10;\n\t\t",
+        "local.set": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t",
+        "local.tee": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t"
     },
     "replacements": {
         "f32.const": [

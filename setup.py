@@ -158,7 +158,7 @@ class gen_opcodes(setuptools.Command):
                 (
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n\n',
-                    "bytes decodeOperation(bytes buf, size_t offset, char plat)\n{\n\t",
+                    "bytes decodeOperation(bytes buf, size_t offset)\n{\n\t",
                     "bytes insts = {};\n\t",
                     "int localidx;\n\t",
                     "uint64_t hh, hl, lh, ll, bits;\n\t"
