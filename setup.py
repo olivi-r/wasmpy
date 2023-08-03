@@ -183,127 +183,71 @@ replacements = {
 }
 
 
-def listdir(path):
+def listdir(path: str) -> list:
     return [os.path.join(path, p) for p in os.listdir(path)]
 
 
+def is_x86() -> bool:
+    return platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64")
+
+
 class assemble(setuptools.Command):
-    user_options = []
+    user_options = [("targets=", "T", None)]
 
     def initialize_options(self):
-        pass
+        if is_x86():
+            if struct.calcsize("P") == 4:
+                self.targets = "x86"
+
+            else:
+                self.targets = "x86_64"
+
+        else:
+            raise ValueError("Unknown architecture")
 
     def finalize_options(self):
-        pass
+        self.targets = self.targets.split(",")
+        for target in self.targets:
+            if target not in os.listdir("wasmpy/arch") or os.path.isfile(
+                f"wasmpy/{target}"
+            ):
+                raise ValueError(f"Unknown architecture: {target}")
 
     def run(self):
-        for source in listdir("wasmpy/x86") + listdir("wasmpy/x86/64"):
-            if os.path.isdir(source):
-                continue
+        args = {
+            "x86_64": [
+                ["as", "-o"],
+                ["ld", "--oformat", "binary", "-o"],
+                ["ld", "-T", "NUL", "--image-base", "0", "-o"],
+                ["objcopy", "-O", "binary", "-j", ".text"],
+            ]
+        }
 
-            # assemble x86 instructions
-            if os.path.splitext(source)[1].lower() == ".s":
-                subprocess.call(
-                    [
-                        "as",
-                        source,
-                        "-o",
-                        os.path.splitext(source)[0] + ".o",
-                    ]
-                )
+        args["x86"] = [i.copy() for i in args["x86_64"]]
+        args["x86"][0].insert(1, "--32")
+        args["x86"][1].insert(1, "-melf_i386")
+        args["x86"][2].insert(1, "-mi386pe")
 
-                if platform.system() == "Linux":
-                    subprocess.call(
-                        [
-                            "ld",
-                            "--oformat",
-                            "binary",
-                            os.path.splitext(source)[0] + ".o",
-                            "-o",
-                            os.path.splitext(source)[0],
-                        ]
-                    )
+        for target in self.targets:
+            arg = args[target]
+            for source in listdir(f"wasmpy/arch/{target}"):
+                if os.path.isdir(source):
+                    continue
 
-                elif platform.system() == "Windows":
-                    subprocess.call(
-                        [
-                            "ld",
-                            "-T",
-                            "NUL",
-                            "--image-base",
-                            "0",
-                            os.path.splitext(source)[0] + ".o",
-                            "-o",
-                            os.path.splitext(source)[0] + ".tmp",
-                        ]
-                    )
-                    subprocess.call(
-                        [
-                            "objcopy",
-                            "-O",
-                            "binary",
-                            "-j",
-                            ".text",
-                            os.path.splitext(source)[0] + ".tmp",
-                            os.path.splitext(source)[0],
-                        ]
-                    )
+                if os.path.splitext(source)[1].lower() == ".s":
+                    name = os.path.splitext(source)[0]
+                    cmd = arg[0] + [name + ".o", source]
+                    subprocess.call(cmd)
 
-        for source in listdir("wasmpy/x86/32"):
-            if os.path.isdir(source):
-                continue
+                    if platform.system() == "Linux":
+                        cmd = arg[1] + [name, name + ".o"]
+                        subprocess.call(cmd)
 
-            # assemble x86 32 bit specific instructions
-            if os.path.splitext(source)[1].lower() == ".s":
-                subprocess.call(
-                    [
-                        "as",
-                        "--32",
-                        source,
-                        "-o",
-                        os.path.splitext(source)[0] + ".o",
-                    ]
-                )
-
-                if platform.system() == "Linux":
-                    subprocess.call(
-                        [
-                            "ld",
-                            "-melf_i386",
-                            "--oformat",
-                            "binary",
-                            os.path.splitext(source)[0] + ".o",
-                            "-o",
-                            os.path.splitext(source)[0],
-                        ]
-                    )
-
-                elif platform.system() == "Windows":
-                    subprocess.call(
-                        [
-                            "ld",
-                            "-mi386pe",
-                            "-T",
-                            "NUL",
-                            "--image-base",
-                            "0",
-                            os.path.splitext(source)[0] + ".o",
-                            "-o",
-                            os.path.splitext(source)[0] + ".tmp",
-                        ]
-                    )
-
-                    subprocess.call(
-                        [
-                            "objcopy",
-                            "-O",
-                            "binary",
-                            "-j",
-                            ".text",
-                            os.path.splitext(source)[0] + ".tmp",
-                            os.path.splitext(source)[0],
-                        ]
-                    )
+                    elif platform.system() == "Windows":
+                        cmd = arg[2] + [name + ".tmp", name + ".o"]
+                        subprocess.call(cmd)
+                        cmd = arg[3] + [name + ".tmp", name]
+                        subprocess.call(cmd)
 
 
 class tidy(setuptools.Command):
@@ -316,19 +260,19 @@ class tidy(setuptools.Command):
         pass
 
     def run(self):
-        if os.path.exists("wasmpy/x86/lib/opcodes.cpp"):
-            os.remove("wasmpy/x86/lib/opcodes.cpp")
-
-        for file in (
-            listdir("wasmpy/x86")
-            + listdir("wasmpy/x86/64")
-            + listdir("wasmpy/x86/32")
-        ):
-            if os.path.isdir(file):
+        for machine in os.listdir("wasmpy/arch"):
+            if os.path.isfile("wasmpy/arch/" + machine):
                 continue
 
-            if os.path.splitext(file)[1] != ".s":
-                os.remove(file)
+            if os.path.exists(f"wasmpy/arch/{machine}/lib/opcodes.cpp"):
+                os.remove(f"wasmpy/arch/{machine}/lib/opcodes.cpp")
+
+            for file in listdir(f"wasmpy/arch/{machine}"):
+                if os.path.isdir(file):
+                    continue
+
+                if os.path.splitext(file)[1] != ".s":
+                    os.remove(file)
 
 
 class gen_opcodes(setuptools.Command):
@@ -347,7 +291,6 @@ class gen_opcodes(setuptools.Command):
             os.path.join(os.path.dirname(__file__), "wasmpy", "opcodes.json")
         ) as fp:
             data = json.load(fp)
-            consumes = data["consumes"]
             for group in data["opcodes"]:
                 opcodes.update(
                     dict(
@@ -361,9 +304,13 @@ class gen_opcodes(setuptools.Command):
                     )
                 )
 
-        with open("wasmpy/x86/lib/opcodes.cpp", "w+") as out:
-            bits = struct.calcsize("P")
+        if struct.calcsize("P") == 4:
+            machine = "x86"
 
+        else:
+            machine = "x86_64"
+
+        with open(f"wasmpy/arch/{machine}/lib/opcodes.cpp", "w+") as out:
             out.writelines(
                 (
                     "// auto-generated\n\n",
@@ -376,13 +323,7 @@ class gen_opcodes(setuptools.Command):
                 )
             )
 
-            if bits == 8:
-                extra = listdir("wasmpy/x86/64")
-
-            elif bits == 4:
-                extra = listdir("wasmpy/x86/32")
-
-            for file in listdir("wasmpy/x86") + extra:
+            for file in listdir(f"wasmpy/arch/{machine}"):
                 if os.path.isdir(file):
                     continue
 
@@ -407,7 +348,7 @@ class gen_opcodes(setuptools.Command):
 
             out.write("default:\n\t\tbreak;\n\t}\n\treturn insts;\n}\n\n")
 
-            for file in listdir("wasmpy/x86") + extra:
+            for file in listdir(f"wasmpy/arch/{machine}"):
                 if os.path.isdir(file):
                     continue
 
@@ -451,11 +392,20 @@ ext = [
     ),
 ]
 
-if platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64"):
+if is_x86():
+    if struct.calcsize("P") == 4:
+        machine = "x86"
+
+    else:
+        machine = "x86_64"
+
     ext.append(
         setuptools.Extension(
             "wasmpy.nativelib",
-            sources=["wasmpy/x86/lib/lib.cpp", "wasmpy/x86/lib/opcodes.cpp"],
+            sources=[
+                f"wasmpy/arch/{machine}/lib/lib.cpp",
+                f"wasmpy/arch/{machine}/lib/opcodes.cpp",
+            ],
             py_limited_api=True,
         )
     )

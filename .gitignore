@@ -1,8 +1,8 @@
 wasmpy.egg-info
-wasmpy/x86/**/*
-!wasmpy/*/lib/*
-!wasmpy/*/lib/
-!wasmpy/**/*.s
+wasmpy/arch/*/*
+!wasmpy/arch/*
+!wasmpy/arch/*/*.s
+!wasmpy/arch/*/lib/
 **/opcodes.cpp
 __pycache__
 .vscode
