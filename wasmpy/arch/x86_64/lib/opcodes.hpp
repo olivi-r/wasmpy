@@ -10,6 +10,8 @@ bytes ret_void(uint64_t errorPageAddr);
 
 extern bytes drop_32;
 extern bytes drop_64;
+extern bytes select_32;
+extern bytes select_64;
 
 extern bytes local32;
 extern bytes local64;

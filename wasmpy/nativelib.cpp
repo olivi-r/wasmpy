@@ -389,19 +389,24 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     for (size_t i = 0; i < stack.size(); i++)
     {
         operation *current = stack.at(i);
+
+        // drop
         if (current->opcode == 0x1A)
         {
-            if (wcscmp(stack.at(i - 1)->results.at(0), L"i32") == 0 || wcscmp(stack.at(i - 1)->results.at(0), L"f32") == 0)
+            if (wcscmp(current->arguments.at(0), L"i32") == 0 || wcscmp(current->arguments.at(0), L"f32") == 0)
                 current->code = drop_32;
 
-            else if (wcscmp(stack.at(i - 1)->results.at(0), L"i64") == 0 || wcscmp(stack.at(i - 1)->results.at(0), L"f64") == 0)
+            else
                 current->code = drop_64;
+        }
+        // select
+        else if (current->opcode == 0x1B)
+        {
+            if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
+                current->code = select_32;
 
             else
-            {
-                PyErr_SetString(PyExc_TypeError, "incorrect stack arguments");
-                return NULL;
-            }
+                current->code = select_64;
         }
         else
             current->code = decodeOperation(code, offset);
