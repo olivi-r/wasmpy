@@ -417,7 +417,23 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     for (size_t i = 0; i < stack.size(); i++)
     {
         operation *current = stack.at(i);
-        current->code = decodeOperation(code, offset);
+        if (current->opcode == 0x1A)
+        {
+            if (wcscmp(stack.at(i - 1)->results.at(0), L"i32") == 0 || wcscmp(stack.at(i - 1)->results.at(0), L"f32") == 0)
+                current->code = drop_32;
+
+            else if (wcscmp(stack.at(i - 1)->results.at(0), L"i64") == 0 || wcscmp(stack.at(i - 1)->results.at(0), L"f64") == 0)
+                current->code = drop_64;
+
+            else
+            {
+                PyErr_SetString(PyExc_TypeError, "incorrect stack arguments");
+                return NULL;
+            }
+        }
+        else
+            current->code = decodeOperation(code, offset);
+
         funcBody = concat(funcBody, {current->code});
         offset += current->consumes;
         offset += 1;
