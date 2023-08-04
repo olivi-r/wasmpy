@@ -37,13 +37,10 @@ class assemble(setuptools.Command):
             "T",
             "comma separated list of targets to assemble, defaults to current "
             "Python's architecture, e.g. --targets=x86_64,...",
-        ),
-        ("verbose", "v", "increase output verbosity"),
+        )
     ]
 
     def initialize_options(self):
-        self.verbose = None
-
         if is_x86():
             if struct.calcsize("P") == 4:
                 self.targets = "x86"
@@ -63,7 +60,7 @@ class assemble(setuptools.Command):
                 raise ValueError(f"Unknown architecture: {target}")
 
     def log(self, out):
-        if self.verbose is not None:
+        if self.verbose:
             print(" ".join(out))
 
     def run(self):
