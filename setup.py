@@ -242,7 +242,12 @@ if is_x86():
     ext.append(
         setuptools.Extension(
             "wasmpy.nativelib",
+            include_dirs=[
+                os.path.abspath("wasmpy"),
+                os.path.abspath(f"wasmpy/arch/{machine}/lib"),
+            ],
             sources=[
+                "wasmpy/nativelib.cpp",
                 f"wasmpy/arch/{machine}/lib/lib.cpp",
                 f"wasmpy/arch/{machine}/lib/opcodes.cpp",
             ],

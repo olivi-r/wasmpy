@@ -1,7 +1,7 @@
 #ifndef OPCODES_H
 #define OPCODES_H
 
-#include "lib.hpp"
+#include "nativelib.hpp"
 
 bytes decodeOperation(bytes buf, size_t offset);
 bytes ret_v32(uint64_t errorPageAddr);
