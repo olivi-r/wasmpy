@@ -1,11 +1,8 @@
 .globl _start
 _start:
-pop %ax
-pop %ax
-shl $16, %eax
-pop %ax
+popl %eax
 movl %eax, (0xff000000)
 movl $0xff0000ff, %eax
 movl %ebp, %esp
-pop %ebp
+popl %ebp
 ret

@@ -1370,6 +1370,10 @@
             [
                 "255, 0, 0, 0",
                 "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
+            ],
+            [
+                "254, 0, 0, 0",
+                "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
             ]
         ],
         "local_get_32_small": [
@@ -1382,6 +1386,10 @@
             [
                 "127",
                 "offset"
+            ],
+            [
+                "126",
+                "(uint8_t)(offset - 4)"
             ]
         ],
         "reg_param_f32_linux_0": [
