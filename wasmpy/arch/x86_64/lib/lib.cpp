@@ -97,7 +97,9 @@ bytes paramInt(Py_ssize_t i, uint8_t offset = 0, int bits = 64)
         if (i == 5)
             return reg_param_i64_linux_5(offset);
     }
-#elif _WIN32 if (i == 0) return reg_param_int_win_0;
+#elif _WIN32
+    if (i == 0)
+        return reg_param_int_win_0;
     if (i == 1)
         return reg_param_int_win_1;
     if (i == 2)
