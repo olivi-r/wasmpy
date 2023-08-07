@@ -8,7 +8,7 @@ class ResultVoid(ctypes.Structure):
 
 
 class ResultI32(ctypes.Structure):
-    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint32)]
+    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_int32)]
     _pack_ = 1
 
 
@@ -18,7 +18,7 @@ class ResultF32(ctypes.Structure):
 
 
 class ResultI64(ctypes.Structure):
-    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_uint64)]
+    _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_int64)]
     _pack_ = 1
 
 
