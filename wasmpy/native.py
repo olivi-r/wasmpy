@@ -110,7 +110,7 @@ def wrap_function(func, param_clear, raw=False):
             {"ensure": ensure, "func": func},
         )
 
-    wrapper.func = func
+    wrapper.addr = ctypes.cast(func, ctypes.c_void_p).value
     return wrapper
 
 
