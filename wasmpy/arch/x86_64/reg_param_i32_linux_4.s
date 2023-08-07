@@ -1,4 +1,3 @@
 .globl _start
 _start:
-pushq $0
-pushw $4
+movl %r8d, 1(%rsp)

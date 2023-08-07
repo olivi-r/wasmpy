@@ -1,3 +1,3 @@
 .globl _start
 _start:
-addq $8, %rsp
+movq %rdi, 1(%rsp)

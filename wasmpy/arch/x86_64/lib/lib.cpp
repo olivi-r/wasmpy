@@ -1,112 +1,193 @@
 #include "lib.hpp"
 
+bytes paramFloat32(Py_ssize_t i, uint8_t offset = 0)
+{
+#ifdef __linux__
+    if (i == 0)
+        return reg_param_f32_linux_0(offset);
+    if (i == 1)
+        return reg_param_f32_linux_1(offset);
+    if (i == 2)
+        return reg_param_f32_linux_2(offset);
+    if (i == 3)
+        return reg_param_f32_linux_3(offset);
+    if (i == 4)
+        return reg_param_f32_linux_4(offset);
+    if (i == 5)
+        return reg_param_f32_linux_5(offset);
+    if (i == 6)
+        return reg_param_f32_linux_6(offset);
+    if (i == 7)
+        return reg_param_f32_linux_7(offset);
+#elif _WIN32
+    if (i == 0)
+        return reg_param_f32_win_0;
+    if (i == 1)
+        return reg_param_f32_win_1;
+    if (i == 2)
+        return reg_param_f32_win_2;
+    if (i == 3)
+        return reg_param_f32_win_3;
+#endif
+    return {};
+}
+
+bytes paramFloat64(Py_ssize_t i, uint8_t offset = 0)
+{
+#ifdef __linux__
+    if (i == 0)
+        return reg_param_f64_linux_0(offset);
+    if (i == 1)
+        return reg_param_f64_linux_1(offset);
+    if (i == 2)
+        return reg_param_f64_linux_2(offset);
+    if (i == 3)
+        return reg_param_f64_linux_3(offset);
+    if (i == 4)
+        return reg_param_f64_linux_4(offset);
+    if (i == 5)
+        return reg_param_f64_linux_5(offset);
+    if (i == 6)
+        return reg_param_f64_linux_6(offset);
+    if (i == 7)
+        return reg_param_f64_linux_7(offset);
+#elif _WIN32
+    if (i == 0)
+        return reg_param_f64_win_0;
+    if (i == 1)
+        return reg_param_f64_win_1;
+    if (i == 2)
+        return reg_param_f64_win_2;
+    if (i == 3)
+        return reg_param_f64_win_3;
+#endif
+    return {};
+}
+
+bytes paramInt(Py_ssize_t i, uint8_t offset = 0, int bits = 64)
+{
+#ifdef __linux__
+    if (bits == 32)
+    {
+        if (i == 0)
+            return reg_param_i32_linux_0(offset);
+        if (i == 1)
+            return reg_param_i32_linux_1(offset);
+        if (i == 2)
+            return reg_param_i32_linux_2(offset);
+        if (i == 3)
+            return reg_param_i32_linux_3(offset);
+        if (i == 4)
+            return reg_param_i32_linux_4(offset);
+        if (i == 5)
+            return reg_param_i32_linux_5(offset);
+    }
+    else
+    {
+        if (i == 0)
+            return reg_param_i64_linux_0(offset);
+        if (i == 1)
+            return reg_param_i64_linux_1(offset);
+        if (i == 2)
+            return reg_param_i64_linux_2(offset);
+        if (i == 3)
+            return reg_param_i64_linux_3(offset);
+        if (i == 4)
+            return reg_param_i64_linux_4(offset);
+        if (i == 5)
+            return reg_param_i64_linux_5(offset);
+    }
+#elif _WIN32 if (i == 0) return reg_param_int_win_0;
+    if (i == 1)
+        return reg_param_int_win_1;
+    if (i == 2)
+        return reg_param_int_win_2;
+    if (i == 3)
+        return reg_param_int_win_3;
+#endif
+    return {};
+}
+
 bytes regParam(const char *argbuf, Py_ssize_t arglen)
 {
     bytes code = {};
 #ifdef __linux__
-    for (int i = 0; i < std::min((int)arglen, 6); i++)
+    int32_t offset = 0;
+    uint32_t rtl_offset = 8;
+    int param_int = 0;
+    int param_float = 0;
+    for (Py_ssize_t i = 0; i < arglen; i++)
     {
         localTypes.push_back(argbuf[i]);
-
         if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
         {
-            if (i == 0)
-                code = concat(code, {param_32_linux_0});
-
-            else if (i == 1)
-                code = concat(code, {param_32_linux_1});
-
-            else if (i == 2)
-                code = concat(code, {param_32_linux_2_win_1});
-
-            else if (i == 3)
-                code = concat(code, {param_32_linux_3_win_0});
-
-            else if (i == 4)
-                code = concat(code, {param_32_linux_4_win_2});
-
-            else if (i == 5)
-                code = concat(code, {param_32_linux_5_win_3});
+            offset -= 4;
+            if (param_int < 6 && argbuf[i] == 0x7F)
+            {
+                code = concat(code, {paramInt(param_int, (uint8_t)offset, 32)});
+                param_int += 1;
+                localOffsets.push_back(offset);
+            }
+            else if (param_float < 8 && argbuf[i] == 0x7D)
+            {
+                code = concat(code, {paramFloat32(param_float, (uint8_t)offset)});
+                param_float += 1;
+                localOffsets.push_back(offset);
+            }
+            else
+            {
+                localOffsets.push_back(rtl_offset);
+                rtl_offset += 4;
+            }
         }
-        else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
+        else
         {
-            if (i == 0)
-                code = concat(code, {param_64_linux_0});
-
-            else if (i == 1)
-                code = concat(code, {param_64_linux_1});
-
-            else if (i == 2)
-                code = concat(code, {param_64_linux_2_win_1});
-
-            else if (i == 3)
-                code = concat(code, {param_64_linux_3_win_0});
-
-            else if (i == 4)
-                code = concat(code, {param_64_linux_4_win_2});
-
-            else if (i == 5)
-                code = concat(code, {param_64_linux_5_win_3});
+            offset -= 8;
+            if (param_int < 6 && argbuf[i] == 0x7E)
+            {
+                code = concat(code, {paramInt(param_int, (uint8_t)offset)});
+                param_int += 1;
+                localOffsets.push_back(offset);
+            }
+            else if (param_float < 8 && argbuf[i] == 0x7C)
+            {
+                code = concat(code, {paramFloat64(param_float, (uint8_t)offset)});
+                param_float += 1;
+                localOffsets.push_back(offset);
+            }
+            else
+            {
+                localOffsets.push_back(rtl_offset);
+                rtl_offset += 8;
+            }
         }
     }
+    code = concat(code, {sub_rsp((uint8_t)(-offset))});
 #elif _WIN32
-    for (int i = 0; i < min(arglen, 4); i++)
+    uint32_t offset = 8;
+    for (Py_ssize_t i = 0; i < arglen; i++)
     {
         localTypes.push_back(argbuf[i]);
-
-        if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
+        if (i < 4)
         {
-            if (i == 0)
-                code = concat(code, {param_32_linux_3_win_0});
+            offset += 8;
+            if (argbuf[i] == 0x7F || argbuf[i] == 0x7E)
+                code = concat(code, {paramInt(i)});
 
-            else if (i == 1)
-                code = concat(code, {param_32_linux_2_win_1});
+            else if (argbuf[i] == 0x7D)
+                code = concat(code, {paramFloat32(i)});
 
-            else if (i == 2)
-                code = concat(code, {param_32_linux_4_win_2});
-
-            else if (i == 3)
-                code = concat(code, {param_32_linux_5_win_3});
+            else if (argbuf[i] == 0x7C)
+                code = concat(code, {paramFloat64(i)});
         }
-        else if (argbuf[i] == 0x7E || argbuf[i] == 0x7C)
-        {
-            if (i == 0)
-                code = concat(code, {param_64_linux_3_win_0});
+        else if (argbuf[i] == 0x7F || argbuf[i] == 0x7D)
+            offset += 4;
 
-            else if (i == 1)
-                code = concat(code, {param_64_linux_2_win_1});
+        else
+            offset += 8;
 
-            else if (i == 2)
-                code = concat(code, {param_64_linux_4_win_2});
-
-            else if (i == 3)
-                code = concat(code, {param_64_linux_5_win_3});
-        }
+        localOffsets.push_back(offset);
     }
 #endif
-#ifdef __linux__
-    int argoff = 6;
-    Py_ssize_t count = arglen - argoff;
-    int baseOffset = 16;
-#elif _WIN32
-    int argoff = 4;
-    Py_ssize_t count = arglen - argoff;
-    int baseOffset = 48;
-#endif
-    for (Py_ssize_t i = 0; i < count; i++)
-    {
-        localTypes.push_back(argbuf[i + argoff]);
-
-        Py_ssize_t offset = i * 8 + baseOffset;
-        // movq (%rbp + offset), %rax
-        code = concat(code, {{0x48, 0x8B, 0x85, (uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)}});
-
-        if (argbuf[i + argoff] == 0x7F || argbuf[i + argoff] == 0x7D)
-            code = concat(code, {param_32});
-
-        else if (argbuf[i + argoff] == 0x7E || argbuf[i + argoff] == 0x7C)
-            code = concat(code, {param_64});
-    }
-
     return code;
 }

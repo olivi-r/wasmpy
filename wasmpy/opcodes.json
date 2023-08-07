@@ -1315,7 +1315,243 @@
         "local.set": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t",
         "local.tee": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t"
     },
+    "functions": {
+        "sub_rsp": "uint8_t offset",
+        "local_get_32": "uint32_t offset",
+        "local_get_64": "uint32_t offset",
+        "local_get_32_small": "uint8_t offset",
+        "local_get_64_small": "uint8_t offset",
+        "reg_param_f32_linux_0": "uint8_t offset",
+        "reg_param_f32_linux_1": "uint8_t offset",
+        "reg_param_f32_linux_2": "uint8_t offset",
+        "reg_param_f32_linux_3": "uint8_t offset",
+        "reg_param_f32_linux_4": "uint8_t offset",
+        "reg_param_f32_linux_5": "uint8_t offset",
+        "reg_param_f32_linux_6": "uint8_t offset",
+        "reg_param_f32_linux_7": "uint8_t offset",
+        "reg_param_f64_linux_0": "uint8_t offset",
+        "reg_param_f64_linux_1": "uint8_t offset",
+        "reg_param_f64_linux_2": "uint8_t offset",
+        "reg_param_f64_linux_3": "uint8_t offset",
+        "reg_param_f64_linux_4": "uint8_t offset",
+        "reg_param_f64_linux_5": "uint8_t offset",
+        "reg_param_f64_linux_6": "uint8_t offset",
+        "reg_param_f64_linux_7": "uint8_t offset",
+        "reg_param_i32_linux_0": "uint8_t offset",
+        "reg_param_i32_linux_1": "uint8_t offset",
+        "reg_param_i32_linux_2": "uint8_t offset",
+        "reg_param_i32_linux_3": "uint8_t offset",
+        "reg_param_i32_linux_4": "uint8_t offset",
+        "reg_param_i32_linux_5": "uint8_t offset",
+        "reg_param_i64_linux_0": "uint8_t offset",
+        "reg_param_i64_linux_1": "uint8_t offset",
+        "reg_param_i64_linux_2": "uint8_t offset",
+        "reg_param_i64_linux_3": "uint8_t offset",
+        "reg_param_i64_linux_4": "uint8_t offset",
+        "reg_param_i64_linux_5": "uint8_t offset",
+        "ret_v32": "uint64_t errorPageAddr",
+        "ret_v64": "uint64_t errorPageAddr",
+        "ret_void": "uint64_t errorPageAddr"
+    },
     "replacements": {
+        "sub_rsp": [
+            [
+                ", 0",
+                ", offset"
+            ]
+        ],
+        "local_get_32": [
+            [
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
+            ]
+        ],
+        "local_get_64": [
+            [
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
+            ]
+        ],
+        "local_get_32_small": [
+            [
+                "127",
+                "offset"
+            ]
+        ],
+        "local_get_64_small": [
+            [
+                "127",
+                "offset"
+            ]
+        ],
+        "reg_param_f32_linux_0": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_1": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_2": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_3": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_4": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_5": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_6": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f32_linux_7": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_0": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_1": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_2": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_3": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_4": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_5": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_6": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_f64_linux_7": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i32_linux_0": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i32_linux_1": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i32_linux_2": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i32_linux_3": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i32_linux_4": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i32_linux_5": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i64_linux_0": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i64_linux_1": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i64_linux_2": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i64_linux_3": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i64_linux_4": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
+        "reg_param_i64_linux_5": [
+            [
+                "36, 1",
+                "36, offset"
+            ]
+        ],
         "f32.const": [
             [
                 "0, 0",

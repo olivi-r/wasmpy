@@ -1,11 +1,11 @@
 .globl _start
 _start:
-cmpl $0, 2(%rsp)
+cmpl $0, (%rsp)
 je zero
-addq $12, %rsp
+addq $8, %rsp
 jmp end
 zero:
-movl 8(%rsp), %eax
-movl %eax, 14(%rsp)
-addq $12, %rsp
+movl 4(%rsp), %eax
+addq $8, %rsp
+movl %eax, (%rsp)
 end:

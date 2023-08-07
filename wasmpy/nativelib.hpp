@@ -20,6 +20,7 @@
 typedef std::vector<uint8_t> bytes;
 
 extern bytes localTypes;
+extern std::vector<uint32_t> localOffsets;
 extern uint64_t globalTableAddr;
 extern uint64_t errorPageAddr;
 

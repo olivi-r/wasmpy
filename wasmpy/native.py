@@ -88,10 +88,10 @@ def gen_params(arg):
             params.append(ctypes.c_uint64)
 
         if a == 0x7D:
-            params.append(ctypes.c_uint32)
+            params.append(ctypes.c_float)
 
         if a == 0x7C:
-            params.append(ctypes.c_uint64)
+            params.append(ctypes.c_double)
 
     return params, param_clear
 

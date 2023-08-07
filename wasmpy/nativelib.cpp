@@ -6,6 +6,7 @@ bytes globalTable = {};
 bytes globalTypes = {};
 std::vector<int> globalMut = {};
 bytes localTypes = {};
+std::vector<uint32_t> localOffsets = {};
 uint64_t globalTableAddr;
 uint64_t errorPageAddr;
 uint32_t page_size;
@@ -84,8 +85,8 @@ typedef struct operation
     std::vector<wchar_t *> arguments;
     std::vector<wchar_t *> results;
     long consumes;
+    uint32_t data;
     bytes code;
-    operation(uint8_t opcode, std::vector<wchar_t *> arguments, std::vector<wchar_t *> results) : opcode(opcode), arguments(arguments), results(results), consumes(0){};
 } operation;
 
 static PyObject *createFunction(PyObject *self, PyObject *args)
@@ -97,22 +98,41 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "by#y#y#OO", &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen, &consumes, &signatures))
         return NULL;
 
+    // register parameters
     bytes loadLocals = regParam(argbuf, arglen);
 
+    int32_t localOff = 0;
+
+    // register local variables
+    size_t localSize = 0;
     for (Py_ssize_t i = 0; i < locallen; i++)
     {
         localTypes.push_back(localbuf[i]);
 
         if (localbuf[i] == 0x7F || localbuf[i] == 0x7D)
-            loadLocals = concat(loadLocals, {local32});
-
-        if (localbuf[i] == 0x7E || localbuf[i] == 0x7C)
-            loadLocals = concat(loadLocals, {local64});
+        {
+            localSize += 4;
+            localOff -= 4;
+        }
+        else
+        {
+            localSize += 8;
+            localOff -= 8;
+        }
+        localOffsets.push_back((uint32_t)localOff);
     }
+
+    // allocate space for local variables
+    for (size_t i = 0; i < localSize / 8; i++)
+        loadLocals = concat(loadLocals, {pushq0});
+
+    if (localSize % 8 == 4)
+        loadLocals = concat(loadLocals, {pushl0});
 
     bytes code(codebuf, codelen + codebuf);
 
     std::vector<operation *> stack = {};
+    operation *current_operation;
 
     std::vector<wchar_t *> validateStack = {};
     for (size_t i = 0; i < code.size(); i++)
@@ -121,6 +141,11 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
         std::vector<wchar_t *> operandVector = {};
         std::vector<wchar_t *> resultVector = {};
+
+        current_operation = new operation();
+
+        current_operation->opcode = op;
+        current_operation->data = 0;
 
         // local instruction validation
         if (op == 0x20 || op == 0x21 || op == 0x22)
@@ -132,6 +157,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
                 PyErr_SetString(PyExc_ValueError, "attempted access of undefined local");
                 return NULL;
             }
+
+            current_operation->data = localOffsets.at(localidx);
 
             uint8_t localType = localTypes.at(localidx);
             const wchar_t *localStr;
@@ -359,7 +386,9 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             validateStack = concat(validateStack, {resultVector});
         }
 
-        stack.push_back(new operation(op, operandVector, resultVector));
+        current_operation->arguments = operandVector;
+        current_operation->results = resultVector;
+        stack.push_back(current_operation);
         if (PyDict_Contains(consumes, PyLong_FromLong(op)))
         {
             long opConsumes = PyLong_AsLong(PyDict_GetItem(consumes, PyLong_FromLong(op)));
@@ -384,6 +413,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         }
     }
 
+    // fetch machine code for opcodes
     size_t offset = 0;
     bytes funcBody = {};
     for (size_t i = 0; i < stack.size(); i++)
@@ -408,6 +438,26 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             else
                 current->code = select_64;
         }
+        // local.get
+        else if (current->opcode == 0x20)
+        {
+            if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
+            {
+                if (current->data < 256)
+                    current->code = local_get_32_small((uint8_t)current->data);
+
+                else
+                    current->code = local_get_32(current->data);
+            }
+            else
+            {
+                if (current->data < 256)
+                    current->code = local_get_64_small((uint8_t)current->data);
+
+                else
+                    current->code = local_get_64(current->data);
+            }
+        }
         else
             current->code = decodeOperation(code, offset);
 
@@ -415,9 +465,9 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         offset += current->consumes;
         offset += 1;
     }
-
     // flush locals ready for next function
     localTypes = {};
+    localOffsets = {};
 
     bytes returnCode = {};
     if (ret == 0x7F || ret == 0x7D)

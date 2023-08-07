@@ -8,6 +8,7 @@ with open(
     data = json.load(fp)
     prefixes = data["prefixes"]
     replacements = data["replacements"]
+    functions = data["functions"]
     for group in data["opcodes"]:
         opcodes.update(
             dict(
@@ -186,7 +187,7 @@ class gen_opcodes(setuptools.Command):
 
                     out.write("break;\n\n\t")
 
-            out.write("default:\n\t\tbreak;\n\t}\n\treturn insts;\n}\n\n")
+            out.write("default:\n\t\tbreak;\n\t}\n\treturn insts;\n}\n")
 
             for file in listdir(f"wasmpy/arch/{machine}"):
                 if os.path.isdir(file):
@@ -203,13 +204,13 @@ class gen_opcodes(setuptools.Command):
                             for replacement in replacements[name]:
                                 data = data.replace(*replacement)
 
-                        if name in ("ret_v32", "ret_v64", "ret_void"):
+                        if name in functions:
                             out.write(
-                                f"\nbytes {name}(uint64_t errorPageAddr)\n{{\n\treturn {{{data}}};\n}}\n"
+                                f"\nbytes {name}({functions[name]})\n{{\n\treturn {{{data}}};\n}}\n"
                             )
 
                         else:
-                            out.write(f"bytes {name} = {{{data}}};\n")
+                            out.write(f"\nbytes {name} = {{{data}}};\n")
 
 
 class build_ext(setuptools.command.build_ext.build_ext):
