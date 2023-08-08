@@ -43,7 +43,7 @@ python3 -m pip install .
 
 # Limitations
 Wasmpy is still in active development, and only supports x86/x86-64 Windows and Linux machines and lacks some key features:
-- most control, memory, and floating point instructions
+- most control and memory instructions
 - memories
 - imports
 - tables
