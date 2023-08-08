@@ -1,18 +1,13 @@
 .globl _start
 _start:
-pop %ax
-pop %ax
-shl $16, %eax
-pop %ax
+movl (%rsp), %eax
 cmp $0, %eax
-je true
+je zero
 bsr %eax, %eax
-movw $31, %cx
-sub %ax, %cx
-push %cx
+movl $31, %ecx
+subl %eax, %ecx
+movl %ecx, (%rsp)
 jmp end
-true:
-pushw $32
+zero:
+movl $32, (%rsp)
 end:
-pushw $0
-pushw $2
