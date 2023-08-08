@@ -5,7 +5,7 @@ subl $2, %esp
 fstcw (%esp)
 movw (%esp), %ax
 andb $0b11110011, %ah
-orw $0x800, %ax 
+orw $0x800, %ax
 pushw %ax
 fldcw (%esp)
 frndint

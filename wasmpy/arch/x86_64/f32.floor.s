@@ -5,7 +5,7 @@ subq $2, %rsp
 fstcw (%rsp)
 movw (%rsp), %ax
 andb $0b11110011, %ah
-orw $0x400, %ax 
+orw $0x400, %ax
 pushw %ax
 fldcw (%rsp)
 frndint
