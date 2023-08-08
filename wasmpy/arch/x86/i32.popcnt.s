@@ -1,10 +1,5 @@
 .globl _start
 _start:
-pop %ax
-pop %ax
-shl $16, %eax
-pop %ax
+popl %eax
 popcnt %eax, %eax
-push %ax
-pushw $0
-pushw $2
+pushl %eax
