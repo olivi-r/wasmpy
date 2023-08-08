@@ -2,5 +2,5 @@
 _start:
 popl %eax
 popl %ecx
-xor %eax, (%esp)
-xor %ecx, 4(%esp)
+xorl %eax, (%esp)
+xorl %ecx, 4(%esp)

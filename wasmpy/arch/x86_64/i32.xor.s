@@ -2,4 +2,4 @@
 _start:
 movl (%rsp), %eax
 addq $4, %rsp
-xor %eax, (%rsp)
+xorl %eax, (%rsp)
