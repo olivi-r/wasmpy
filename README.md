@@ -16,6 +16,17 @@ To get started, first import the `wasmpy` module to register the WebAssembly imp
 Then you can just `import wasm_or_wat_file` to load a WebAssembly module.
 
 ## Example
+```
+|-  my_module
+    |-  __init__.py
+    |-  wasm_math.wat
+```
+
+File: `__init__.py`
+```python
+import wasmpy
+from .wasm_math import add
+```
 File: `wasm_math.wat`
 ```webassembly
 (module
@@ -25,9 +36,8 @@ File: `wasm_math.wat`
 )
 ```
 ```python
->>> import wasmpy
->>> import wasm_math
->>> wasm_math.add(45, 960)
+>>> import my_module
+>>> my_module.add(45, 960)
 1005
 >>>
 ```
