@@ -25,7 +25,7 @@ def read_instruction_text(source, offset: int) -> list:
         else:
             immediate = source[offset + 1]
             if op in (0x43, 0x44):
-                if isinstance(immediate, float):
+                if isinstance(immediate, (float, int)):
                     # 32 bit floating point immediate
                     if op == 0x43:
                         return [op] + list(struct.pack("<f", immediate)) + [1]

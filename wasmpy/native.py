@@ -29,26 +29,35 @@ class ResultF64(ctypes.Structure):
 
 def create_global(mut, globaltype, expr):
     assert len(expr), "Missing initializer"
-    value = create_function(globaltype, bytes(expr))()
-    return nativelib.append_global(value, mut, globaltype)
+    ret, address = create_function(globaltype, bytes(expr), standalone=True)
+    value = ctypes.CFUNCTYPE(ret)(address)()
+
+    if isinstance(value.contents, ResultF32):
+        value = ctypes.cast(value, ctypes.POINTER(ResultI32))
+
+    elif isinstance(value.contents, ResultF64):
+        value = ctypes.cast(value, ctypes.POINTER(ResultI64))
+
+    return nativelib.append_global(value.contents.value, mut, globaltype)
 
 
 def get_global_object(offset, globaltype):
-    if globaltype in (0x7F, 0x7D):
+    if globaltype == 0x7F:
         return ctypes.cast(offset, ctypes.POINTER(ctypes.c_int32))
 
-    if globaltype in (0x7E, 0x7C):
+    if globaltype == 0x7E:
         return ctypes.cast(offset, ctypes.POINTER(ctypes.c_int64))
 
+    if globaltype == 0x7D:
+        return ctypes.cast(offset, ctypes.POINTER(ctypes.c_float))
 
-def create_function(ret, code, arg=b"", local=b""):
+    if globaltype == 0x7C:
+        return ctypes.cast(offset, ctypes.POINTER(ctypes.c_double))
+
+
+def create_function(ret, code, arg=b"", local=b"", standalone=False):
     address = nativelib.create_function(
-        ret,
-        code,
-        arg,
-        local,
-        util.consumes,
-        util.signatures,
+        ret, code, arg, local, util.consumes, util.signatures, standalone
     )
 
     params, param_clear = gen_params(arg)
@@ -67,6 +76,9 @@ def create_function(ret, code, arg=b"", local=b""):
 
     else:
         ret = ctypes.POINTER(ResultVoid)
+
+    if standalone:
+        return ret, address
 
     return {
         "ret": ret,

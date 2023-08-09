@@ -91,11 +91,11 @@ typedef struct operation
 
 static PyObject *createFunction(PyObject *self, PyObject *args)
 {
-    char ret;
+    char ret, standalone;
     const char *codebuf, *argbuf, *localbuf;
     Py_ssize_t codelen, arglen, locallen;
     PyObject *consumes, *signatures;
-    if (!PyArg_ParseTuple(args, "by#y#y#OO", &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen, &consumes, &signatures))
+    if (!PyArg_ParseTuple(args, "by#y#y#OOb", &ret, &codebuf, &codelen, &argbuf, &arglen, &localbuf, &locallen, &consumes, &signatures, &standalone))
         return NULL;
 
     // register parameters
@@ -479,7 +479,20 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     else
         returnCode = ret_void(errorPageAddr);
 
-    return Py_BuildValue("O", PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode}))));
+    if (standalone == 1)
+    {
+        bytes code = concat(initStack, {loadLocals, funcBody, returnCode});
+        void *buf = writePage(code);
+#ifdef __linux__
+        mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
+#elif _WIN32
+        DWORD dummy;
+        VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);
+#endif
+        return PyLong_FromVoidPtr(buf);
+    }
+
+    return PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode})));
 }
 
 static PyObject *appendGlobal(PyObject *self, PyObject *args)
