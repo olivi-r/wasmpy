@@ -70,6 +70,8 @@ def create_module(module: dict) -> object:
     for prop in props:
         obj.__dict__.update({prop: getattr(obj, prop)})
 
+    obj.__dict__.update({"_internal": module})
+
     return obj
 
 

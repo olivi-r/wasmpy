@@ -99,14 +99,14 @@ def gen_params(arg):
 def wrap_function(func, param_clear, raw=False):
     if raw:
         wrapper = eval(
-            f"lambda {', '.join(['_'] + param_clear)}: func({', '.join(param_clear)})",
+            f"lambda {', '.join(['self'] + param_clear)}: func({', '.join(param_clear)})",
             {"func": func},
         )
 
     else:
         # ensure result structs
         wrapper = eval(
-            f"lambda {', '.join(['_'] + param_clear)}: ensure(func({', '.join(param_clear)}))",
+            f"lambda {', '.join(['self'] + param_clear)}: ensure(func({', '.join(param_clear)}))",
             {"ensure": ensure, "func": func},
         )
 

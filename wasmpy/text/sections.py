@@ -156,20 +156,25 @@ def read_func(expr: list) -> tuple:
     funcidx = None
     export = None
     typeidx = None
+    no_inf = False
     off = 1
     if off < len(expr) and isinstance(expr[off], sexpdata.Symbol):
-        funcidx = expr[off]
-        assert funcidx.value().startswith("$")
-        off += 1
+        if expr[off].value().startswith("$"):
+            funcidx = expr[off]
+            off += 1
 
-    if (
-        off < len(expr)
-        and isinstance(expr[off], list)
-        and isinstance(expr[off][0], sexpdata.Symbol)
-        and expr[off][0].value() == "export"
-    ):
-        export = expr[off][1]
-        off += 1
+        else:
+            no_inf = True
+
+    if not no_inf:
+        if (
+            off < len(expr)
+            and isinstance(expr[off], list)
+            and isinstance(expr[off][0], sexpdata.Symbol)
+            and expr[off][0].value() == "export"
+        ):
+            export = expr[off][1]
+            off += 1
 
     typeidx, typeuse, param_ids, o = read_typeuse(expr[off:])
     off += o
