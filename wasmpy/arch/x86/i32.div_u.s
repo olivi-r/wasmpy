@@ -1,23 +1,13 @@
 .globl _start
 _start:
-pop %cx
-pop %cx
-shl $16, %ecx
-pop %cx
-pop %ax
-pop %ax
-shl $16, %eax
-pop %ax
+pop %ecx
+pop %eax
 cmp $0, %ecx
-jne nezero
+jne continue
 movl $0xff000000, %eax
-movl %ebp, %esp
-pop %ebp
+leave
 ret
-nezero:
-movl $0, %edx
+continue:
+xor %edx, %edx
 div %ecx
-push %ax
-shr $16, %eax
-push %ax
-pushw $2
+push %eax
