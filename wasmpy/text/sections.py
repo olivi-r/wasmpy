@@ -155,7 +155,6 @@ def read_import(expr: list) -> tuple:
 def read_func(expr: list) -> tuple:
     funcidx = None
     export = None
-    typeidx = None
     no_inf = False
     off = 1
     if off < len(expr) and isinstance(expr[off], sexpdata.Symbol):
@@ -179,6 +178,31 @@ def read_func(expr: list) -> tuple:
     typeidx, typeuse, param_ids, o = read_typeuse(expr[off:])
     off += o
 
+    locals = []
+    local_ids = []
+    if not no_inf:
+        while (
+            off < len(expr)
+            and isinstance(expr[off], list)
+            and isinstance(expr[off][0], sexpdata.Symbol)
+            and expr[off][0].value() == "local"
+        ):
+            if (
+                len(expr[off]) == 3
+                and isinstance(expr[off][1], sexpdata.Symbol)
+                and expr[off][1].value().startswith("$")
+            ):
+                local_ids.append(expr[off][1])
+                locals.append(expr[off][2])
+
+            else:
+                l = expr[off][1:]
+                local_ids += [None for _ in l]
+                locals += l
+
+            off += 1
+
+    locals = list(map(lambda x: valtypes[x], locals))
     body = []
     for sub_expr in expr[off:]:
         body.append(flatten(sub_expr))
@@ -194,13 +218,16 @@ def read_func(expr: list) -> tuple:
         if term in param_ids:
             body[i] = param_ids.index(term)
 
+        if term in local_ids:
+            body[i] = local_ids.index(term) + len(param_ids)
+
     return (
         funcidx,
         {
             "export": export,
             "typeidx": typeidx,
             "typeuse": typeuse,
-            "locals": (),
+            "locals": locals,
             "body": body,
         },
     )

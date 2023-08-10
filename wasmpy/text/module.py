@@ -166,7 +166,10 @@ def read_module(buffer: object) -> dict:
                 func["type"][1].append(0x40)
 
             func["_obj"] = native.create_function(
-                func["type"][1][0], bytes(func["body"]), bytes(func["type"][0])
+                func["type"][1][0],
+                bytes(func["body"]),
+                bytes(func["type"][0]),
+                bytes(func["locals"]),
             )
 
         else:
