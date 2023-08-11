@@ -1519,6 +1519,18 @@
                 "(uint8_t)(errorPageAddr + 11), (uint8_t)((errorPageAddr + 11) >> 8), (uint8_t)((errorPageAddr + 11) >> 16), (uint8_t)((errorPageAddr + 11) >> 24), (uint8_t)((errorPageAddr + 11) >> 32), (uint8_t)((errorPageAddr + 11) >> 40), (uint8_t)((errorPageAddr + 11) >> 48), (uint8_t)((errorPageAddr + 11) >> 56)"
             ]
         ],
+        "i64.rem_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ]
+        ],
+        "i64.rem_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ]
+        ],
         "local_get_32": [
             [
                 "255, 0, 0, 0",
