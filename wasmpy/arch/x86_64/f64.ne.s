@@ -1,8 +1,8 @@
 .globl _start
 _start:
-popq %rax
-popq %rcx
-subq $4, %rsp
+pop %rax
+pop %rcx
+sub $4, %rsp
 cmp %rcx, %rax
 je false
 movl $1, (%rsp)

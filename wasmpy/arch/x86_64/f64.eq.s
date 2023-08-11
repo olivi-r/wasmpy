@@ -2,7 +2,7 @@
 _start:
 pop %rax
 pop %rcx
-subq $4, %rsp
+sub $4, %rsp
 cmp %rax, %rcx
 je true
 movl $0, (%rsp)

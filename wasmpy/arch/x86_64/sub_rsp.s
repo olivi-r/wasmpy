@@ -1,3 +1,3 @@
 .globl _start
 _start:
-subq $0, %rsp
+sub $0, %rsp

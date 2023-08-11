@@ -1,11 +1,11 @@
 .globl _start
 _start:
-movb 3(%rsp), %al
-andb $0x80, %al
-addq $4, %rsp
-movb 3(%rsp), %cl
-andb $0x80, %cl
-cmpb %al, %cl
+mov 3(%rsp), %al
+and $0x80, %al
+add $4, %rsp
+mov 3(%rsp), %cl
+and $0x80, %cl
+cmp %al, %cl
 je end
 xorb $0x80, 3(%rsp)
 end:

@@ -1,3 +1,3 @@
 .globl _start
 _start:
-movq %r9, 40(%rsp)
+mov %r9, 40(%rsp)

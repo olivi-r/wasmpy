@@ -1,5 +1,5 @@
 .globl _start
 _start:
-movl (%rsp), %eax
-addq $4, %rsp
-pushq %rax
+mov (%rsp), %eax
+add $4, %rsp
+push %rax

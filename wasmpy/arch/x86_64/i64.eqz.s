@@ -1,7 +1,7 @@
 .globl _start
 _start:
 pop %rax
-subq $4, %rsp
+sub $4, %rsp
 cmp $0, %rax
 je true
 movl $0, (%rsp)

@@ -1,6 +1,5 @@
 .globl _start
 _start:
-movl 127(%rbp), %eax
-subq $4, %rsp
-movl %eax, (%rsp)
-end:
+mov 127(%rbp), %eax
+sub $4, %rsp
+mov %eax, (%rsp)

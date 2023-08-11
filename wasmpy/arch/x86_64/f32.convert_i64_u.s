@@ -1,17 +1,17 @@
 .globl _start
 _start:
 movq (%rsp), %rax
-addq $4, %rsp
-testq %rax, %rax
+add $4, %rsp
+test %rax, %rax
 js negative
-cvtsi2ssq %rax, %xmm0
+cvtsi2ss %rax, %xmm0
 jmp end
 negative:
-movq %rax, %rcx
-andl $1, %eax
-shrq %rcx
-orq %rax, %rcx
-cvtsi2ssq %rcx, %xmm0
+mov %rax, %rcx
+and $1, %eax
+shr %rcx
+or %rax, %rcx
+cvtsi2ss %rcx, %xmm0
 addss %xmm0, %xmm0
 end:
 movss %xmm0, (%rsp)

@@ -2,10 +2,10 @@
 _start:
 cmpl $0, (%rsp)
 je zero
-addq $8, %rsp
+add $8, %rsp
 jmp end
 zero:
-movl 4(%rsp), %eax
-addq $8, %rsp
-movl %eax, (%rsp)
+mov 4(%rsp), %eax
+add $8, %rsp
+mov %eax, (%rsp)
 end:
