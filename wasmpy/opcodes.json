@@ -1483,6 +1483,18 @@
                 "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24)"
             ]
         ],
+        "i32.rem_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ]
+        ],
+        "i32.rem_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ]
+        ],
         "i64.const": [
             [
                 "255, 255, 255, 255, 255, 255, 255, 127",
