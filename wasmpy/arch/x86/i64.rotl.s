@@ -4,7 +4,7 @@ pop %ecx
 pop %eax
 pop %eax
 pop %edx
-xorl %ebx, %ebx
+xor %ebx, %ebx
 shld %edx, %ebx
 shld %eax, %edx
 shl %cl, %eax

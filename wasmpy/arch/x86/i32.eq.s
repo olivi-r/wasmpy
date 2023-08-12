@@ -1,8 +1,8 @@
 .globl _start
 _start:
-popl %eax
-popl %ecx
-cmpl %eax, %ecx
+pop %eax
+pop %ecx
+cmp %eax, %ecx
 je true
 pushl $0
 jmp end

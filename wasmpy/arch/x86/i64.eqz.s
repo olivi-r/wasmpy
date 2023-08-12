@@ -1,10 +1,10 @@
 .globl _start
 _start:
-popl %eax
-cmpl $0, %eax
-popl %eax
+pop %eax
+cmp $0, %eax
+pop %eax
 jne false
-cmpl $0, %eax
+cmp $0, %eax
 jne false
 pushl $1
 jmp end

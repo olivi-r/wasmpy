@@ -4,7 +4,7 @@ pop %ecx
 pop %eax
 cmp $0, %ecx
 jne continue
-movl $0xff000000, %eax
+mov $0xff000000, %eax
 leave
 ret
 continue:

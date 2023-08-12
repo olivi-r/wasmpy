@@ -2,12 +2,12 @@
 _start:
 fldl (%esp)
 fldl 8(%esp)
-add $12, %esp
+add $16, %esp
 fcomip
 fstps (%esp)
 jae true
-movl $0, (%esp)
+pushl $0
 jmp end
 true:
-movl $1, (%esp)
+pushl $1
 end:

@@ -1,7 +1,7 @@
 .globl _start
 _start:
-popl %eax
-popl %ecx
+pop %eax
+pop %ecx
 cmp %ecx, %eax
 je false
 pushl $1

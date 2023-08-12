@@ -1,5 +1,5 @@
 .globl _start
 _start:
 fildq (%esp)
-addl $4, %esp
+pop %eax
 fstps (%esp)

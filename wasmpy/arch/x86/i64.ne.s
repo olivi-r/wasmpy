@@ -1,9 +1,9 @@
 .globl _start
 _start:
-popl %eax
-popl %ecx
-popl %esi
-popl %edi
+pop %eax
+pop %ecx
+pop %esi
+pop %edi
 cmp %eax, %esi
 jne true
 cmp %ecx, %edi

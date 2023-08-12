@@ -1,23 +1,23 @@
 .globl _start
 _start:
-popl %eax
-popl %ecx
+pop %eax
+pop %ecx
 cmp $0, %ecx
 je highzero
 bsr %ecx, %ecx
-movl $31, %eax
-subl %ecx, %eax
+mov $31, %eax
+sub %ecx, %eax
 pushl $0
-pushl %eax
+push %eax
 jmp end
 highzero:
 cmp $0, %eax
 je zero
 bsr %eax, %eax
-movl $63, %ecx
-subl %eax, %ecx
+mov $63, %ecx
+sub %eax, %ecx
 pushl $0
-pushl %ecx
+push %ecx
 jmp end
 zero:
 pushl $0

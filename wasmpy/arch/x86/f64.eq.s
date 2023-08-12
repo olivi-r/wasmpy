@@ -1,12 +1,12 @@
 .globl _start
 _start:
-popl %eax
-popl %ecx
-popl %esi
-popl %edi
-cmpl %eax, %esi
+pop %eax
+pop %ecx
+pop %esi
+pop %edi
+cmp %eax, %esi
 jne false
-cmpl %ecx, %edi
+cmp %ecx, %edi
 jne false
 pushl $1
 jmp end

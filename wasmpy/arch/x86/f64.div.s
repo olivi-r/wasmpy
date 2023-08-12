@@ -1,6 +1,7 @@
 .globl _start
 _start:
 fldl (%esp)
-add $8, %esp
+pop %eax
+pop %eax
 fdivrl (%esp)
 fstl (%esp)

@@ -20,8 +20,6 @@ extern bytes select_64;
 
 extern bytes pushl0;
 extern bytes pushq0;
-extern bytes param_32;
-extern bytes param_64;
 extern bytes initStack;
 
 #endif

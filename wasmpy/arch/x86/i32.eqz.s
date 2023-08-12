@@ -1,6 +1,6 @@
 .globl _start
 _start:
-popl %eax
+pop %eax
 cmp $0, %eax
 je true
 pushl $0

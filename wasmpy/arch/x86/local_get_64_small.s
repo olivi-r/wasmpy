@@ -1,7 +1,6 @@
 .globl _start
 _start:
-movl 127(%ebp), %eax
-pushl %eax
-movl 126(%ebp), %eax
-pushl %eax
-end:
+mov 127(%ebp), %eax
+push %eax
+mov 126(%ebp), %eax
+push %eax
