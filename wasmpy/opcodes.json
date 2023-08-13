@@ -1545,6 +1545,30 @@
                 "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
             ]
         ],
+        "i64.trunc_f32_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i64.trunc_f32_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i64.trunc_f64_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i64.trunc_f64_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
         "local_get_32": [
             [
                 "255, 0, 0, 0",
