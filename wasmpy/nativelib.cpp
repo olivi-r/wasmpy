@@ -442,21 +442,28 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         else if (current->opcode == 0x20)
         {
             if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
-            {
-                if (current->data < 256)
-                    current->code = local_get_32_small((uint8_t)current->data);
+                current->code = local_get_32(current->data);
 
-                else
-                    current->code = local_get_32(current->data);
-            }
             else
-            {
-                if (current->data < 256)
-                    current->code = local_get_64_small((uint8_t)current->data);
+                current->code = local_get_64(current->data);
+        }
+        // local.set
+        else if (current->opcode == 0x21)
+        {
+            if (wcscmp(current->arguments.at(0), L"i32") == 0 || wcscmp(current->arguments.at(0), L"f32") == 0)
+                current->code = local_set_32(current->data);
 
-                else
-                    current->code = local_get_64(current->data);
-            }
+            else
+                current->code = local_set_64(current->data);
+        }
+        // local.tee
+        else if (current->opcode == 0x22)
+        {
+            if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
+                current->code = local_tee_32(current->data);
+
+            else
+                current->code = local_tee_64(current->data);
         }
         else
         {

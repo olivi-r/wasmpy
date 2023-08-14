@@ -10,8 +10,10 @@ bytes ret_void(uint64_t errorPageAddr);
 
 bytes local_get_32(uint32_t offset);
 bytes local_get_64(uint32_t offset);
-bytes local_get_32_small(uint8_t offset);
-bytes local_get_64_small(uint8_t offset);
+bytes local_set_32(uint32_t offset);
+bytes local_set_64(uint32_t offset);
+bytes local_tee_32(uint32_t offset);
+bytes local_tee_64(uint32_t offset);
 
 extern bytes drop_32;
 extern bytes drop_64;

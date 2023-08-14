@@ -1310,15 +1310,15 @@
     ],
     "prefixes": {
         "global.get": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\tbits = ll + 8;\n\t\t",
-        "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\t",
-        "local.set": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t",
-        "local.tee": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t"
+        "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\t"
     },
     "functions": {
         "local_get_32": "uint32_t offset",
-        "local_get_32_small": "uint8_t offset",
         "local_get_64": "uint32_t offset",
-        "local_get_64_small": "uint8_t offset",
+        "local_set_32": "uint32_t offset",
+        "local_set_64": "uint32_t offset",
+        "local_tee_32": "uint32_t offset",
+        "local_tee_64": "uint32_t offset",
         "reg_param_f32_linux_0": "uint8_t offset",
         "reg_param_f32_linux_1": "uint8_t offset",
         "reg_param_f32_linux_2": "uint8_t offset",
@@ -1609,32 +1609,36 @@
                 "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
             ]
         ],
-        "local_get_32_small": [
+        "local_set_32": [
             [
-                "127",
-                "offset"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
             ]
         ],
-        "local_get_64_small": [
+        "local_set_64": [
             [
-                "127",
-                "offset"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
             ],
             [
-                "126",
-                "(uint8_t)(offset - 4)"
+                "254, 0, 0, 0",
+                "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
             ]
         ],
-        "local.set": [
+        "local_tee_32": [
             [
-                "255, 0, 255, 0",
-                "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
             ]
         ],
-        "local.tee": [
+        "local_tee_64": [
             [
-                "255, 0, 255, 0",
-                "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
+            ],
+            [
+                "254, 0, 0, 0",
+                "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
             ]
         ],
         "reg_param_f32_linux_0": [

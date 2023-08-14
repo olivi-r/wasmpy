@@ -1,4 +1,5 @@
 .globl _start
 _start:
-mov 127(%rbp), %rax
+pop %rax
 push %rax
+mov %rax, 255(%rbp)

@@ -1,4 +1,5 @@
 .globl _start
 _start:
-mov 127(%ebp), %eax
+pop %eax
 push %eax
+mov %eax, 255(%ebp)
