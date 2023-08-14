@@ -3,7 +3,7 @@
 
 #include "nativelib.hpp"
 
-bytes decodeOperation(bytes buf, size_t offset);
+bool decodeOperation(bytes buf, size_t offset, bytes *insts);
 bytes ret_v32(uint64_t errorPageAddr);
 bytes ret_v64(uint64_t errorPageAddr);
 bytes ret_void(uint64_t errorPageAddr);

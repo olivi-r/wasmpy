@@ -156,8 +156,7 @@ class gen_opcodes(setuptools.Command):
                 (
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n\n',
-                    "bytes decodeOperation(bytes buf, size_t offset)\n{\n\t",
-                    "bytes insts = {};\n\t",
+                    "bool decodeOperation(bytes buf, size_t offset, bytes *insts)\n{\n\t",
                     "int localidx;\n\t",
                     "uint64_t hh, hl, lh, ll, bits;\n\t"
                     "switch (buf.at(offset))\n\t{\n\t",
@@ -183,11 +182,13 @@ class gen_opcodes(setuptools.Command):
                     if inst in prefixes:
                         out.write("".join(prefixes[inst]))
 
-                    out.write(f"insts = {{{data}}};\n\t\t")
+                    out.write(f"*insts = {{{data}}};\n\t\t")
 
                     out.write("break;\n\n\t")
 
-            out.write("default:\n\t\tbreak;\n\t}\n\treturn insts;\n}\n")
+            out.write(
+                'default:\n\t\tPyErr_SetString(PyExc_NotImplementedError, "unimplemented instruction");\n\t\treturn false;\n\t}\n\treturn true;\n}\n'
+            )
 
             for file in listdir(f"wasmpy/arch/{machine}"):
                 if os.path.isdir(file):

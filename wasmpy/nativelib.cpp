@@ -18,7 +18,6 @@ bytes errorPage = {
     3,                         // division overflow
     4,                         // integer modulo by zero
     5,                         // unrepresentable truncation result
-    6,                         // unimplemented instruction
     0, 0, 0, 0, 0, 0, 0, 0,    // padding
 };
 
@@ -460,7 +459,13 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             }
         }
         else
-            current->code = decodeOperation(code, offset);
+        {
+            bytes insts;
+            if (!decodeOperation(code, offset, &insts))
+                return NULL;
+
+            current->code = insts;
+        }
 
         funcBody = concat(funcBody, {current->code});
         offset += current->consumes;
