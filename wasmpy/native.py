@@ -145,3 +145,6 @@ def ensure(result):
 
     elif result.contents.errno == 5:
         raise FloatingPointError("unrepresentable truncation result")
+
+    elif result.contents.errno == 6:
+        raise NotImplementedError("unimplemented instruction")

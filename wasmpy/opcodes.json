@@ -1549,24 +1549,40 @@
             [
                 "255, 0, 0, 0, 0, 0, 0, 255",
                 "(uint8_t)(errorPageAddr + 11), (uint8_t)((errorPageAddr + 11) >> 8), (uint8_t)((errorPageAddr + 11) >> 16), (uint8_t)((errorPageAddr + 11) >> 24), (uint8_t)((errorPageAddr + 11) >> 32), (uint8_t)((errorPageAddr + 11) >> 40), (uint8_t)((errorPageAddr + 11) >> 48), (uint8_t)((errorPageAddr + 11) >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 14), (uint8_t)((errorPageAddr + 14) >> 8), (uint8_t)((errorPageAddr + 14) >> 16), (uint8_t)((errorPageAddr + 14) >> 24)"
             ]
         ],
         "i64.div_u": [
             [
                 "0, 0, 0, 0, 0, 0, 0, 255",
                 "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24), (uint8_t)((errorPageAddr + 10) >> 32), (uint8_t)((errorPageAddr + 10) >> 40), (uint8_t)((errorPageAddr + 10) >> 48), (uint8_t)((errorPageAddr + 10) >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 14), (uint8_t)((errorPageAddr + 14) >> 8), (uint8_t)((errorPageAddr + 14) >> 16), (uint8_t)((errorPageAddr + 14) >> 24)"
             ]
         ],
         "i64.rem_s": [
             [
                 "0, 0, 0, 0, 0, 0, 0, 255",
                 "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 14), (uint8_t)((errorPageAddr + 14) >> 8), (uint8_t)((errorPageAddr + 14) >> 16), (uint8_t)((errorPageAddr + 14) >> 24)"
             ]
         ],
         "i64.rem_u": [
             [
                 "0, 0, 0, 0, 0, 0, 0, 255",
                 "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 14), (uint8_t)((errorPageAddr + 14) >> 8), (uint8_t)((errorPageAddr + 14) >> 16), (uint8_t)((errorPageAddr + 14) >> 24)"
             ]
         ],
         "i64.trunc_f32_s": [

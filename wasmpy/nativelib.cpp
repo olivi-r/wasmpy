@@ -18,6 +18,7 @@ bytes errorPage = {
     3,                         // division overflow
     4,                         // integer modulo by zero
     5,                         // unrepresentable truncation result
+    6,                         // unimplemented instruction
     0, 0, 0, 0, 0, 0, 0, 0,    // padding
 };
 
