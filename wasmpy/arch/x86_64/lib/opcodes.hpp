@@ -18,6 +18,8 @@ bytes local_tee_64(uint32_t offset);
 
 bytes global_get_32(uint64_t globalTableAddr, uint32_t offset);
 bytes global_get_64(uint64_t globalTableAddr, uint32_t offset);
+bytes global_set_32(uint64_t globalTableAddr, uint32_t offset);
+bytes global_set_64(uint64_t globalTableAddr, uint32_t offset);
 
 bytes reg_param_f32_linux_0(uint8_t offset);
 bytes reg_param_f32_linux_1(uint8_t offset);

@@ -476,6 +476,15 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             else
                 current->code = global_get_64(globalTableAddr, current->data);
         }
+        // global.set
+        else if (current->opcode == 0x24)
+        {
+            if (wcscmp(current->arguments.at(0), L"i32") == 0 || wcscmp(current->arguments.at(0), L"f32") == 0)
+                current->code = global_set_32(globalTableAddr, current->data);
+
+            else
+                current->code = global_set_64(globalTableAddr, current->data);
+        }
         else
         {
             bytes insts;
