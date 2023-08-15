@@ -1308,9 +1308,6 @@
             ]
         }
     ],
-    "prefixes": {
-        "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\t"
-    },
     "functions": {
         "local_get_32": "uint32_t offset",
         "local_get_64": "uint32_t offset",
@@ -1422,40 +1419,6 @@
             [
                 "0, 0, 0, 254",
                 "(uint8_t)(globalTableAddr + offset + 4), (uint8_t)((globalTableAddr + offset + 4) >> 8), (uint8_t)((globalTableAddr + offset + 4) >> 16), (uint8_t)((globalTableAddr + offset + 4) >> 24)"
-            ]
-        ],
-        "global.set": [
-            [
-                "0, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24), (uint8_t)(ll >> 32), (uint8_t)(ll >> 40), (uint8_t)(ll >> 48), (uint8_t)(ll >> 56)"
-            ],
-            [
-                "255, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24), (uint8_t)(lh >> 32), (uint8_t)(lh >> 40), (uint8_t)(lh >> 48), (uint8_t)(lh >> 56)"
-            ],
-            [
-                "0, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24), (uint8_t)(hl >> 32), (uint8_t)(hl >> 40), (uint8_t)(hl >> 48), (uint8_t)(hl >> 56)"
-            ],
-            [
-                "255, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24), (uint8_t)(hh >> 32), (uint8_t)(hh >> 40), (uint8_t)(hh >> 48), (uint8_t)(hh >> 56)"
-            ],
-            [
-                "0, 0, 0, 255",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24)"
-            ],
-            [
-                "255, 0, 0, 255",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24)"
-            ],
-            [
-                "0, 255, 0, 255",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24)"
-            ],
-            [
-                "255, 255, 0, 255",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24)"
             ]
         ],
         "i32.const": [

@@ -6,7 +6,6 @@ with open(
     os.path.join(os.path.dirname(__file__), "wasmpy", "opcodes.json")
 ) as fp:
     data = json.load(fp)
-    prefixes = data["prefixes"]
     replacements = data["replacements"]
     functions = data["functions"]
     for group in data["opcodes"]:
@@ -157,8 +156,6 @@ class gen_opcodes(setuptools.Command):
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n\n',
                     "bool decodeOperation(bytes buf, size_t offset, bytes *insts)\n{\n\t",
-                    "int localidx;\n\t",
-                    "uint64_t hh, hl, lh, ll, bits;\n\t"
                     "switch (buf.at(offset))\n\t{\n\t",
                 )
             )
@@ -179,8 +176,6 @@ class gen_opcodes(setuptools.Command):
                             data = data.replace(*replacement)
 
                     out.write(f"case {opcodes[inst]}:\n\t\t")
-                    if inst in prefixes:
-                        out.write("".join(prefixes[inst]))
 
                     out.write(f"*insts = {{{data}}};\n\t\t")
 
