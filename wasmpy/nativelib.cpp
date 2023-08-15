@@ -239,6 +239,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         {
             uint32_t globalidx = code.at(i + 4) << 24 | code.at(i + 3) << 16 | code.at(i + 2) << 8 | code.at(i + 1);
 
+            current_operation->data = globalidx;
+
             if (globalidx >= globalMut.size())
             {
                 PyErr_SetString(PyExc_ValueError, "attempted access of undefined global");
@@ -465,6 +467,15 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             else
                 current->code = local_tee_64(current->data);
         }
+        // global.get
+        else if (current->opcode == 0x23)
+        {
+            if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
+                current->code = global_get_32(globalTableAddr, current->data);
+
+            else
+                current->code = global_get_64(globalTableAddr, current->data);
+        }
         else
         {
             bytes insts;
@@ -520,10 +531,10 @@ static PyObject *appendGlobal(PyObject *self, PyObject *args)
     globalMut.push_back(mut);
 
     if (type == 0x7F || type == 0x7D)
-        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), 2, 0, 0, 0, 0}});
+        globalTable = concat(globalTable, {{(uint8_t)(global >> 24), (uint8_t)(global >> 16), (uint8_t)(global >> 8), (uint8_t)global}});
 
     else if (type == 0x7E || type == 0x7C)
-        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), (uint8_t)(global >> 32), (uint8_t)(global >> 40), (uint8_t)(global >> 48), (uint8_t)(global >> 56), 4}});
+        globalTable = concat(globalTable, {{(uint8_t)(global >> 56), (uint8_t)(global >> 48), (uint8_t)(global >> 40), (uint8_t)(global >> 32), (uint8_t)(global >> 24), (uint8_t)(global >> 16), (uint8_t)(global >> 8), (uint8_t)global}});
 
     else
     {

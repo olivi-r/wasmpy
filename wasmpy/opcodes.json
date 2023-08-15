@@ -1309,7 +1309,6 @@
         }
     ],
     "prefixes": {
-        "global.get": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\tbits = ll + 8;\n\t\t",
         "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\t"
     },
     "functions": {
@@ -1319,6 +1318,8 @@
         "local_set_64": "uint32_t offset",
         "local_tee_32": "uint32_t offset",
         "local_tee_64": "uint32_t offset",
+        "global_get_32": "uint64_t globalTableAddr, uint32_t offset",
+        "global_get_64": "uint64_t globalTableAddr, uint32_t offset",
         "reg_param_f32_linux_0": "uint8_t offset",
         "reg_param_f32_linux_1": "uint8_t offset",
         "reg_param_f32_linux_2": "uint8_t offset",
@@ -1373,46 +1374,28 @@
                 "buf.at(offset + 1), buf.at(offset + 2), buf.at(offset + 3), buf.at(offset + 4)"
             ]
         ],
-        "global.get": [
+        "global_get_32": [
             [
-                "0, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24), (uint8_t)(ll >> 32), (uint8_t)(ll >> 40), (uint8_t)(ll >> 48), (uint8_t)(ll >> 56)"
-            ],
-            [
-                "255, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24), (uint8_t)(lh >> 32), (uint8_t)(lh >> 40), (uint8_t)(lh >> 48), (uint8_t)(lh >> 56)"
-            ],
-            [
-                "0, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24), (uint8_t)(hl >> 32), (uint8_t)(hl >> 40), (uint8_t)(hl >> 48), (uint8_t)(hl >> 56)"
-            ],
-            [
-                "255, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24), (uint8_t)(hh >> 32), (uint8_t)(hh >> 40), (uint8_t)(hh >> 48), (uint8_t)(hh >> 56)"
-            ],
-            [
-                "255, 255, 255, 255, 0, 0, 0, 0",
-                "(uint8_t)bits, (uint8_t)(bits >> 8), (uint8_t)(bits >> 16), (uint8_t)(bits >> 24), (uint8_t)(bits >> 32), (uint8_t)(bits >> 40), (uint8_t)(bits >> 48), (uint8_t)(bits >> 56)"
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24), (uint8_t)((globalTableAddr + offset) >> 32), (uint8_t)((globalTableAddr + offset) >> 40), (uint8_t)((globalTableAddr + offset) >> 48), (uint8_t)((globalTableAddr + offset) >> 56)"
             ],
             [
                 "0, 0, 0, 255",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24)"
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24)"
+            ]
+        ],
+        "global_get_64": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24), (uint8_t)((globalTableAddr + offset) >> 32), (uint8_t)((globalTableAddr + offset) >> 40), (uint8_t)((globalTableAddr + offset) >> 48), (uint8_t)((globalTableAddr + offset) >> 56)"
             ],
             [
-                "255, 0, 0, 255",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24)"
+                "0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset + 4), (uint8_t)((globalTableAddr + offset + 4) >> 8), (uint8_t)((globalTableAddr + offset + 4) >> 16), (uint8_t)((globalTableAddr + offset + 4) >> 24)"
             ],
             [
-                "0, 255, 0, 255",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24)"
-            ],
-            [
-                "255, 255, 0, 255",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24)"
-            ],
-            [
-                "255, 255, 255, 255",
-                "(uint8_t)bits, (uint8_t)(bits >> 8), (uint8_t)(bits >> 16), (uint8_t)(bits >> 24)"
+                "0, 0, 0, 254",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24)"
             ]
         ],
         "global.set": [
