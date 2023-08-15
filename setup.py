@@ -1,10 +1,8 @@
-import json, os, platform, setuptools.command.build_ext, struct, subprocess
+import glob, json, os, platform, setuptools.command.build_ext, struct, subprocess
 
 
 opcodes = {}
-with open(
-    os.path.join(os.path.dirname(__file__), "wasmpy", "opcodes.json")
-) as fp:
+with open(os.path.dirname(__file__) + "/wasmpy/opcodes.json") as fp:
     data = json.load(fp)
     replacements = data["replacements"]
     functions = data["functions"]
@@ -20,10 +18,6 @@ with open(
                 )
             )
         )
-
-
-def listdir(path: str) -> list:
-    return [os.path.join(path, p) for p in os.listdir(path)]
 
 
 def is_x86() -> bool:
@@ -54,9 +48,7 @@ class assemble(setuptools.Command):
     def finalize_options(self):
         self.targets = self.targets.split(",")
         for target in self.targets:
-            if target not in os.listdir("wasmpy/arch") or os.path.isfile(
-                f"wasmpy/{target}"
-            ):
+            if target not in os.listdir("wasmpy/arch"):
                 raise ValueError(f"Unknown architecture: {target}")
 
     def log(self, out):
@@ -80,7 +72,7 @@ class assemble(setuptools.Command):
 
         for target in self.targets:
             arg = args[target]
-            for source in listdir(f"wasmpy/arch/{target}"):
+            for source in glob.glob(f"wasmpy/arch/{target}/*"):
                 if os.path.isdir(source):
                     continue
 
@@ -115,13 +107,10 @@ class tidy(setuptools.Command):
 
     def run(self):
         for machine in os.listdir("wasmpy/arch"):
-            if os.path.isfile("wasmpy/arch/" + machine):
-                continue
-
             if os.path.exists(f"wasmpy/arch/{machine}/lib/opcodes.cpp"):
                 os.remove(f"wasmpy/arch/{machine}/lib/opcodes.cpp")
 
-            for file in listdir(f"wasmpy/arch/{machine}"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -160,7 +149,7 @@ class gen_opcodes(setuptools.Command):
                 )
             )
 
-            for file in listdir(f"wasmpy/arch/{machine}"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -185,7 +174,7 @@ class gen_opcodes(setuptools.Command):
                 'default:\n\t\tPyErr_SetString(PyExc_NotImplementedError, "unimplemented instruction");\n\t\treturn false;\n\t}\n\treturn true;\n}\n'
             )
 
-            for file in listdir(f"wasmpy/arch/{machine}"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -258,7 +247,7 @@ with open("README.md", "r") as fp:
 
 setuptools.setup(
     name="wasmpy",
-    version="0.1.4",
+    version="0.2.0",
     author="Olivia Ryan",
     author_email="olivia.r.dev@gmail.com",
     description="WebAssembly from Python.",
