@@ -250,7 +250,7 @@ setuptools.setup(
     version="0.2.0",
     author="Olivia Ryan",
     author_email="olivia.r.dev@gmail.com",
-    description="WebAssembly from Python.",
+    description="WebAssembly in Python.",
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",
