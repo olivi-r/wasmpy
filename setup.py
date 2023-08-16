@@ -2,7 +2,7 @@ import glob, json, os, platform, setuptools.command.build_ext, struct, subproces
 
 
 opcodes = {}
-with open(os.path.dirname(__file__) + "/wasmpy/opcodes.json") as fp:
+with open(os.path.join(os.path.dirname(__file__), "wasmpy/opcodes.json")) as fp:
     data = json.load(fp)
     replacements = data["replacements"]
     functions = data["functions"]
