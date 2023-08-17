@@ -2,6 +2,7 @@
 
 std::vector<void *> registeredPages = {};
 std::vector<size_t> registeredPageSizes = {};
+std::vector<size_t> standaloneFuncs = {};
 bytes globalTable = {};
 bytes globalTypes = {};
 std::vector<int> globalMut = {};
@@ -516,6 +517,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     {
         bytes code = concat(initStack, {loadLocals, funcBody, returnCode});
         void *buf = writePage(code);
+        standaloneFuncs.push_back(registeredPages.size() - 1);
 #ifdef __linux__
         mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
 #elif _WIN32
@@ -526,6 +528,19 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     }
 
     return PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode})));
+}
+
+static PyObject *destructStandalones(PyObject *self, PyObject *args)
+{
+    for (size_t i = 0; i < standaloneFuncs.size(); i++)
+    {
+#ifdef __linux__
+        munmap(registeredPages.at(standaloneFuncs.at(i)), registeredPageSizes.at(standaloneFuncs.at(i)));
+#elif _WIN32
+        VirtualFree(registeredPages.at(standaloneFuncs.at(i)), 0, MEM_RELEASE);
+#endif
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *appendGlobal(PyObject *self, PyObject *args)
@@ -574,6 +589,7 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
 static PyMethodDef methods[] = {
     {"append_global", appendGlobal, METH_VARARGS, NULL},
     {"create_function", createFunction, METH_VARARGS, NULL},
+    {"destruct_standalone", destructStandalones, METH_NOARGS, NULL},
     {"flush_globals", flushGlobals, METH_NOARGS, NULL},
     {"write_function_page", writeFunctionPage, METH_NOARGS, NULL},
     {"write_globals", writeGlobals, METH_NOARGS, NULL},

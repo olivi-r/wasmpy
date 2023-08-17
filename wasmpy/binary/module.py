@@ -1,5 +1,5 @@
 from . import sections, values
-from .. import native, util
+from .. import native, nativelib, util
 import ctypes, importlib
 
 
@@ -103,7 +103,7 @@ def read_module(buffer: object) -> dict:
             g["globaltype"][0] == "mut", g["globaltype"][1], g["expr"]
         )
 
-    global_offset = native.nativelib.write_globals()
+    global_offset = nativelib.write_globals()
     for g in mod_dict["globals"]:
         g["offset"] += global_offset
         g["obj"] = [
@@ -121,7 +121,7 @@ def read_module(buffer: object) -> dict:
         for i, (locals, body) in enumerate(code)
     ]
 
-    function_base_addr = native.nativelib.write_function_page()
+    function_base_addr = nativelib.write_function_page()
     for funcidx, func in enumerate(mod_dict["funcs"]):
         if isinstance(func, dict):
             obj = ctypes.CFUNCTYPE(func["ret"], *func["params"])(
@@ -131,7 +131,8 @@ def read_module(buffer: object) -> dict:
                 obj, func["param_clear"]
             )
 
-    native.nativelib.flush_globals()
+    nativelib.flush_globals()
+    nativelib.destruct_standalone()
 
     for e in mod_dict["exports"]:
         if e["desc"][0] == "func":

@@ -1,5 +1,5 @@
 from . import instructions, sections
-from .. import native, util
+from .. import native, nativelib, util
 import sexpdata
 import ctypes
 
@@ -119,7 +119,7 @@ def read_module(buffer: object) -> dict:
             g["mutable"] == "mut", g["type"], g["init"]
         )
 
-    global_offset = native.nativelib.write_globals()
+    global_offset = nativelib.write_globals()
     for globalidx, g in enumerate(mod_dict["globals"]):
         g["offset"] += global_offset
         g["obj"] = [
@@ -195,7 +195,7 @@ def read_module(buffer: object) -> dict:
                     func["obj"], param_clear, True
                 )
 
-    function_base_addr = native.nativelib.write_function_page()
+    function_base_addr = nativelib.write_function_page()
     for funcidx, func in enumerate(mod_dict["funcs"]):
         if "_obj" in func:
             obj = ctypes.CFUNCTYPE(
@@ -218,7 +218,8 @@ def read_module(buffer: object) -> dict:
         except (IndexError, TypeError):
             raise ValueError("Invalid start symbol")
 
-    native.nativelib.flush_globals()
+    nativelib.flush_globals()
+    nativelib.destruct_standalone()
 
     for e in mod_dict["exports"]:
         e["name"] = util.sanitize(e["name"])
