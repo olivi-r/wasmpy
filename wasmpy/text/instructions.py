@@ -1,5 +1,7 @@
-from .. import util
-import re, struct
+import re
+import struct
+
+import wasmpy.util
 
 
 def read_expr_text(source: list) -> list:
@@ -17,9 +19,9 @@ def read_expr_text(source: list) -> list:
 def read_instruction_text(source, offset: int) -> list:
     """Read the instruction from source at offset."""
     data = source[offset]
-    if data in util.opcodes:
-        op = util.opcodes[data]
-        if op not in util.consumes:
+    if data in wasmpy.util.opcodes:
+        op = wasmpy.util.opcodes[data]
+        if op not in wasmpy.util.consumes:
             return [op, 0]
 
         else:
@@ -65,11 +67,17 @@ def read_instruction_text(source, offset: int) -> list:
 
                     immediate_value |= int(nan.group("n"), 16)
                     if op == 0x43:
-                        return [op] + util.expand_bytes(immediate_value) + [1]
+                        return (
+                            [op]
+                            + wasmpy.util.expand_bytes(immediate_value)
+                            + [1]
+                        )
 
                     else:
                         return (
-                            [op] + util.expand_bytes(immediate_value, 64) + [1]
+                            [op]
+                            + wasmpy.util.expand_bytes(immediate_value, 64)
+                            + [1]
                         )
 
                 else:
@@ -113,5 +121,9 @@ def read_instruction_text(source, offset: int) -> list:
                 immediate = sign * int(immediate[2:], 16)
 
             return (
-                [op] + util.expand_bytes(immediate, util.consumes[op] * 8) + [1]
+                [op]
+                + wasmpy.util.expand_bytes(
+                    immediate, wasmpy.util.consumes[op] * 8
+                )
+                + [1]
             )

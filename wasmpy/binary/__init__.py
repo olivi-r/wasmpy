@@ -1,5 +1,7 @@
-from . import module
-import os, sys
+import os
+import sys
+
+import wasmpy.binary.module
 
 
 class WebAssemblyBinaryLoader:
@@ -20,7 +22,7 @@ class WebAssemblyBinaryLoader:
             return
 
         with open(self.fname, "rb") as fp:
-            mod = module.read_module(fp)
+            mod = wasmpy.binary.module.read_module(fp)
             mod.__file__ = self.fname
             mod.__name__ = fullname
             mod.__loader__ = self

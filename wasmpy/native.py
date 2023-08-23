@@ -1,5 +1,7 @@
-from . import nativelib, util
 import ctypes
+
+import wasmpy.nativelib
+import wasmpy.util
 
 
 class ResultVoid(ctypes.Structure):
@@ -38,7 +40,7 @@ def create_global(mut, globaltype, expr):
     elif isinstance(value.contents, ResultF64):
         value = ctypes.cast(value, ctypes.POINTER(ResultI64))
 
-    return nativelib.append_global(value.contents.value, mut, globaltype)
+    return wasmpy.nativelib.append_global(value.contents.value, mut, globaltype)
 
 
 def get_global_object(offset, globaltype):
@@ -56,8 +58,14 @@ def get_global_object(offset, globaltype):
 
 
 def create_function(ret, code, arg=b"", local=b"", standalone=False):
-    address = nativelib.create_function(
-        ret, code, arg, local, util.consumes, util.signatures, standalone
+    address = wasmpy.nativelib.create_function(
+        ret,
+        code,
+        arg,
+        local,
+        wasmpy.util.consumes,
+        wasmpy.util.signatures,
+        standalone,
     )
 
     params, param_clear = gen_params(arg)

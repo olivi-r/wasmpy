@@ -1,4 +1,4 @@
-from . import values
+import wasmpy.binary.values
 
 
 type_map = {b"\x7f": "i32", b"\x7e": "i64", b"\x7d": "f32", b"\x7c": "f64"}
@@ -28,8 +28,14 @@ def read_functype(buffer: object) -> tuple:
     assert (
         buffer.read(1) == b"\x60"
     ), f"Malformed function type at {buffer.tell() - 1}"
-    t1 = [buffer.read(1)[0] for _ in range(values.get_vec_len(buffer))]
-    t2 = [buffer.read(1)[0] for _ in range(values.get_vec_len(buffer))]
+    t1 = [
+        buffer.read(1)[0]
+        for _ in range(wasmpy.binary.values.get_vec_len(buffer))
+    ]
+    t2 = [
+        buffer.read(1)[0]
+        for _ in range(wasmpy.binary.values.get_vec_len(buffer))
+    ]
     if len(t2) == 0:
         t2.append(0x40)
 
@@ -42,10 +48,12 @@ def read_limits(buffer: object) -> tuple:
         flag = buffer.read(1)[0]
         assert flag in range(2)
         if flag:
-            return tuple(values.read_uint(buffer, 32) for _ in range(2))
+            return tuple(
+                wasmpy.binary.values.read_uint(buffer, 32) for _ in range(2)
+            )
 
         else:
-            return (values.read_uint(buffer, 32),)
+            return (wasmpy.binary.values.read_uint(buffer, 32),)
 
     except (IndexError, AssertionError):
         raise TypeError("Invalid limits.")

@@ -1,4 +1,11 @@
-import glob, json, os, platform, setuptools.command.build_ext, struct, subprocess
+import glob
+import json
+import os
+import platform
+import struct
+import subprocess
+
+import setuptools.command.build_ext
 
 
 opcodes = {}

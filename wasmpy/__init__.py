@@ -1,6 +1,9 @@
-from . import binary, text
-import sys as _sys
+import sys
+
+import wasmpy.binary
+import wasmpy.text
 
 
-_sys.meta_path.insert(0, text.WebAssemblyTextLoader())
-_sys.meta_path.insert(0, binary.WebAssemblyBinaryLoader())
+sys.meta_path.insert(0, wasmpy.text.WebAssemblyTextLoader())
+sys.meta_path.insert(0, wasmpy.binary.WebAssemblyBinaryLoader())
+__all__ = []

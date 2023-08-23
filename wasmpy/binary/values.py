@@ -1,4 +1,5 @@
-import math, struct
+import math
+import struct
 
 
 f32 = struct.Struct("<f")

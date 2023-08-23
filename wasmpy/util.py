@@ -1,4 +1,7 @@
-import json, os, re, types
+import json
+import os
+import re
+import types
 
 
 opcodes = {}
