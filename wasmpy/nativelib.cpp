@@ -11,6 +11,8 @@ std::vector<uint32_t> localOffsets = {};
 uint64_t globalTableAddr;
 uint64_t errorPageAddr;
 uint32_t page_size;
+void *memoryRegion;
+uint32_t mappedPage;
 
 bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
@@ -586,11 +588,34 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *setupMemory(PyObject *self, PyObject *args)
+{
+    memoryRegion = VirtualAlloc(nullptr, 65536, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    mappedPage = NULL;
+    registeredPages.push_back(memoryRegion);
+    registeredPageSizes.push_back(65536);
+    return PyLong_FromVoidPtr(memoryRegion);
+}
+
+static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
+{
+    const char *path;
+    if (!PyArg_ParseTuple(args, "s", &path))
+        return NULL;
+
+    FILE *fp = fopen(path, "r");
+    fread(memoryRegion, 65536, 1, fp);
+    fclose(fp);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef methods[] = {
     {"append_global", appendGlobal, METH_VARARGS, NULL},
     {"create_function", createFunction, METH_VARARGS, NULL},
     {"destruct_standalone", destructStandalones, METH_NOARGS, NULL},
     {"flush_globals", flushGlobals, METH_NOARGS, NULL},
+    {"load_memory_page", loadMemoryPage, METH_VARARGS, NULL},
+    {"setup_memory", setupMemory, METH_NOARGS, NULL},
     {"write_function_page", writeFunctionPage, METH_NOARGS, NULL},
     {"write_globals", writeGlobals, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}};
