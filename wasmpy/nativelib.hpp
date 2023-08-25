@@ -11,6 +11,7 @@
 
 #ifdef __linux__
 #include <sys/mman.h>
+#include <fcntl.h>
 #elif _WIN32
 #include <Windows.h>
 #else
