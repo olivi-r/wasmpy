@@ -610,8 +610,14 @@ bool loadMemoryPage(char *path, long pageNum)
     unmapMemory();
 #ifdef __linux__
     int fd = open(path, O_RDWR);
+    if (fd == -1)
+        return false;
+
     memoryRegion = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 65536 * pageNum);
     close(fd);
+    if (memoryRegion == MAP_FAILED)
+        return false;
+
 #elif _WIN32
     hFile = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
