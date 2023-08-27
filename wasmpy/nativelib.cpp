@@ -1,18 +1,18 @@
 #include "nativelib.hpp"
 
 std::vector<void *> registeredPages = {};
-std::vector<size_t> registeredPageSizes = {};
-std::vector<size_t> standaloneFuncs = {};
-bytes globalTable = {};
-bytes globalTypes = {};
+std::vector<size_t> registeredPageSizes = {}, standaloneFuncs = {};
 std::vector<int> globalMut = {};
-bytes localTypes = {};
+bytes globalTable = {}, globalTypes = {}, localTypes = {};
 std::vector<uint32_t> localOffsets = {};
-uint64_t globalTableAddr;
-uint64_t errorPageAddr;
+uint64_t errorPageAddr, globalTableAddr;
 uint32_t page_size;
 void *memoryRegion;
-uint32_t mappedPage;
+long mappedPage;
+
+#ifdef _WIN32
+HANDLE hFile, hMap;
+#endif
 
 bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
@@ -50,12 +50,25 @@ void *writePage(bytes data)
     return buf;
 }
 
+void unmapMemory()
+{
+    if (mappedPage != -1)
+#ifdef __linux
+        munmap(memoryRegion, 65536);
+#elif _WIN32
+    {
+        UnmapViewOfFile(memoryRegion);
+        CloseHandle(hMap);
+        CloseHandle(hFile);
+    }
+#endif
+    mappedPage = -1;
+}
+
 void freePages()
 {
-#ifdef __linux
-    munmap(memoryRegion, 65536);
-#elif _WIN32
-#endif
+    unmapMemory();
+
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
 #ifdef __linux__
@@ -592,29 +605,45 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
+bool loadMemoryPage(char *path, long pageNum)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path))
-        return NULL;
-
-    if (mappedPage != NULL)
-    {
-#ifdef __linux__
-        munmap(memoryRegion, 65536);
-#elif _WIN32
-#endif
-        mappedPage = NULL;
-    }
-
+    unmapMemory();
 #ifdef __linux__
     int fd = open(path, O_RDWR);
-    memoryRegion = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    memoryRegion = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 65536 * pageNum);
     close(fd);
-    return PyLong_FromVoidPtr(memoryRegion);
 #elif _WIN32
-    Py_RETURN_NONE;
+    hFile = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+        return false;
+
+    hMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
+    if (hMap == NULL)
+        return false;
+
+    memoryRegion = MapViewOfFile(hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 65536 * pageNum, 65536);
+    if (memoryRegion == NULL)
+        return false;
+
 #endif
+    mappedPage = pageNum;
+    return true;
+}
+
+static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
+{
+    char *path;
+    long pageNum;
+    if (!PyArg_ParseTuple(args, "sl", &path, &pageNum))
+        return NULL;
+
+    if (!loadMemoryPage(path, pageNum))
+    {
+        PyErr_SetString(PyExc_MemoryError, "failed to load memory page");
+        return NULL;
+    }
+
+    return PyLong_FromVoidPtr(memoryRegion);
 }
 
 static PyMethodDef methods[] = {
