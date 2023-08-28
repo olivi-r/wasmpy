@@ -7,13 +7,10 @@ bytes globalTable = {}, globalTypes = {}, localTypes = {};
 std::vector<uint32_t> localOffsets = {};
 uint64_t errorPageAddr, globalTableAddr;
 uint32_t page_size;
-void *memoryRegion;
-long mappedPage;
 
 typedef struct
 {
     void *address;
-    char *path;
     int32_t currentPage;
     uint16_t numPages;
     uint16_t maxPages;
@@ -26,10 +23,6 @@ typedef struct
 } memory_t;
 
 std::vector<memory_t *> memories = {};
-
-#ifdef _WIN32
-HANDLE hFile, hMap;
-#endif
 
 bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
@@ -70,12 +63,14 @@ void *writePage(bytes data)
 void unmapMemory(memory_t *mem)
 {
     if (mem->currentPage != -1)
+    {
 #ifdef __linux
         munmap(mem->address, 65536);
 #elif _WIN32
         UnmapViewOfFile(mem->address);
 #endif
-    mappedPage = -1;
+        mem->currentPage = -1;
+    }
 }
 
 void freePages()
@@ -630,7 +625,6 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
 bool createMemory(char *path, uint16_t minPages, uint16_t maxPages)
 {
     memory_t *mem = new memory_t();
-    mem->path = path;
     mem->currentPage = -1;
     mem->numPages = minPages; // initialize to minimum required
     mem->maxPages = maxPages;
