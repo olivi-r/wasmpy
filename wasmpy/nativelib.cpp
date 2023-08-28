@@ -10,6 +10,23 @@ uint32_t page_size;
 void *memoryRegion;
 long mappedPage;
 
+typedef struct
+{
+    void *address;
+    char *path;
+    int32_t currentPage;
+    uint16_t numPages;
+    uint16_t maxPages;
+#ifdef __linux__
+    int fd;
+#elif _WIN32
+    HANDLE hFile;
+    HANDLE hMap;
+#endif
+} memory_t;
+
+std::vector<memory_t *> memories = {};
+
 #ifdef _WIN32
 HANDLE hFile, hMap;
 #endif
@@ -50,24 +67,29 @@ void *writePage(bytes data)
     return buf;
 }
 
-void unmapMemory()
+void unmapMemory(memory_t *mem)
 {
-    if (mappedPage != -1)
+    if (mem->currentPage != -1)
 #ifdef __linux
-        munmap(memoryRegion, 65536);
+        munmap(mem->address, 65536);
 #elif _WIN32
-    {
-        UnmapViewOfFile(memoryRegion);
-        CloseHandle(hMap);
-        CloseHandle(hFile);
-    }
+        UnmapViewOfFile(mem->address);
 #endif
     mappedPage = -1;
 }
 
 void freePages()
 {
-    unmapMemory();
+    for (size_t i = 0; i < memories.size(); i++)
+    {
+        unmapMemory(memories.at(i));
+#ifdef __linux__
+        close(memories.at(i)->fd);
+#elif _WIN32
+        CloseHandle(memories.at(i)->hMap);
+        CloseHandle(memories.at(i)->hFile);
+#endif
+    }
 
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
@@ -605,56 +627,84 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-bool loadMemoryPage(char *path, long pageNum)
+bool createMemory(char *path, uint16_t minPages, uint16_t maxPages)
 {
-    unmapMemory();
+    memory_t *mem = new memory_t();
+    mem->path = path;
+    mem->currentPage = -1;
+    mem->numPages = minPages; // initialize to minimum required
+    mem->maxPages = maxPages;
 #ifdef __linux__
-    int fd = open(path, O_RDWR);
-    if (fd == -1)
-        return false;
-
-    memoryRegion = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 65536 * pageNum);
-    close(fd);
-    if (memoryRegion == MAP_FAILED)
+    mem->fd = open(path, O_RDWR);
+    if (mem->fd == -1)
         return false;
 
 #elif _WIN32
-    hFile = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
+    mem->hFile = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+    if (mem->hFile == INVALID_HANDLE_VALUE)
         return false;
 
-    hMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
-    if (hMap == NULL)
-        return false;
-
-    memoryRegion = MapViewOfFile(hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 65536 * pageNum, 65536);
-    if (memoryRegion == NULL)
+    mem->hMap = CreateFileMapping(mem->hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
+    if (mem->hMap == NULL)
         return false;
 
 #endif
-    mappedPage = pageNum;
+    memories.push_back(mem);
+    return true;
+}
+
+static PyObject *createMemory(PyObject *self, PyObject *args)
+{
+    char *path;
+    uint16_t minPages, maxPages;
+    if (!PyArg_ParseTuple(args, "sll", &path, &minPages, &maxPages))
+        return NULL;
+
+    if (!createMemory(path, minPages, maxPages))
+    {
+        PyErr_SetString(PyExc_MemoryError, "failed to create memory");
+        return NULL;
+    }
+    return PyLong_FromSize_t(memories.size() - 1);
+}
+
+bool loadMemoryPage(memory_t *mem, long pageNum)
+{
+    unmapMemory(mem);
+#ifdef __linux__
+    mem->address = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, mem->fd, 65536 * pageNum);
+    if (mem->address == MAP_FAILED)
+        return false;
+
+#elif _WIN32
+    mem->address = MapViewOfFile(mem->hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 65536 * pageNum, 65536);
+    if (mem->address == NULL)
+        return false;
+
+#endif
+    mem->currentPage = pageNum;
     return true;
 }
 
 static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
 {
-    char *path;
-    long pageNum;
-    if (!PyArg_ParseTuple(args, "sl", &path, &pageNum))
+    long memoryIndex, pageNum;
+    if (!PyArg_ParseTuple(args, "ll", &memoryIndex, &pageNum))
         return NULL;
 
-    if (!loadMemoryPage(path, pageNum))
+    if (!loadMemoryPage(memories.at(memoryIndex), pageNum))
     {
         PyErr_SetString(PyExc_MemoryError, "failed to load memory page");
         return NULL;
     }
 
-    return PyLong_FromVoidPtr(memoryRegion);
+    return PyLong_FromVoidPtr(memories.at(memoryIndex)->address);
 }
 
 static PyMethodDef methods[] = {
     {"append_global", appendGlobal, METH_VARARGS, NULL},
     {"create_function", createFunction, METH_VARARGS, NULL},
+    {"create_memory", createMemory, METH_VARARGS, NULL},
     {"destruct_standalone", destructStandalones, METH_NOARGS, NULL},
     {"flush_globals", flushGlobals, METH_NOARGS, NULL},
     {"load_memory_page", loadMemoryPage, METH_VARARGS, NULL},
