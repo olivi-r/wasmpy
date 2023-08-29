@@ -693,14 +693,14 @@ static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
-    {"append_global", appendGlobal, METH_VARARGS, NULL},
-    {"create_function", createFunction, METH_VARARGS, NULL},
-    {"create_memory", createMemory, METH_VARARGS, NULL},
-    {"destruct_standalone", destructStandalones, METH_NOARGS, NULL},
-    {"flush_globals", flushGlobals, METH_NOARGS, NULL},
-    {"load_memory_page", loadMemoryPage, METH_VARARGS, NULL},
-    {"write_function_page", writeFunctionPage, METH_NOARGS, NULL},
-    {"write_globals", writeGlobals, METH_NOARGS, NULL},
+    {"append_global", appendGlobal, METH_VARARGS, "append_global(value, mutable, global_type, /)\n--\n\nRegister new global variable."},
+    {"create_function", createFunction, METH_VARARGS, "create_function(ret_type, codebuf, argbuf, localbuf, op_con, op_sig, standalone, /)\n--\n\nGenerate a new function and add it to the function page."},
+    {"create_memory", createMemory, METH_VARARGS, "create_memory(fd, min_pages, max_pages, /)\n--\n\nRegister a new memory backed by fd."},
+    {"destruct_standalone", destructStandalones, METH_NOARGS, "destruct_standalone()\n--\n\nFree up temporary functions."},
+    {"flush_globals", flushGlobals, METH_NOARGS, "flush_globals()\n--\n\nClear generated globals ready for the next module."},
+    {"load_memory_page", loadMemoryPage, METH_VARARGS, "load_memory_page(index, page_no, /)\n--\n\nLoad page_no of the memory specified by index."},
+    {"write_function_page", writeFunctionPage, METH_NOARGS, "write_function_page()\n--\n\nCommit generated functions to memory."},
+    {"write_globals", writeGlobals, METH_NOARGS, "write_globals()\n--\n\nCommit generated globals to memory."},
     {NULL, NULL, 0, NULL}};
 
 static PyModuleDef module = {
