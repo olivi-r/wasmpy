@@ -14,9 +14,8 @@ typedef struct
     int32_t currentPage;
     uint16_t numPages;
     uint16_t maxPages;
-#ifdef __linux__
     int fd;
-#elif _WIN32
+#ifdef _WIN32
     HANDLE hFile;
     HANDLE hMap;
 #endif
@@ -78,12 +77,11 @@ void freePages()
     for (size_t i = 0; i < memories.size(); i++)
     {
         unmapMemory(memories.at(i));
-#ifdef __linux__
-        close(memories.at(i)->fd);
-#elif _WIN32
+#ifdef _WIN32
         CloseHandle(memories.at(i)->hMap);
         CloseHandle(memories.at(i)->hFile);
 #endif
+        close(memories.at(i)->fd);
     }
 
     for (size_t i = 0; i < registeredPages.size(); i++)
@@ -622,19 +620,18 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-bool createMemory(int file, uint16_t minPages, uint16_t maxPages)
+bool createMemory(int fd, uint16_t minPages, uint16_t maxPages)
 {
     memory_t *mem = new memory_t();
     mem->currentPage = -1;
     mem->numPages = minPages; // initialize to minimum required
     mem->maxPages = maxPages;
-#ifdef __linux__
-    mem->fd = file;
+    mem->fd = fd;
     if (mem->fd == -1)
         return false;
 
-#elif _WIN32
-    mem->hFile = (HANDLE)_get_osfhandle(file);
+#ifdef _WIN32
+    mem->hFile = (HANDLE)_get_osfhandle(fd);
     if (mem->hFile == INVALID_HANDLE_VALUE)
         return false;
 
@@ -649,12 +646,12 @@ bool createMemory(int file, uint16_t minPages, uint16_t maxPages)
 
 static PyObject *createMemory(PyObject *self, PyObject *args)
 {
-    int file;
+    int fd;
     uint16_t minPages, maxPages;
-    if (!PyArg_ParseTuple(args, "ihh", &file, &minPages, &maxPages))
+    if (!PyArg_ParseTuple(args, "ihh", &fd, &minPages, &maxPages))
         return NULL;
 
-    if (!createMemory(file, minPages, maxPages))
+    if (!createMemory(fd, minPages, maxPages))
     {
         PyErr_SetString(PyExc_MemoryError, "failed to create memory");
         return NULL;
