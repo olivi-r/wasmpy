@@ -622,29 +622,19 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-#ifdef __linux__
 bool createMemory(int file, uint16_t minPages, uint16_t maxPages)
 {
     memory_t *mem = new memory_t();
     mem->currentPage = -1;
     mem->numPages = minPages; // initialize to minimum required
     mem->maxPages = maxPages;
+#ifdef __linux__
     mem->fd = file;
     if (mem->fd == -1)
         return false;
 
-    memories.push_back(mem);
-    return true;
-}
-
 #elif _WIN32
-bool createMemory(char *file, uint16_t minPages, uint16_t maxPages)
-{
-    memory_t *mem = new memory_t();
-    mem->currentPage = -1;
-    mem->numPages = minPages; // initialize to minimum required
-    mem->maxPages = maxPages;
-    mem->hFile = CreateFileA(file, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+    mem->hFile = (HANDLE)_get_osfhandle(file);
     if (mem->hFile == INVALID_HANDLE_VALUE)
         return false;
 
@@ -652,25 +642,18 @@ bool createMemory(char *file, uint16_t minPages, uint16_t maxPages)
     if (mem->hMap == NULL)
         return false;
 
+#endif
     memories.push_back(mem);
     return true;
 }
-#endif
 
 static PyObject *createMemory(PyObject *self, PyObject *args)
 {
-    uint16_t minPages, maxPages;
-#ifdef __linux__
     int file;
+    uint16_t minPages, maxPages;
     if (!PyArg_ParseTuple(args, "ihh", &file, &minPages, &maxPages))
         return NULL;
 
-#elif _WIN32
-    char *file;
-    if (!PyArg_ParseTuple(args, "shh", &file, &minPages, &maxPages))
-        return NULL;
-
-#endif
     if (!createMemory(file, minPages, maxPages))
     {
         PyErr_SetString(PyExc_MemoryError, "failed to create memory");
