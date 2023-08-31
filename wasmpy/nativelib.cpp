@@ -8,6 +8,8 @@ std::vector<uint32_t> localOffsets = {};
 uint64_t errorPageAddr, globalTableAddr;
 uint32_t page_size;
 
+uint8_t blankPage[65536] = {0};
+
 typedef struct
 {
     void *address;
@@ -648,7 +650,7 @@ static PyObject *createMemory(PyObject *self, PyObject *args)
 {
     int fd;
     uint16_t minPages, maxPages;
-    if (!PyArg_ParseTuple(args, "ihh", &fd, &minPages, &maxPages))
+    if (!PyArg_ParseTuple(args, "iHH", &fd, &minPages, &maxPages))
         return NULL;
 
     if (!createMemory(fd, minPages, maxPages))
@@ -657,6 +659,30 @@ static PyObject *createMemory(PyObject *self, PyObject *args)
         return NULL;
     }
     return PyLong_FromSize_t(memories.size() - 1);
+}
+
+int32_t growMemory(memory_t *mem, uint32_t n)
+{
+    uint16_t size = mem->numPages;
+    if (size + n > mem->maxPages)
+        return -1;
+
+    off_t off = lseek(mem->fd, 0, SEEK_END);
+    for (uint32_t i = 0; i < n; i++)
+        write(mem->fd, blankPage, 65536);
+
+    mem->numPages = size + n;
+    return size;
+}
+
+static PyObject *growMemory(PyObject *self, PyObject *args)
+{
+    long memoryIndex;
+    uint16_t n;
+    if (!PyArg_ParseTuple(args, "lH", &memoryIndex, &n))
+        return NULL;
+
+    return PyLong_FromLong(growMemory(memories.at(memoryIndex), n));
 }
 
 bool loadMemoryPage(memory_t *mem, long pageNum)
@@ -698,6 +724,7 @@ static PyMethodDef methods[] = {
     {"create_memory", createMemory, METH_VARARGS, "create_memory(fd, min_pages, max_pages, /)\n--\n\nRegister a new memory backed by fd."},
     {"destruct_standalone", destructStandalones, METH_NOARGS, "destruct_standalone()\n--\n\nFree up temporary functions."},
     {"flush_globals", flushGlobals, METH_NOARGS, "flush_globals()\n--\n\nClear generated globals ready for the next module."},
+    {"grow_memory", growMemory, METH_VARARGS, "grow_memory(index, n)\n--\n\n"},
     {"load_memory_page", loadMemoryPage, METH_VARARGS, "load_memory_page(index, page_no, /)\n--\n\nLoad page_no of the memory specified by index."},
     {"write_function_page", writeFunctionPage, METH_NOARGS, "write_function_page()\n--\n\nCommit generated functions to memory."},
     {"write_globals", writeGlobals, METH_NOARGS, "write_globals()\n--\n\nCommit generated globals to memory."},
