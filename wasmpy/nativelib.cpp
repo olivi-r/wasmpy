@@ -14,8 +14,8 @@ typedef struct
 {
     void *address;
     int32_t currentPage;
-    uint16_t numPages;
-    uint16_t maxPages;
+    uint32_t numPages;
+    uint32_t maxPages;
     int fd;
 #ifdef _WIN32
     HANDLE hFile;
@@ -622,7 +622,7 @@ static PyObject *flushGlobals(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-bool createMemory(int fd, uint16_t minPages, uint16_t maxPages)
+bool createMemory(int fd, uint32_t minPages, uint32_t maxPages)
 {
     memory_t *mem = new memory_t();
     mem->currentPage = -1;
@@ -637,10 +637,7 @@ bool createMemory(int fd, uint16_t minPages, uint16_t maxPages)
     if (mem->hFile == INVALID_HANDLE_VALUE)
         return false;
 
-    mem->hMap = CreateFileMapping(mem->hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
-    if (mem->hMap == NULL)
-        return false;
-
+    mem->hMap = NULL;
 #endif
     memories.push_back(mem);
     return true;
@@ -649,9 +646,11 @@ bool createMemory(int fd, uint16_t minPages, uint16_t maxPages)
 static PyObject *createMemory(PyObject *self, PyObject *args)
 {
     int fd;
-    uint16_t minPages, maxPages;
-    if (!PyArg_ParseTuple(args, "iHH", &fd, &minPages, &maxPages))
+    uint32_t minPages, maxPages;
+    if (!PyArg_ParseTuple(args, "iLL", &fd, &minPages, &maxPages))
         return NULL;
+
+    maxPages = maxPages < 65536 ? maxPages : 65536;
 
     if (!createMemory(fd, minPages, maxPages))
     {
@@ -663,11 +662,11 @@ static PyObject *createMemory(PyObject *self, PyObject *args)
 
 int32_t growMemory(memory_t *mem, uint32_t n)
 {
-    uint16_t size = mem->numPages;
+    uint32_t size = mem->numPages;
     if (size + n > mem->maxPages)
         return -1;
 
-    off_t off = lseek(mem->fd, 0, SEEK_END);
+    lseek(mem->fd, 0, SEEK_END);
     for (uint32_t i = 0; i < n; i++)
         write(mem->fd, blankPage, 65536);
 
@@ -677,15 +676,14 @@ int32_t growMemory(memory_t *mem, uint32_t n)
 
 static PyObject *growMemory(PyObject *self, PyObject *args)
 {
-    long memoryIndex;
-    uint16_t n;
-    if (!PyArg_ParseTuple(args, "lH", &memoryIndex, &n))
+    uint32_t memoryIndex, n;
+    if (!PyArg_ParseTuple(args, "LL", &memoryIndex, &n))
         return NULL;
 
     return PyLong_FromLong(growMemory(memories.at(memoryIndex), n));
 }
 
-bool loadMemoryPage(memory_t *mem, long pageNum)
+bool loadMemoryPage(memory_t *mem, uint16_t pageNum)
 {
     unmapMemory(mem);
 #ifdef __linux__
@@ -694,6 +692,10 @@ bool loadMemoryPage(memory_t *mem, long pageNum)
         return false;
 
 #elif _WIN32
+    mem->hMap = CreateFileMapping(mem->hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
+    if (mem->hMap == NULL)
+        return false;
+
     mem->address = MapViewOfFile(mem->hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 65536 * pageNum, 65536);
     if (mem->address == NULL)
         return false;
@@ -705,8 +707,9 @@ bool loadMemoryPage(memory_t *mem, long pageNum)
 
 static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
 {
-    long memoryIndex, pageNum;
-    if (!PyArg_ParseTuple(args, "ll", &memoryIndex, &pageNum))
+    uint32_t memoryIndex;
+    uint16_t pageNum;
+    if (!PyArg_ParseTuple(args, "LH", &memoryIndex, &pageNum))
         return NULL;
 
     if (!loadMemoryPage(memories.at(memoryIndex), pageNum))
