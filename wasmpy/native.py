@@ -1,7 +1,11 @@
 import ctypes
+import tempfile
 
 import wasmpy.nativelib
 import wasmpy.util
+
+
+_memory_files = []
 
 
 class ResultVoid(ctypes.Structure):
@@ -27,6 +31,12 @@ class ResultI64(ctypes.Structure):
 class ResultF64(ctypes.Structure):
     _fields_ = [("errno", ctypes.c_byte), ("value", ctypes.c_double)]
     _pack_ = 1
+
+
+def create_memory(min_pages, max_pages=65536):
+    file = tempfile.TemporaryFile()
+    _memory_files.append(file)  # stop file getting garbage collected
+    return wasmpy.nativelib.create_memory(file.fileno(), min_pages, max_pages)
 
 
 def create_global(mut, globaltype, expr):
