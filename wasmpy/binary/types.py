@@ -48,9 +48,11 @@ def read_limits(buffer: object) -> tuple:
         flag = buffer.read(1)[0]
         assert flag in range(2)
         if flag:
-            return tuple(
+            lims = tuple(
                 wasmpy.binary.values.read_uint(buffer, 32) for _ in range(2)
             )
+            assert lims[0] <= lims[1], "Invalid limits"
+            return lims
 
         else:
             return (wasmpy.binary.values.read_uint(buffer, 32),)

@@ -23,7 +23,7 @@ def read_module(buffer: object) -> dict:
         "imports": (),
         "funcs": [],
         "tables": (),
-        "mems": (),
+        "mem": (),
         "globals": (),
         "exports": (),
         "start": None,
@@ -72,7 +72,7 @@ def read_module(buffer: object) -> dict:
                 )
 
             if id == 5:
-                mod_dict["mems"] = wasmpy.binary.sections.read_memsec(buffer)
+                mod_dict["mem"] = wasmpy.binary.sections.read_memsec(buffer)
 
             if id == 6:
                 mod_dict["globals"] = wasmpy.binary.sections.read_globalsec(
@@ -125,6 +125,14 @@ def read_module(buffer: object) -> dict:
             g["globaltype"][0],
             wasmpy.native.get_global_object(g["offset"], g["globaltype"][1]),
         ]
+
+    if mod_dict["mem"]:
+        min_pages = mod_dict["mem"][0]
+        max_pages = 65536
+        if len(mod_dict["mem"]) == 2:
+            max_pages = mod_dict["mem"][1]
+
+        mod_dict["mem"] = wasmpy.native.create_memory(min_pages, max_pages)
 
     mod_dict["funcs"] += [
         wasmpy.native.create_function(

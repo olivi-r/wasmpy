@@ -83,10 +83,12 @@ def read_tablesec(buffer: object) -> tuple:
 
 def read_memsec(buffer: object) -> tuple:
     """Read a memory section from buffer."""
-    return tuple(
-        {"type": wasmpy.binary.types.read_memtype(buffer)}
-        for _ in range(wasmpy.binary.values.get_vec_len(buffer))
-    )
+    mems = wasmpy.binary.values.get_vec_len(buffer)
+    assert mems in (0, 1), "Multiple memories defined"
+    if mems:
+        return wasmpy.binary.types.read_memtype(buffer)
+
+    return ()
 
 
 def read_globalsec(buffer: object) -> tuple:

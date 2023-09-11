@@ -35,6 +35,7 @@ class ResultF64(ctypes.Structure):
 
 def create_memory(min_pages, max_pages):
     file = tempfile.TemporaryFile()
+    file.write(b"\0" * 65536 * min_pages)  # populate to initial size
     return (
         wasmpy.nativelib.create_memory(file.fileno(), min_pages, max_pages),
         file,  # store the file with module so it isn't garbage collected
