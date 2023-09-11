@@ -555,6 +555,24 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             current->code = memory_grow(funcAddr, memAddr);
 #endif
         }
+#ifdef ARCH_X86
+        // i64.div_s
+        else if (current->opcode == 0x7F)
+            current->code = div64_s((uint32_t)&func_div64_s, errorPageAddr);
+
+        // i64.div_u
+        else if (current->opcode == 0x80)
+            current->code = div64_u((uint32_t)&func_div64_u, errorPageAddr);
+
+        // i64.rem_s
+        else if (current->opcode == 0x81)
+            current->code = rem64((uint32_t)&func_rem64_s, errorPageAddr);
+
+        // i64.rem_u
+        else if (current->opcode == 0x82)
+            current->code = rem64((uint32_t)&func_rem64_u, errorPageAddr);
+
+#endif
         else
         {
             bytes insts;

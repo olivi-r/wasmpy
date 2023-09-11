@@ -1318,16 +1318,18 @@
         }
     ],
     "functions": {
+        "div64_s": "uint32_t addr, uint64_t errorPageAddr",
+        "div64_u": "uint32_t addr, uint64_t errorPageAddr",
+        "global_get_32": "uint64_t globalTableAddr, uint32_t offset",
+        "global_get_64": "uint64_t globalTableAddr, uint32_t offset",
+        "global_set_32": "uint64_t globalTableAddr, uint32_t offset",
+        "global_set_64": "uint64_t globalTableAddr, uint32_t offset",
         "local_get_32": "uint32_t offset",
         "local_get_64": "uint32_t offset",
         "local_set_32": "uint32_t offset",
         "local_set_64": "uint32_t offset",
         "local_tee_32": "uint32_t offset",
         "local_tee_64": "uint32_t offset",
-        "global_get_32": "uint64_t globalTableAddr, uint32_t offset",
-        "global_get_64": "uint64_t globalTableAddr, uint32_t offset",
-        "global_set_32": "uint64_t globalTableAddr, uint32_t offset",
-        "global_set_64": "uint64_t globalTableAddr, uint32_t offset",
         "memory_grow": "uint32_t funcAddr, uint32_t memAddr",
         "memory_grow_linux": "uint64_t funcAddr, uint64_t memAddr",
         "memory_grow_win": "uint64_t funcAddr, uint64_t memAddr",
@@ -1359,12 +1361,37 @@
         "reg_param_i64_linux_3": "uint8_t offset",
         "reg_param_i64_linux_4": "uint8_t offset",
         "reg_param_i64_linux_5": "uint8_t offset",
+        "rem64": "uint32_t addr, uint64_t errorPageAddr",
         "ret_v32": "uint64_t errorPageAddr",
         "ret_v64": "uint64_t errorPageAddr",
         "ret_void": "uint64_t errorPageAddr",
         "sub_rsp": "uint8_t offset"
     },
     "replacements": {
+        "div64_s": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 11), (uint8_t)((errorPageAddr + 11) >> 8), (uint8_t)((errorPageAddr + 11) >> 16), (uint8_t)((errorPageAddr + 11) >> 24)"
+            ],
+            [
+                "0, 255, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
+            ]
+        ],
+        "div64_u": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
+            ]
+        ],
         "f32.const": [
             [
                 "255, 255, 255, 127",
@@ -1821,6 +1848,16 @@
             [
                 "36, 1",
                 "36, offset"
+            ]
+        ],
+        "rem64": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
             ]
         ],
         "ret_v32": [

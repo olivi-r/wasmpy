@@ -8,6 +8,10 @@ bytes ret_v32(uint64_t errorPageAddr);
 bytes ret_v64(uint64_t errorPageAddr);
 bytes ret_void(uint64_t errorPageAddr);
 
+bytes div64_s(uint32_t addr, uint64_t errorPageAddr);
+bytes div64_u(uint32_t addr, uint64_t errorPageAddr);
+bytes rem64(uint32_t addr, uint64_t errorPageAddr);
+
 bytes local_get_32(uint32_t offset);
 bytes local_get_64(uint32_t offset);
 bytes local_set_32(uint32_t offset);
