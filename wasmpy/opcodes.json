@@ -92,8 +92,17 @@
             ]
         },
         {
-            "offset": 65,
+            "offset": 64,
             "instructions": [
+                [
+                    "memory.grow",
+                    [
+                        "i32"
+                    ],
+                    [
+                        "i32"
+                    ]
+                ],
                 [
                     "i32.const",
                     [],
@@ -1319,6 +1328,9 @@
         "global_get_64": "uint64_t globalTableAddr, uint32_t offset",
         "global_set_32": "uint64_t globalTableAddr, uint32_t offset",
         "global_set_64": "uint64_t globalTableAddr, uint32_t offset",
+        "memory_grow": "uint32_t funcAddr, uint32_t memAddr",
+        "memory_grow_linux": "uint64_t funcAddr, uint64_t memAddr",
+        "memory_grow_win": "uint64_t funcAddr, uint64_t memAddr",
         "reg_param_f32_linux_0": "uint8_t offset",
         "reg_param_f32_linux_1": "uint8_t offset",
         "reg_param_f32_linux_2": "uint8_t offset",
@@ -1611,6 +1623,36 @@
             [
                 "254, 0, 0, 0",
                 "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
+            ]
+        ],
+        "memory_grow": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)funcAddr, (uint8_t)(funcAddr >> 8), (uint8_t)(funcAddr >> 16), (uint8_t)(funcAddr >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24)"
+            ]
+        ],
+        "memory_grow_linux": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)funcAddr, (uint8_t)(funcAddr >> 8), (uint8_t)(funcAddr >> 16), (uint8_t)(funcAddr >> 24), (uint8_t)(funcAddr >> 32), (uint8_t)(funcAddr >> 40), (uint8_t)(funcAddr >> 48), (uint8_t)(funcAddr >> 56)"
+            ],
+            [
+                "255, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24), (uint8_t)(memAddr >> 32), (uint8_t)(memAddr >> 40), (uint8_t)(memAddr >> 48), (uint8_t)(memAddr >> 56)"
+            ]
+        ],
+        "memory_grow_win": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)funcAddr, (uint8_t)(funcAddr >> 8), (uint8_t)(funcAddr >> 16), (uint8_t)(funcAddr >> 24), (uint8_t)(funcAddr >> 32), (uint8_t)(funcAddr >> 40), (uint8_t)(funcAddr >> 48), (uint8_t)(funcAddr >> 56)"
+            ],
+            [
+                "255, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24), (uint8_t)(memAddr >> 32), (uint8_t)(memAddr >> 40), (uint8_t)(memAddr >> 48), (uint8_t)(memAddr >> 56)"
             ]
         ],
         "reg_param_f32_linux_0": [

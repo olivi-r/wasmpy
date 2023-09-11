@@ -20,6 +20,8 @@ bytes global_get_64(uint64_t globalTableAddr, uint32_t offset);
 bytes global_set_32(uint64_t globalTableAddr, uint32_t offset);
 bytes global_set_64(uint64_t globalTableAddr, uint32_t offset);
 
+bytes memory_grow(uint32_t funcAddr, uint32_t memAddr);
+
 extern bytes drop_32;
 extern bytes drop_64;
 extern bytes select_32;

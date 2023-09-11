@@ -17,7 +17,7 @@ typedef struct
     uint32_t numPages;
     uint32_t maxPages;
     int fd;
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
     HANDLE hFile;
     HANDLE hMap;
 #endif
@@ -50,9 +50,9 @@ void *writePage(bytes data)
 {
     void *buf;
     size_t size = page_size * (1 + data.size() / page_size);
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
 #endif
     memcpy(buf, data.data(), data.size());
@@ -65,9 +65,9 @@ void unmapMemory(memory_t *mem)
 {
     if (mem->currentPage != -1)
     {
-#ifdef __linux
+#ifdef PLATFORM_LINUX
         munmap(mem->address, 65536);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
         UnmapViewOfFile(mem->address);
 #endif
         mem->currentPage = -1;
@@ -79,7 +79,7 @@ void freePages()
     for (size_t i = 0; i < memories.size(); i++)
     {
         unmapMemory(memories.at(i));
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         CloseHandle(memories.at(i)->hMap);
         CloseHandle(memories.at(i)->hFile);
 #endif
@@ -88,9 +88,9 @@ void freePages()
 
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
         munmap(registeredPages.at(i), registeredPageSizes.at(i));
-#elif _WIN32
+#elif PLATFORM_WINDOWS
         VirtualFree(registeredPages.at(i), 0, MEM_RELEASE);
 #endif
     }
@@ -106,14 +106,28 @@ size_t writeFunction(bytes code)
 static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
 {
     void *buf = writePage(text);
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     mprotect(buf, text.size(), PROT_READ | PROT_EXEC);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     DWORD dummy;
     VirtualProtect(buf, text.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
     text = {}; // flush function code
     return PyLong_FromVoidPtr(buf);
+}
+
+int32_t growMemory(memory_t *mem, uint32_t n)
+{
+    uint32_t size = mem->numPages;
+    if (size + n > mem->maxPages)
+        return -1;
+
+    lseek(mem->fd, 0, SEEK_END);
+    for (uint32_t i = 0; i < n; i++)
+        write(mem->fd, blankPage, 65536);
+
+    mem->numPages = size + n;
+    return size;
 }
 
 typedef struct operation
@@ -522,6 +536,25 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             else
                 current->code = global_set_64(globalTableAddr, current->data);
         }
+        // memory.grow
+        else if (current->opcode == 0x40)
+        {
+#ifdef ARCH_X86_64
+            uint64_t funcAddr = (uint64_t)&growMemory;
+            size_t idx = memories.size() - 1;
+            uint64_t memAddr = (uint64_t) * (memory_t **)((uint64_t)memories.data() + idx * sizeof(memory_t *));
+#ifdef PLATFORM_LINUX
+            current->code = memory_grow_linux(funcAddr, memAddr);
+#elif PLATFORM_WINDOWS
+            current->code = memory_grow_win(funcAddr, memAddr);
+#endif
+#elif ARCH_X86
+            uint32_t funcAddr = (uint32_t)&growMemory;
+            size_t idx = memories.size() - 1;
+            uint32_t memAddr = (uint32_t) * (memory_t **)((uint32_t)memories.data() + idx * sizeof(memory_t *));
+            current->code = memory_grow(funcAddr, memAddr);
+#endif
+        }
         else
         {
             bytes insts;
@@ -554,9 +587,9 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         bytes code = concat(initStack, {loadLocals, funcBody, returnCode});
         void *buf = writePage(code);
         standaloneFuncs.push_back(registeredPages.size() - 1);
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
         mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
         DWORD dummy;
         VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
@@ -570,9 +603,9 @@ static PyObject *destructStandalones(PyObject *self, PyObject *args)
 {
     for (size_t i = 0; i < standaloneFuncs.size(); i++)
     {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
         munmap(registeredPages.at(standaloneFuncs.at(i)), registeredPageSizes.at(standaloneFuncs.at(i)));
-#elif _WIN32
+#elif PLATFORM_WINDOWS
         VirtualFree(registeredPages.at(standaloneFuncs.at(i)), 0, MEM_RELEASE);
 #endif
     }
@@ -632,7 +665,7 @@ bool createMemory(int fd, uint32_t minPages, uint32_t maxPages)
     if (mem->fd == -1)
         return false;
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
     mem->hFile = (HANDLE)_get_osfhandle(fd);
     if (mem->hFile == INVALID_HANDLE_VALUE)
         return false;
@@ -645,14 +678,14 @@ bool createMemory(int fd, uint32_t minPages, uint32_t maxPages)
 
 static PyObject *createMemory(PyObject *self, PyObject *args)
 {
-    int fd;
+    long long fd;
     uint32_t minPages, maxPages;
-    if (!PyArg_ParseTuple(args, "iLL", &fd, &minPages, &maxPages))
+    if (!PyArg_ParseTuple(args, "LLL", &fd, &minPages, &maxPages))
         return NULL;
 
     maxPages = maxPages < 65536 ? maxPages : 65536;
 
-    if (!createMemory(fd, minPages, maxPages))
+    if (!createMemory((int)fd, minPages, maxPages))
     {
         PyErr_SetString(PyExc_MemoryError, "failed to create memory");
         return NULL;
@@ -660,38 +693,15 @@ static PyObject *createMemory(PyObject *self, PyObject *args)
     return PyLong_FromSize_t(memories.size() - 1);
 }
 
-int32_t growMemory(memory_t *mem, uint32_t n)
-{
-    uint32_t size = mem->numPages;
-    if (size + n > mem->maxPages)
-        return -1;
-
-    lseek(mem->fd, 0, SEEK_END);
-    for (uint32_t i = 0; i < n; i++)
-        write(mem->fd, blankPage, 65536);
-
-    mem->numPages = size + n;
-    return size;
-}
-
-static PyObject *growMemory(PyObject *self, PyObject *args)
-{
-    uint32_t memoryIndex, n;
-    if (!PyArg_ParseTuple(args, "LL", &memoryIndex, &n))
-        return NULL;
-
-    return PyLong_FromLong(growMemory(memories.at(memoryIndex), n));
-}
-
 bool loadMemoryPage(memory_t *mem, uint16_t pageNum)
 {
     unmapMemory(mem);
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     mem->address = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, mem->fd, 65536 * pageNum);
     if (mem->address == MAP_FAILED)
         return false;
 
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     mem->hMap = CreateFileMapping(mem->hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
     if (mem->hMap == NULL)
         return false;
@@ -727,7 +737,6 @@ static PyMethodDef methods[] = {
     {"create_memory", createMemory, METH_VARARGS, "create_memory(fd, min_pages, max_pages, /)\n--\n\nRegister a new memory backed by fd."},
     {"destruct_standalone", destructStandalones, METH_NOARGS, "destruct_standalone()\n--\n\nFree up temporary functions."},
     {"flush_globals", flushGlobals, METH_NOARGS, "flush_globals()\n--\n\nClear generated globals ready for the next module."},
-    {"grow_memory", growMemory, METH_VARARGS, "grow_memory(index, n)\n--\n\n"},
     {"load_memory_page", loadMemoryPage, METH_VARARGS, "load_memory_page(index, page_no, /)\n--\n\nLoad page_no of the memory specified by index."},
     {"write_function_page", writeFunctionPage, METH_NOARGS, "write_function_page()\n--\n\nCommit generated functions to memory."},
     {"write_globals", writeGlobals, METH_NOARGS, "write_globals()\n--\n\nCommit generated globals to memory."},
@@ -742,9 +751,9 @@ static PyModuleDef module = {
 
 PyMODINIT_FUNC PyInit_nativelib()
 {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     page_size = sysconf(_SC_PAGE_SIZE);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     page_size = sysinfo.dwPageSize;

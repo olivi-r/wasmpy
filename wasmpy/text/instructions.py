@@ -24,6 +24,10 @@ def read_instruction_text(source, offset: int) -> list:
         if op not in wasmpy.util.consumes:
             return [op, 0]
 
+        elif op == 0x40:
+            assert source[offset + 1] == 0
+            return [0x40, 0]
+
         else:
             immediate = source[offset + 1]
             if op in (0x43, 0x44):

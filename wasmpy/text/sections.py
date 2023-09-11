@@ -44,6 +44,25 @@ def unfold(expr: list) -> list:
         return expr
 
 
+def read_id(expr: list, off: int) -> tuple:
+    if isinstance(expr[off], sexpdata.Symbol) and expr[off].value().startswith(
+        "$"
+    ):
+        return expr[0], off + 1
+
+    return None, off
+
+
+def read_limits(expr: list, off: int) -> tuple:
+    n = expr[off]
+    if off > len(expr) and isinstance(expr[off + 1], int):
+        m = expr[off + 1]
+        assert m >= n
+        return n, m, off + 2
+
+    return n, None, off + 1
+
+
 def read_type(expr: list) -> tuple:
     typeidx = None
     if len(expr) == 3:
@@ -231,6 +250,15 @@ def read_func(expr: list) -> tuple:
             "body": body,
         },
     )
+
+
+def read_memory(expr: list) -> tuple:
+    id, off = read_id(expr, 1)
+    min_pages, max_pages, off = read_limits(expr, off)
+    if max_pages is None or max_pages > 65536:
+        max_pages = 65536
+
+    return id, min_pages, max_pages
 
 
 def read_global(expr: list) -> tuple:

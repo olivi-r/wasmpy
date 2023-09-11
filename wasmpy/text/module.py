@@ -49,7 +49,7 @@ def read_module(buffer: object) -> dict:
         "imports": (),
         "funcs": [],
         "tables": (),
-        "mems": (),
+        "mem": (),
         "globals": [],
         "exports": [],
         "start": None,
@@ -90,6 +90,14 @@ def read_module(buffer: object) -> dict:
                 funcidx, func = wasmpy.text.sections.read_func(expr)
                 funcs["funcs"].append(func)
                 funcs["ids"].append(funcidx)
+
+            elif expr[0].value() == "memory":
+                if mod_dict["mem"]:
+                    raise ValueError("Multiple memories defined")
+
+                _, min_pages, max_pages = wasmpy.text.sections.read_memory(expr)
+                memory = wasmpy.native.create_memory(min_pages, max_pages)
+                mod_dict["mem"] = memory
 
             elif expr[0].value() == "global":
                 globalidx, export, global_ = wasmpy.text.sections.read_global(

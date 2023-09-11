@@ -9,10 +9,10 @@
 #include <cstdint>
 #include <vector>
 
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
 #include <sys/mman.h>
 #include <fcntl.h>
-#elif _WIN32
+#elif PLATFORM_WINDOWS
 #include <Windows.h>
 #else
 #error Unknown system

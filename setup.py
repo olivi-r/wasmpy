@@ -226,11 +226,21 @@ ext = [
 ]
 
 if is_x86():
+    plat = []
+    if platform.system() == "Windows":
+        plat = [("PLATFORM_WINDOWS", None)]
+
+    elif platform.system() == "Linux":
+        plat = [("PLATFORM_LINUX", None)]
+
+    arch = []
     if struct.calcsize("P") == 4:
         machine = "x86"
+        arch = [("ARCH_X86", None)]
 
     else:
         machine = "x86_64"
+        arch = [("ARCH_X86_64", None)]
 
     ext.append(
         setuptools.Extension(
@@ -244,6 +254,7 @@ if is_x86():
                 f"wasmpy/arch/{machine}/lib/lib.cpp",
                 f"wasmpy/arch/{machine}/lib/opcodes.cpp",
             ],
+            define_macros=plat + arch,
             py_limited_api=True,
         )
     )
