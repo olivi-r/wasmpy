@@ -1,5 +1,6 @@
 import ctypes
 import importlib
+import os
 
 import wasmpy.binary.sections
 import wasmpy.binary.values
@@ -163,6 +164,10 @@ def read_module(buffer: object) -> dict:
 
         elif e["desc"][0] == "global":
             e["obj"] = mod_dict["globals"][e["desc"][1]]["obj"]
+
+        elif e["desc"][0] == "mem":
+            e["obj"] = mod_dict["mem"][1].raw
+            e["obj"].seek(0)
 
     if mod_dict["start"] is not None:
         mod_dict["start"] = mod_dict["funcs"][mod_dict["start"]]
