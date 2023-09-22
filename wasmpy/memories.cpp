@@ -1,5 +1,4 @@
 #include "memories.hpp"
-#include <Windows.h>
 
 struct memory_t
 {
