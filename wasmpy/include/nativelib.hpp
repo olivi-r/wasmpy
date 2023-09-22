@@ -27,6 +27,10 @@ extern uint64_t errorPageAddr;
 
 template <typename T>
 std::vector<T> concat(std::vector<T> v0, std::vector<std::vector<T>> vn);
+void *writePage(bytes data);
+
+#include "globals.hpp"
+#include "memories.hpp"
 
 #include "opcodes.hpp"
 #include "lib.hpp"

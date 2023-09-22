@@ -246,13 +246,15 @@ if is_x86():
         setuptools.Extension(
             "wasmpy.nativelib",
             include_dirs=[
-                os.path.abspath("wasmpy"),
+                os.path.abspath("wasmpy/include"),
                 os.path.abspath(f"wasmpy/arch/{machine}/lib"),
             ],
             sources=[
-                "wasmpy/nativelib.cpp",
                 f"wasmpy/arch/{machine}/lib/lib.cpp",
                 f"wasmpy/arch/{machine}/lib/opcodes.cpp",
+                "wasmpy/globals.cpp",
+                "wasmpy/memories.cpp",
+                "wasmpy/nativelib.cpp",
             ],
             define_macros=plat + arch,
             py_limited_api=True,

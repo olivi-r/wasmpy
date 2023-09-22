@@ -21,6 +21,7 @@ bytes global_get_64(uint64_t globalTableAddr, uint32_t offset);
 bytes global_set_32(uint64_t globalTableAddr, uint32_t offset);
 bytes global_set_64(uint64_t globalTableAddr, uint32_t offset);
 
+bytes memory_size(uint64_t addr);
 bytes memory_grow_linux(uint64_t funcAddr, uint64_t memAddr);
 bytes memory_grow_win(uint64_t funcAddr, uint64_t memAddr);
 

@@ -2,28 +2,20 @@
 
 std::vector<void *> registeredPages = {};
 std::vector<size_t> registeredPageSizes = {}, standaloneFuncs = {};
-std::vector<int> globalMut = {};
-bytes globalTable = {}, globalTypes = {}, localTypes = {};
+bytes localTypes = {};
 std::vector<uint32_t> localOffsets = {};
-uint64_t errorPageAddr, globalTableAddr;
+uint64_t errorPageAddr;
 uint32_t page_size;
 
-uint8_t blankPage[65536] = {0};
-
-typedef struct
+struct operation_t
 {
-    void *address;
-    int32_t currentPage;
-    uint32_t numPages;
-    uint32_t maxPages;
-    int fd;
-#ifdef PLATFORM_WINDOWS
-    HANDLE hFile;
-    HANDLE hMap;
-#endif
-} memory_t;
-
-std::vector<memory_t *> memories = {};
+    uint8_t opcode;
+    std::vector<wchar_t *> arguments;
+    std::vector<wchar_t *> results;
+    long consumes;
+    uint32_t data;
+    bytes code;
+};
 
 bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
@@ -61,30 +53,10 @@ void *writePage(bytes data)
     return buf;
 }
 
-void unmapMemory(memory_t *mem)
-{
-    if (mem->currentPage != -1)
-    {
-#ifdef PLATFORM_LINUX
-        munmap(mem->address, 65536);
-#elif PLATFORM_WINDOWS
-        UnmapViewOfFile(mem->address);
-#endif
-        mem->currentPage = -1;
-    }
-}
-
 void freePages()
 {
     for (size_t i = 0; i < memories.size(); i++)
-    {
-        unmapMemory(memories.at(i));
-#ifdef PLATFORM_WINDOWS
-        CloseHandle(memories.at(i)->hMap);
-        CloseHandle(memories.at(i)->hFile);
-#endif
-        close(memories.at(i)->fd);
-    }
+        closeMemory(memories.at(i));
 
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
@@ -103,7 +75,7 @@ size_t writeFunction(bytes code)
     return offset;
 }
 
-static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
+PyObject *writeFunctionPage(PyObject *self, PyObject *args)
 {
     void *buf = writePage(text);
 #ifdef PLATFORM_LINUX
@@ -116,31 +88,7 @@ static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
     return PyLong_FromVoidPtr(buf);
 }
 
-int32_t growMemory(memory_t *mem, uint32_t n)
-{
-    uint32_t size = mem->numPages;
-    if (size + n > mem->maxPages)
-        return -1;
-
-    lseek(mem->fd, 0, SEEK_END);
-    for (uint32_t i = 0; i < n; i++)
-        write(mem->fd, blankPage, 65536);
-
-    mem->numPages = size + n;
-    return size;
-}
-
-typedef struct operation
-{
-    uint8_t opcode;
-    std::vector<wchar_t *> arguments;
-    std::vector<wchar_t *> results;
-    long consumes;
-    uint32_t data;
-    bytes code;
-} operation;
-
-static PyObject *createFunction(PyObject *self, PyObject *args)
+PyObject *createFunction(PyObject *self, PyObject *args)
 {
     char ret, standalone;
     const char *codebuf, *argbuf, *localbuf;
@@ -182,8 +130,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
     bytes code(codebuf, codelen + codebuf);
 
-    std::vector<operation *> stack = {};
-    operation *current_operation;
+    std::vector<operation_t *> stack = {};
+    operation_t *current_operation;
 
     std::vector<wchar_t *> validateStack = {};
     for (size_t i = 0; i < code.size(); i++)
@@ -193,7 +141,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         std::vector<wchar_t *> operandVector = {};
         std::vector<wchar_t *> resultVector = {};
 
-        current_operation = new operation();
+        current_operation = new operation_t();
 
         current_operation->opcode = op;
         current_operation->data = 0;
@@ -471,7 +419,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     bytes funcBody = {};
     for (size_t i = 0; i < stack.size(); i++)
     {
-        operation *current = stack.at(i);
+        operation_t *current = stack.at(i);
 
         // drop
         if (current->opcode == 0x1A)
@@ -536,12 +484,20 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
             else
                 current->code = global_set_64(globalTableAddr, current->data);
         }
+        // memory.size
+        else if (current->opcode == 0x3F)
+        {
+            size_t idx = memories.size() - 1;
+            uint64_t addr = (uint64_t) * (memory_t **)((uint64_t)memories.data() + idx * sizeof(memory_t *));
+            addr += +sizeof(void *) + 4;
+            current->code = memory_size(addr);
+        }
         // memory.grow
         else if (current->opcode == 0x40)
         {
+            size_t idx = memories.size() - 1;
 #ifdef ARCH_X86_64
             uint64_t funcAddr = (uint64_t)&growMemory;
-            size_t idx = memories.size() - 1;
             uint64_t memAddr = (uint64_t) * (memory_t **)((uint64_t)memories.data() + idx * sizeof(memory_t *));
 #ifdef PLATFORM_LINUX
             current->code = memory_grow_linux(funcAddr, memAddr);
@@ -550,7 +506,6 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 #endif
 #elif ARCH_X86
             uint32_t funcAddr = (uint32_t)&growMemory;
-            size_t idx = memories.size() - 1;
             uint32_t memAddr = (uint32_t) * (memory_t **)((uint32_t)memories.data() + idx * sizeof(memory_t *));
             current->code = memory_grow(funcAddr, memAddr);
 #endif
@@ -617,7 +572,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     return PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode})));
 }
 
-static PyObject *destructStandalones(PyObject *self, PyObject *args)
+PyObject *destructStandalones(PyObject *self, PyObject *args)
 {
     for (size_t i = 0; i < standaloneFuncs.size(); i++)
     {
@@ -630,126 +585,7 @@ static PyObject *destructStandalones(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *appendGlobal(PyObject *self, PyObject *args)
-{
-    unsigned long long global;
-    int mut;
-    char type;
-    if (!PyArg_ParseTuple(args, "Kpb", &global, &mut, &type))
-        return NULL;
-
-    size_t offset = globalTable.size();
-    globalMut.push_back(mut);
-
-    if (type == 0x7F || type == 0x7D)
-        globalTable = concat(globalTable, {{(uint8_t)(global >> 24), (uint8_t)(global >> 16), (uint8_t)(global >> 8), (uint8_t)global}});
-
-    else if (type == 0x7E || type == 0x7C)
-        globalTable = concat(globalTable, {{(uint8_t)(global >> 56), (uint8_t)(global >> 48), (uint8_t)(global >> 40), (uint8_t)(global >> 32), (uint8_t)(global >> 24), (uint8_t)(global >> 16), (uint8_t)(global >> 8), (uint8_t)global}});
-
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "unrecognized global type");
-        return NULL;
-    }
-
-    globalTypes.push_back(type);
-
-    return Py_BuildValue("O", PyLong_FromSize_t(offset));
-}
-
-static PyObject *writeGlobals(PyObject *self, PyObject *args)
-{
-    void *buf = writePage(globalTable);
-    globalTableAddr = (uint64_t)buf;
-    return Py_BuildValue("O", PyLong_FromVoidPtr(buf));
-}
-
-static PyObject *flushGlobals(PyObject *self, PyObject *args)
-{
-    globalTable = {};
-    globalTypes = {};
-    globalMut = {};
-    Py_RETURN_NONE;
-}
-
-bool createMemory(int fd, uint32_t minPages, uint32_t maxPages)
-{
-    memory_t *mem = new memory_t();
-    mem->currentPage = -1;
-    mem->numPages = minPages; // initialize to minimum required
-    mem->maxPages = maxPages;
-    mem->fd = fd;
-    if (mem->fd == -1)
-        return false;
-
-#ifdef PLATFORM_WINDOWS
-    mem->hFile = (HANDLE)_get_osfhandle(fd);
-    if (mem->hFile == INVALID_HANDLE_VALUE)
-        return false;
-
-    mem->hMap = NULL;
-#endif
-    memories.push_back(mem);
-    return true;
-}
-
-static PyObject *createMemory(PyObject *self, PyObject *args)
-{
-    long long fd;
-    uint32_t minPages, maxPages;
-    if (!PyArg_ParseTuple(args, "LLL", &fd, &minPages, &maxPages))
-        return NULL;
-
-    maxPages = maxPages < 65536 ? maxPages : 65536;
-
-    if (!createMemory((int)fd, minPages, maxPages))
-    {
-        PyErr_SetString(PyExc_MemoryError, "failed to create memory");
-        return NULL;
-    }
-    return PyLong_FromSize_t(memories.size() - 1);
-}
-
-bool loadMemoryPage(memory_t *mem, uint16_t pageNum)
-{
-    unmapMemory(mem);
-#ifdef PLATFORM_LINUX
-    mem->address = mmap(NULL, 65536, PROT_READ | PROT_WRITE, MAP_SHARED, mem->fd, 65536 * pageNum);
-    if (mem->address == MAP_FAILED)
-        return false;
-
-#elif PLATFORM_WINDOWS
-    mem->hMap = CreateFileMapping(mem->hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
-    if (mem->hMap == NULL)
-        return false;
-
-    mem->address = MapViewOfFile(mem->hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 65536 * pageNum, 65536);
-    if (mem->address == NULL)
-        return false;
-
-#endif
-    mem->currentPage = pageNum;
-    return true;
-}
-
-static PyObject *loadMemoryPage(PyObject *self, PyObject *args)
-{
-    uint32_t memoryIndex;
-    uint16_t pageNum;
-    if (!PyArg_ParseTuple(args, "LH", &memoryIndex, &pageNum))
-        return NULL;
-
-    if (!loadMemoryPage(memories.at(memoryIndex), pageNum))
-    {
-        PyErr_SetString(PyExc_MemoryError, "failed to load memory page");
-        return NULL;
-    }
-
-    return PyLong_FromVoidPtr(memories.at(memoryIndex)->address);
-}
-
-static PyMethodDef methods[] = {
+PyMethodDef methods[] = {
     {"append_global", appendGlobal, METH_VARARGS, "append_global(value, mutable, global_type, /)\n--\n\nRegister new global variable."},
     {"create_function", createFunction, METH_VARARGS, "create_function(ret_type, codebuf, argbuf, localbuf, op_con, op_sig, standalone, /)\n--\n\nGenerate a new function and add it to the function page."},
     {"create_memory", createMemory, METH_VARARGS, "create_memory(fd, min_pages, max_pages, /)\n--\n\nRegister a new memory backed by fd."},
@@ -760,7 +596,7 @@ static PyMethodDef methods[] = {
     {"write_globals", writeGlobals, METH_NOARGS, "write_globals()\n--\n\nCommit generated globals to memory."},
     {NULL, NULL, 0, NULL}};
 
-static PyModuleDef module = {
+PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
     "nativelib",
     NULL,

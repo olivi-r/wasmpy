@@ -92,8 +92,15 @@
             ]
         },
         {
-            "offset": 64,
+            "offset": 63,
             "instructions": [
+                [
+                    "memory.size",
+                    [],
+                    [
+                        "i32"
+                    ]
+                ],
                 [
                     "memory.grow",
                     [
@@ -1333,6 +1340,7 @@
         "memory_grow": "uint32_t funcAddr, uint32_t memAddr",
         "memory_grow_linux": "uint64_t funcAddr, uint64_t memAddr",
         "memory_grow_win": "uint64_t funcAddr, uint64_t memAddr",
+        "memory_size": "uint64_t addr",
         "reg_param_f32_linux_0": "uint8_t offset",
         "reg_param_f32_linux_1": "uint8_t offset",
         "reg_param_f32_linux_2": "uint8_t offset",
@@ -1680,6 +1688,16 @@
             [
                 "255, 0, 0, 0, 0, 0, 0, 255",
                 "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24), (uint8_t)(memAddr >> 32), (uint8_t)(memAddr >> 40), (uint8_t)(memAddr >> 48), (uint8_t)(memAddr >> 56)"
+            ]
+        ],
+        "memory_size": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24), (uint8_t)(addr >> 32), (uint8_t)(addr >> 40), (uint8_t)(addr >> 48), (uint8_t)(addr >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
             ]
         ],
         "reg_param_f32_linux_0": [
