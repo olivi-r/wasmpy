@@ -211,17 +211,15 @@ class build_ext(setuptools.command.build_ext.build_ext):
         setuptools.command.build_ext.build_ext.run(self)
 
 
-ext = []
+plat = []
+if platform.system() == "Linux":
+    plat = [("PLATFORM_LINUX", None)]
 
+elif platform.system() == "Windows":
+    plat = [("PLATFORM_WINDOWS", None)]
+
+arch = []
 if is_x86():
-    plat = []
-    if platform.system() == "Windows":
-        plat = [("PLATFORM_WINDOWS", None)]
-
-    elif platform.system() == "Linux":
-        plat = [("PLATFORM_LINUX", None)]
-
-    arch = []
     if struct.calcsize("P") == 4:
         machine = "x86"
         arch = [("ARCH_X86", None)]
@@ -230,24 +228,24 @@ if is_x86():
         machine = "x86_64"
         arch = [("ARCH_X86_64", None)]
 
-    ext.append(
-        setuptools.Extension(
-            "wasmpy.nativelib",
-            include_dirs=[
-                os.path.abspath("wasmpy/include"),
-                os.path.abspath(f"wasmpy/arch/{machine}/lib"),
-            ],
-            sources=[
-                f"wasmpy/arch/{machine}/lib/lib.cpp",
-                f"wasmpy/arch/{machine}/lib/opcodes.cpp",
-                "wasmpy/globals.cpp",
-                "wasmpy/memories.cpp",
-                "wasmpy/nativelib.cpp",
-            ],
-            define_macros=plat + arch,
-            py_limited_api=True,
-        )
+ext = [
+    setuptools.Extension(
+        "wasmpy.nativelib",
+        include_dirs=[
+            os.path.abspath("wasmpy/include"),
+            os.path.abspath(f"wasmpy/arch/{machine}/lib"),
+        ],
+        sources=[
+            f"wasmpy/arch/{machine}/lib/lib.cpp",
+            f"wasmpy/arch/{machine}/lib/opcodes.cpp",
+            "wasmpy/globals.cpp",
+            "wasmpy/memories.cpp",
+            "wasmpy/nativelib.cpp",
+        ],
+        define_macros=plat + arch,
+        py_limited_api=True,
     )
+]
 
 
 with open("README.md", "r") as fp:

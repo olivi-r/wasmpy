@@ -18,6 +18,12 @@
 #error Unknown system
 #endif
 
+#ifndef ARCH_X86
+#ifndef ARCH_X86_64
+#error Unknown architecture
+#endif
+#endif
+
 typedef std::vector<uint8_t> bytes;
 
 extern bytes localTypes;
