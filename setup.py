@@ -211,19 +211,7 @@ class build_ext(setuptools.command.build_ext.build_ext):
         setuptools.command.build_ext.build_ext.run(self)
 
 
-ext = [
-    setuptools.Extension(
-        "wasmpy.wasi_unstable",
-        sources=["wasmpy/wasi.c"],
-        define_macros=[("WASI_UNSTABLE", None)],
-        py_limited_api=True,
-    ),
-    setuptools.Extension(
-        "wasmpy.wasi_snapshot_preview1",
-        sources=["wasmpy/wasi.c"],
-        py_limited_api=True,
-    ),
-]
+ext = []
 
 if is_x86():
     plat = []
