@@ -1,10 +1,20 @@
 #include "nativelib.hpp"
 
 std::vector<void *> registeredPages = {};
-std::vector<size_t> registeredPageSizes = {}, standaloneFuncs = {};
+std::vector<size_t> registeredPageSizes = {};
+
+std::vector<size_t> standaloneFuncs = {};
+
+std::vector<size_t> paramSizes = {};
+
+std::vector<size_t> functionAddrs = {};
+std::vector<size_t> functionCallPoints = {};
+
 bytes localTypes = {};
 std::vector<uint32_t> localOffsets = {};
+
 uint64_t errorPageAddr;
+
 uint32_t page_size;
 
 struct operation_t
@@ -99,6 +109,8 @@ PyObject *createFunction(PyObject *self, PyObject *args)
 
     // register parameters
     bytes loadLocals = regParam(argbuf, arglen);
+
+    size_t callOffset = initStack.size() + loadLocals.size();
 
     int32_t localOff = 0;
 
@@ -569,7 +581,12 @@ PyObject *createFunction(PyObject *self, PyObject *args)
         return PyLong_FromVoidPtr(buf);
     }
 
-    return PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode})));
+    // keep track of offset into function of actual code to allow use of cdecl on x86-64
+    size_t funcAddr = writeFunction(concat(initStack, {loadLocals, funcBody, returnCode}));
+    functionAddrs.push_back(funcAddr);
+    functionCallPoints.push_back(funcAddr + callOffset);
+
+    return PyLong_FromSize_t(funcAddr);
 }
 
 PyObject *destructStandalones(PyObject *self, PyObject *args)
