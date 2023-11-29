@@ -1,8 +1,13 @@
+import enum
 import json
 import os
 import re
 import types
 
+
+NONE = 0
+__all__ = ["enable", "disable", "NONE"]
+enabled_features = NONE
 
 opcodes = {}
 consumes = {}
@@ -14,10 +19,7 @@ with open(os.path.join(os.path.dirname(__file__), "opcodes.json")) as fp:
             dict(
                 zip(
                     (i[0] for i in group["instructions"]),
-                    (
-                        i + group["offset"]
-                        for i in range(len(group["instructions"]))
-                    ),
+                    (i + group["offset"] for i in range(len(group["instructions"]))),
                 )
             )
         )
@@ -76,6 +78,18 @@ def create_module(module: dict) -> object:
     obj.__dict__.update({"_internal": module})
 
     return obj
+
+
+def enable(flag: int) -> None:
+    """Mark features as enabled."""
+    global enabled_features
+    enabled_features |= flag
+
+
+def disable(flag: int) -> None:
+    """Mark features as disabled."""
+    global enabled_features
+    enabled_features = ~(~enabled_features | flag)
 
 
 def expand_bytes(n: int, bits: int = 32) -> list:
