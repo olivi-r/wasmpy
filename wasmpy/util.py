@@ -5,7 +5,22 @@ import types
 
 
 NONE = 0
-__all__ = ["enable", "disable", "NONE"]
+ALL = 0
+features = [
+    "MUTABLE_GLOBALS",
+    "SATURATING_FLOAT_TO_INT",
+    "SIGN_EXTENSION",
+    "MULTI_VALUE",
+    "REFERENCE_TYPES",
+    "BULK_MEMORY",
+    "SIMD",
+]
+
+for i, f in enumerate(features):
+    globals()[f] = 1 << i
+    ALL |= 1 << i
+
+__all__ = ["enable", "disable", "ALL", "NONE"] + features
 enabled_features = NONE
 
 opcodes = {}
@@ -82,7 +97,11 @@ def create_module(module: dict) -> object:
 def enable(flag: int) -> None:
     """Mark features as enabled."""
     global enabled_features
-    enabled_features |= flag
+    if flag == NONE:
+        enabled_features = 0
+
+    else:
+        enabled_features |= flag
 
 
 def disable(flag: int) -> None:
