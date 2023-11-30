@@ -122,10 +122,12 @@ def expand_bytes(n: int, bits: int = 32) -> list:
 
 def sanitize(name: str) -> str:
     """Convert name to valid Python identifier."""
+    name = name.strip()
     if name.isidentifier():
         return name
 
+    name = re.sub(r"\W+", "_", name)
     if not name[0].isidentifier():
         name = "_" + name
 
-    return name[0] + re.sub(r"\W+", "_", name[1:])
+    return name
