@@ -1,5 +1,10 @@
 import sys
 
+
+class Trap(Exception):
+    pass
+
+
 import wasmpy.binary
 import wasmpy.text
 from wasmpy.util import *
