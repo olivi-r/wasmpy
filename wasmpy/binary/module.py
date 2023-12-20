@@ -1,6 +1,12 @@
-from . import sections, values
-from .. import native, util
-import ctypes, importlib
+import ctypes
+import importlib
+import os
+
+import wasmpy.binary.sections
+import wasmpy.binary.values
+import wasmpy.native
+import wasmpy.nativelib
+import wasmpy.util
 
 
 # extend to add future binary formats
@@ -18,7 +24,7 @@ def read_module(buffer: object) -> dict:
         "imports": (),
         "funcs": [],
         "tables": (),
-        "mems": (),
+        "mem": (),
         "globals": (),
         "exports": (),
         "start": None,
@@ -35,7 +41,7 @@ def read_module(buffer: object) -> dict:
         while upto < 23:
             id = buffer.read(1)[0]
             assert id < 12
-            length = values.read_uint(buffer, 32)
+            length = wasmpy.binary.values.read_uint(buffer, 32)
 
             while sects[upto] != id:
                 upto += 1
@@ -46,40 +52,50 @@ def read_module(buffer: object) -> dict:
                 break
 
             if not id:
-                mod_dict["custom"] += (sections.read_customsec(buffer, length),)
+                mod_dict["custom"] += (
+                    wasmpy.binary.sections.read_customsec(buffer, length),
+                )
 
             if id == 1:
-                mod_dict["types"] = sections.read_typesec(buffer)
+                mod_dict["types"] = wasmpy.binary.sections.read_typesec(buffer)
 
             if id == 2:
-                mod_dict["imports"] = sections.read_importsec(buffer)
+                mod_dict["imports"] = wasmpy.binary.sections.read_importsec(
+                    buffer
+                )
 
             if id == 3:
-                typeidx = sections.read_funcsec(buffer)
+                typeidx = wasmpy.binary.sections.read_funcsec(buffer)
 
             if id == 4:
-                mod_dict["tables"] = sections.read_tablesec(buffer)
+                mod_dict["tables"] = wasmpy.binary.sections.read_tablesec(
+                    buffer
+                )
 
             if id == 5:
-                mod_dict["mems"] = sections.read_memsec(buffer)
+                mod_dict["mem"] = wasmpy.binary.sections.read_memsec(buffer)
 
             if id == 6:
-                mod_dict["globals"] = sections.read_globalsec(buffer)
+                mod_dict["globals"] = wasmpy.binary.sections.read_globalsec(
+                    buffer
+                )
 
             if id == 7:
-                mod_dict["exports"] = sections.read_exportsec(buffer)
+                mod_dict["exports"] = wasmpy.binary.sections.read_exportsec(
+                    buffer
+                )
 
             if id == 8:
-                mod_dict["start"] = sections.read_startsec(buffer)
+                mod_dict["start"] = wasmpy.binary.sections.read_startsec(buffer)
 
             if id == 9:
-                mod_dict["elem"] = sections.read_elemsec(buffer)
+                mod_dict["elem"] = wasmpy.binary.sections.read_elemsec(buffer)
 
             if id == 10:
-                code = sections.read_codesec(buffer)
+                code = wasmpy.binary.sections.read_codesec(buffer)
 
             if id == 11:
-                mod_dict["data"] = sections.read_datasec(buffer)
+                mod_dict["data"] = wasmpy.binary.sections.read_datasec(buffer)
 
     except IndexError as i:
         pass
@@ -99,20 +115,28 @@ def read_module(buffer: object) -> dict:
                 )
 
     for g in mod_dict["globals"]:
-        g["offset"] = native.create_global(
+        g["offset"] = wasmpy.native.create_global(
             g["globaltype"][0] == "mut", g["globaltype"][1], g["expr"]
         )
 
-    global_offset = native.nativelib.write_globals()
+    global_offset = wasmpy.nativelib.write_globals()
     for g in mod_dict["globals"]:
         g["offset"] += global_offset
         g["obj"] = [
             g["globaltype"][0],
-            native.get_global_object(g["offset"], g["globaltype"][1]),
+            wasmpy.native.get_global_object(g["offset"], g["globaltype"][1]),
         ]
 
+    if mod_dict["mem"]:
+        min_pages = mod_dict["mem"][0]
+        max_pages = 65536
+        if len(mod_dict["mem"]) == 2:
+            max_pages = mod_dict["mem"][1]
+
+        mod_dict["mem"] = wasmpy.native.create_memory(min_pages, max_pages)
+
     mod_dict["funcs"] += [
-        native.create_function(
+        wasmpy.native.create_function(
             mod_dict["types"][typeidx[i]][1][0],
             bytes(body),
             bytes(mod_dict["types"][typeidx[i]][0]),
@@ -121,17 +145,18 @@ def read_module(buffer: object) -> dict:
         for i, (locals, body) in enumerate(code)
     ]
 
-    function_base_addr = native.nativelib.write_function_page()
+    function_base_addr = wasmpy.nativelib.write_function_page()
     for funcidx, func in enumerate(mod_dict["funcs"]):
         if isinstance(func, dict):
             obj = ctypes.CFUNCTYPE(func["ret"], *func["params"])(
                 function_base_addr + func["address"]
             )
-            mod_dict["funcs"][funcidx] = native.wrap_function(
+            mod_dict["funcs"][funcidx] = wasmpy.native.wrap_function(
                 obj, func["param_clear"]
             )
 
-    native.nativelib.flush_globals()
+    wasmpy.nativelib.flush_globals()
+    wasmpy.nativelib.destruct_standalone()
 
     for e in mod_dict["exports"]:
         if e["desc"][0] == "func":
@@ -140,7 +165,11 @@ def read_module(buffer: object) -> dict:
         elif e["desc"][0] == "global":
             e["obj"] = mod_dict["globals"][e["desc"][1]]["obj"]
 
+        elif e["desc"][0] == "mem":
+            e["obj"] = mod_dict["mem"][1].raw
+            e["obj"].seek(0)
+
     if mod_dict["start"] is not None:
         mod_dict["start"] = mod_dict["funcs"][mod_dict["start"]]
 
-    return util.create_module(mod_dict)
+    return wasmpy.util.create_module(mod_dict)

@@ -92,8 +92,24 @@
             ]
         },
         {
-            "offset": 65,
+            "offset": 63,
             "instructions": [
+                [
+                    "memory.size",
+                    [],
+                    [
+                        "i32"
+                    ]
+                ],
+                [
+                    "memory.grow",
+                    [
+                        "i32"
+                    ],
+                    [
+                        "i32"
+                    ]
+                ],
                 [
                     "i32.const",
                     [],
@@ -1308,17 +1324,23 @@
             ]
         }
     ],
-    "prefixes": {
-        "global.get": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\tbits = ll + 8;\n\t\t",
-        "global.set": "ll = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tll *= 9;\n\t\tll += (uint64_t)globalTableAddr;\n\t\tlh = ll + 2;\n\t\thl = ll + 4;\n\t\thh = ll + 6;\n\t\t",
-        "local.set": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t",
-        "local.tee": "localidx = buf.at(offset + 4) << 24 | buf.at(offset + 3) << 16 | buf.at(offset + 2) << 8 | buf.at(offset + 1);\n\t\tlocalidx *= 10;\n\t\t"
-    },
     "functions": {
+        "div64_s": "uint32_t addr, uint64_t errorPageAddr",
+        "div64_u": "uint32_t addr, uint64_t errorPageAddr",
+        "global_get_32": "uint64_t globalTableAddr, uint32_t offset",
+        "global_get_64": "uint64_t globalTableAddr, uint32_t offset",
+        "global_set_32": "uint64_t globalTableAddr, uint32_t offset",
+        "global_set_64": "uint64_t globalTableAddr, uint32_t offset",
         "local_get_32": "uint32_t offset",
-        "local_get_32_small": "uint8_t offset",
         "local_get_64": "uint32_t offset",
-        "local_get_64_small": "uint8_t offset",
+        "local_set_32": "uint32_t offset",
+        "local_set_64": "uint32_t offset",
+        "local_tee_32": "uint32_t offset",
+        "local_tee_64": "uint32_t offset",
+        "memory_grow": "uint32_t funcAddr, uint32_t memAddr",
+        "memory_grow_linux": "uint64_t funcAddr, uint64_t memAddr",
+        "memory_grow_win": "uint64_t funcAddr, uint64_t memAddr",
+        "memory_size": "uint64_t addr",
         "reg_param_f32_linux_0": "uint8_t offset",
         "reg_param_f32_linux_1": "uint8_t offset",
         "reg_param_f32_linux_2": "uint8_t offset",
@@ -1347,12 +1369,37 @@
         "reg_param_i64_linux_3": "uint8_t offset",
         "reg_param_i64_linux_4": "uint8_t offset",
         "reg_param_i64_linux_5": "uint8_t offset",
+        "rem64": "uint32_t addr, uint64_t errorPageAddr",
         "ret_v32": "uint64_t errorPageAddr",
         "ret_v64": "uint64_t errorPageAddr",
         "ret_void": "uint64_t errorPageAddr",
         "sub_rsp": "uint8_t offset"
     },
     "replacements": {
+        "div64_s": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 11), (uint8_t)((errorPageAddr + 11) >> 8), (uint8_t)((errorPageAddr + 11) >> 16), (uint8_t)((errorPageAddr + 11) >> 24)"
+            ],
+            [
+                "0, 255, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
+            ]
+        ],
+        "div64_u": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
+            ]
+        ],
         "f32.const": [
             [
                 "255, 255, 255, 127",
@@ -1373,80 +1420,52 @@
                 "buf.at(offset + 1), buf.at(offset + 2), buf.at(offset + 3), buf.at(offset + 4)"
             ]
         ],
-        "global.get": [
+        "global_get_32": [
             [
-                "0, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24), (uint8_t)(ll >> 32), (uint8_t)(ll >> 40), (uint8_t)(ll >> 48), (uint8_t)(ll >> 56)"
-            ],
-            [
-                "255, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24), (uint8_t)(lh >> 32), (uint8_t)(lh >> 40), (uint8_t)(lh >> 48), (uint8_t)(lh >> 56)"
-            ],
-            [
-                "0, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24), (uint8_t)(hl >> 32), (uint8_t)(hl >> 40), (uint8_t)(hl >> 48), (uint8_t)(hl >> 56)"
-            ],
-            [
-                "255, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24), (uint8_t)(hh >> 32), (uint8_t)(hh >> 40), (uint8_t)(hh >> 48), (uint8_t)(hh >> 56)"
-            ],
-            [
-                "255, 255, 255, 255, 0, 0, 0, 0",
-                "(uint8_t)bits, (uint8_t)(bits >> 8), (uint8_t)(bits >> 16), (uint8_t)(bits >> 24), (uint8_t)(bits >> 32), (uint8_t)(bits >> 40), (uint8_t)(bits >> 48), (uint8_t)(bits >> 56)"
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24), (uint8_t)((globalTableAddr + offset) >> 32), (uint8_t)((globalTableAddr + offset) >> 40), (uint8_t)((globalTableAddr + offset) >> 48), (uint8_t)((globalTableAddr + offset) >> 56)"
             ],
             [
                 "0, 0, 0, 255",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24)"
-            ],
-            [
-                "255, 0, 0, 255",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24)"
-            ],
-            [
-                "0, 255, 0, 255",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24)"
-            ],
-            [
-                "255, 255, 0, 255",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24)"
-            ],
-            [
-                "255, 255, 255, 255",
-                "(uint8_t)bits, (uint8_t)(bits >> 8), (uint8_t)(bits >> 16), (uint8_t)(bits >> 24)"
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24)"
             ]
         ],
-        "global.set": [
+        "global_get_64": [
             [
-                "0, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24), (uint8_t)(ll >> 32), (uint8_t)(ll >> 40), (uint8_t)(ll >> 48), (uint8_t)(ll >> 56)"
-            ],
-            [
-                "255, 0, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24), (uint8_t)(lh >> 32), (uint8_t)(lh >> 40), (uint8_t)(lh >> 48), (uint8_t)(lh >> 56)"
-            ],
-            [
-                "0, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24), (uint8_t)(hl >> 32), (uint8_t)(hl >> 40), (uint8_t)(hl >> 48), (uint8_t)(hl >> 56)"
-            ],
-            [
-                "255, 255, 0, 255, 0, 0, 0, 0",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24), (uint8_t)(hh >> 32), (uint8_t)(hh >> 40), (uint8_t)(hh >> 48), (uint8_t)(hh >> 56)"
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24), (uint8_t)((globalTableAddr + offset) >> 32), (uint8_t)((globalTableAddr + offset) >> 40), (uint8_t)((globalTableAddr + offset) >> 48), (uint8_t)((globalTableAddr + offset) >> 56)"
             ],
             [
                 "0, 0, 0, 255",
-                "(uint8_t)ll, (uint8_t)(ll >> 8), (uint8_t)(ll >> 16), (uint8_t)(ll >> 24)"
+                "(uint8_t)(globalTableAddr + offset + 4), (uint8_t)((globalTableAddr + offset + 4) >> 8), (uint8_t)((globalTableAddr + offset + 4) >> 16), (uint8_t)((globalTableAddr + offset + 4) >> 24)"
             ],
             [
-                "255, 0, 0, 255",
-                "(uint8_t)lh, (uint8_t)(lh >> 8), (uint8_t)(lh >> 16), (uint8_t)(lh >> 24)"
+                "0, 0, 0, 254",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24)"
+            ]
+        ],
+        "global_set_32": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24), (uint8_t)((globalTableAddr + offset) >> 32), (uint8_t)((globalTableAddr + offset) >> 40), (uint8_t)((globalTableAddr + offset) >> 48), (uint8_t)((globalTableAddr + offset) >> 56)"
             ],
             [
-                "0, 255, 0, 255",
-                "(uint8_t)hl, (uint8_t)(hl >> 8), (uint8_t)(hl >> 16), (uint8_t)(hl >> 24)"
+                "0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24)"
+            ]
+        ],
+        "global_set_64": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24), (uint8_t)((globalTableAddr + offset) >> 32), (uint8_t)((globalTableAddr + offset) >> 40), (uint8_t)((globalTableAddr + offset) >> 48), (uint8_t)((globalTableAddr + offset) >> 56)"
             ],
             [
-                "255, 255, 0, 255",
-                "(uint8_t)hh, (uint8_t)(hh >> 8), (uint8_t)(hh >> 16), (uint8_t)(hh >> 24)"
+                "0, 0, 0, 255",
+                "(uint8_t)(globalTableAddr + offset), (uint8_t)((globalTableAddr + offset) >> 8), (uint8_t)((globalTableAddr + offset) >> 16), (uint8_t)((globalTableAddr + offset) >> 24)"
+            ],
+            [
+                "0, 0, 0, 254",
+                "(uint8_t)(globalTableAddr + offset + 4), (uint8_t)((globalTableAddr + offset + 4) >> 8), (uint8_t)((globalTableAddr + offset + 4) >> 16), (uint8_t)((globalTableAddr + offset + 4) >> 24)"
             ]
         ],
         "i32.const": [
@@ -1483,6 +1502,50 @@
                 "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24)"
             ]
         ],
+        "i32.rem_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24)"
+            ]
+        ],
+        "i32.rem_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24)"
+            ]
+        ],
+        "i32.trunc_f32_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i32.trunc_f32_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i32.trunc_f64_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i32.trunc_f64_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
         "i64.const": [
             [
                 "255, 255, 255, 255, 255, 255, 255, 127",
@@ -1507,6 +1570,48 @@
                 "(uint8_t)(errorPageAddr + 11), (uint8_t)((errorPageAddr + 11) >> 8), (uint8_t)((errorPageAddr + 11) >> 16), (uint8_t)((errorPageAddr + 11) >> 24), (uint8_t)((errorPageAddr + 11) >> 32), (uint8_t)((errorPageAddr + 11) >> 40), (uint8_t)((errorPageAddr + 11) >> 48), (uint8_t)((errorPageAddr + 11) >> 56)"
             ]
         ],
+        "i64.div_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 10), (uint8_t)((errorPageAddr + 10) >> 8), (uint8_t)((errorPageAddr + 10) >> 16), (uint8_t)((errorPageAddr + 10) >> 24), (uint8_t)((errorPageAddr + 10) >> 32), (uint8_t)((errorPageAddr + 10) >> 40), (uint8_t)((errorPageAddr + 10) >> 48), (uint8_t)((errorPageAddr + 10) >> 56)"
+            ]
+        ],
+        "i64.rem_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ]
+        ],
+        "i64.rem_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24), (uint8_t)((errorPageAddr + 12) >> 32), (uint8_t)((errorPageAddr + 12) >> 40), (uint8_t)((errorPageAddr + 12) >> 48), (uint8_t)((errorPageAddr + 12) >> 56)"
+            ]
+        ],
+        "i64.trunc_f32_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i64.trunc_f32_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i64.trunc_f64_s": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
+        "i64.trunc_f64_u": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 13), (uint8_t)((errorPageAddr + 13) >> 8), (uint8_t)((errorPageAddr + 13) >> 16), (uint8_t)((errorPageAddr + 13) >> 24), (uint8_t)((errorPageAddr + 13) >> 32), (uint8_t)((errorPageAddr + 13) >> 40), (uint8_t)((errorPageAddr + 13) >> 48), (uint8_t)((errorPageAddr + 13) >> 56)"
+            ]
+        ],
         "local_get_32": [
             [
                 "255, 0, 0, 0",
@@ -1523,32 +1628,76 @@
                 "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
             ]
         ],
-        "local_get_32_small": [
+        "local_set_32": [
             [
-                "127",
-                "offset"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
             ]
         ],
-        "local_get_64_small": [
+        "local_set_64": [
             [
-                "127",
-                "offset"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
             ],
             [
-                "126",
-                "(uint8_t)(offset - 4)"
+                "254, 0, 0, 0",
+                "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
             ]
         ],
-        "local.set": [
+        "local_tee_32": [
             [
-                "255, 0, 255, 0",
-                "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
             ]
         ],
-        "local.tee": [
+        "local_tee_64": [
             [
-                "255, 0, 255, 0",
-                "(uint8_t)localidx, (uint8_t)(localidx >> 8), (uint8_t)(localidx >> 16), (uint8_t)(localidx >> 24)"
+                "255, 0, 0, 0",
+                "(uint8_t)offset, (uint8_t)(offset >> 8), (uint8_t)(offset >> 16), (uint8_t)(offset >> 24)"
+            ],
+            [
+                "254, 0, 0, 0",
+                "(uint8_t)(offset - 4), (uint8_t)((offset - 4) >> 8), (uint8_t)((offset - 4) >> 16), (uint8_t)((offset - 4) >> 24)"
+            ]
+        ],
+        "memory_grow": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)funcAddr, (uint8_t)(funcAddr >> 8), (uint8_t)(funcAddr >> 16), (uint8_t)(funcAddr >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24)"
+            ]
+        ],
+        "memory_grow_linux": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)funcAddr, (uint8_t)(funcAddr >> 8), (uint8_t)(funcAddr >> 16), (uint8_t)(funcAddr >> 24), (uint8_t)(funcAddr >> 32), (uint8_t)(funcAddr >> 40), (uint8_t)(funcAddr >> 48), (uint8_t)(funcAddr >> 56)"
+            ],
+            [
+                "255, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24), (uint8_t)(memAddr >> 32), (uint8_t)(memAddr >> 40), (uint8_t)(memAddr >> 48), (uint8_t)(memAddr >> 56)"
+            ]
+        ],
+        "memory_grow_win": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)funcAddr, (uint8_t)(funcAddr >> 8), (uint8_t)(funcAddr >> 16), (uint8_t)(funcAddr >> 24), (uint8_t)(funcAddr >> 32), (uint8_t)(funcAddr >> 40), (uint8_t)(funcAddr >> 48), (uint8_t)(funcAddr >> 56)"
+            ],
+            [
+                "255, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)memAddr, (uint8_t)(memAddr >> 8), (uint8_t)(memAddr >> 16), (uint8_t)(memAddr >> 24), (uint8_t)(memAddr >> 32), (uint8_t)(memAddr >> 40), (uint8_t)(memAddr >> 48), (uint8_t)(memAddr >> 56)"
+            ]
+        ],
+        "memory_size": [
+            [
+                "0, 0, 0, 0, 0, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24), (uint8_t)(addr >> 32), (uint8_t)(addr >> 40), (uint8_t)(addr >> 48), (uint8_t)(addr >> 56)"
+            ],
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
             ]
         ],
         "reg_param_f32_linux_0": [
@@ -1717,6 +1866,16 @@
             [
                 "36, 1",
                 "36, offset"
+            ]
+        ],
+        "rem64": [
+            [
+                "0, 0, 0, 255",
+                "(uint8_t)(errorPageAddr + 12), (uint8_t)((errorPageAddr + 12) >> 8), (uint8_t)((errorPageAddr + 12) >> 16), (uint8_t)((errorPageAddr + 12) >> 24)"
+            ],
+            [
+                "255, 0, 0, 255",
+                "(uint8_t)addr, (uint8_t)(addr >> 8), (uint8_t)(addr >> 16), (uint8_t)(addr >> 24)"
             ]
         ],
         "ret_v32": [

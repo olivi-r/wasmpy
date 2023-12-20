@@ -1,7 +1,12 @@
-from . import instructions, sections
-from .. import native, util
-import sexpdata
 import ctypes
+
+import sexpdata
+
+import wasmpy.native
+import wasmpy.nativelib
+import wasmpy.text.instructions
+import wasmpy.text.sections
+import wasmpy.util
 
 
 def read_module(buffer: object) -> dict:
@@ -44,7 +49,7 @@ def read_module(buffer: object) -> dict:
         "imports": (),
         "funcs": [],
         "tables": (),
-        "mems": (),
+        "mem": (),
         "globals": [],
         "exports": [],
         "start": None,
@@ -61,12 +66,18 @@ def read_module(buffer: object) -> dict:
     for expr in data:
         if isinstance(expr, list):
             if expr[0].value() == "type":
-                typeidx, type = sections.read_type(expr)
+                typeidx, type = wasmpy.text.sections.read_type(expr)
                 mod_dict["types"].append(type)
                 type_ids.append(typeidx)
 
             elif expr[0].value() == "import":
-                type, mod, name, importidx, desc = sections.read_import(expr)
+                (
+                    type,
+                    mod,
+                    name,
+                    importidx,
+                    desc,
+                ) = wasmpy.text.sections.read_import(expr)
                 if type == "func":
                     if mod == "capi":
                         import_funcs["ids"].append(importidx)
@@ -76,12 +87,22 @@ def read_module(buffer: object) -> dict:
                     # TODO: .wasm imports
 
             elif expr[0].value() == "func":
-                funcidx, func = sections.read_func(expr)
+                funcidx, func = wasmpy.text.sections.read_func(expr)
                 funcs["funcs"].append(func)
                 funcs["ids"].append(funcidx)
 
+            elif expr[0].value() == "memory":
+                if mod_dict["mem"]:
+                    raise ValueError("Multiple memories defined")
+
+                _, min_pages, max_pages = wasmpy.text.sections.read_memory(expr)
+                memory = wasmpy.native.create_memory(min_pages, max_pages)
+                mod_dict["mem"] = memory
+
             elif expr[0].value() == "global":
-                globalidx, export, global_ = sections.read_global(expr)
+                globalidx, export, global_ = wasmpy.text.sections.read_global(
+                    expr
+                )
                 mod_dict["globals"].append(global_)
                 global_ids.append(globalidx)
                 if export is not None:
@@ -94,7 +115,9 @@ def read_module(buffer: object) -> dict:
                     )
 
             elif expr[0].value() == "export":
-                mod_dict["exports"].append(sections.read_export(expr))
+                mod_dict["exports"].append(
+                    wasmpy.text.sections.read_export(expr)
+                )
 
             elif expr[0].value() == "start":
                 if mod_dict["start"] is not None:
@@ -114,17 +137,17 @@ def read_module(buffer: object) -> dict:
             if term in global_ids:
                 g["init"][i] = global_ids.index(term)
 
-        g["init"] = instructions.read_expr_text(g["init"])
-        g["offset"] = native.create_global(
+        g["init"] = wasmpy.text.instructions.read_expr_text(g["init"])
+        g["offset"] = wasmpy.native.create_global(
             g["mutable"] == "mut", g["type"], g["init"]
         )
 
-    global_offset = native.nativelib.write_globals()
+    global_offset = wasmpy.nativelib.write_globals()
     for globalidx, g in enumerate(mod_dict["globals"]):
         g["offset"] += global_offset
         g["obj"] = [
             g["mutable"],
-            native.get_global_object(g["offset"], g["type"]),
+            wasmpy.native.get_global_object(g["offset"], g["type"]),
         ]
 
         mod_dict["globals"][globalidx] = g["obj"]
@@ -161,11 +184,11 @@ def read_module(buffer: object) -> dict:
                 if term in global_ids:
                     func["body"][i] = global_ids.index(term)
 
-            func["body"] = instructions.read_expr_text(func["body"])
+            func["body"] = wasmpy.text.instructions.read_expr_text(func["body"])
             if not func["type"][1]:
                 func["type"][1].append(0x40)
 
-            func["_obj"] = native.create_function(
+            func["_obj"] = wasmpy.native.create_function(
                 func["type"][1][0],
                 bytes(func["body"]),
                 bytes(func["type"][0]),
@@ -174,7 +197,7 @@ def read_module(buffer: object) -> dict:
 
         else:
             if not hasattr(func["obj"], "func"):
-                params, param_clear = native.gen_params(func["type"][0])
+                params, param_clear = wasmpy.native.gen_params(func["type"][0])
                 func["obj"].argtypes = params
                 if not func["type"][1]:
                     func["obj"].restype = None
@@ -191,17 +214,19 @@ def read_module(buffer: object) -> dict:
                 elif func["type"][1][0] == 0x7C:
                     func["obj"].restype = ctypes.c_double
 
-                func["obj"] = native.wrap_function(
+                func["obj"] = wasmpy.native.wrap_function(
                     func["obj"], param_clear, True
                 )
 
-    function_base_addr = native.nativelib.write_function_page()
+    function_base_addr = wasmpy.nativelib.write_function_page()
     for funcidx, func in enumerate(mod_dict["funcs"]):
         if "_obj" in func:
             obj = ctypes.CFUNCTYPE(
                 func["_obj"]["ret"], *func["_obj"]["params"]
             )(function_base_addr + func["_obj"]["address"])
-            func["obj"] = native.wrap_function(obj, func["_obj"]["param_clear"])
+            func["obj"] = wasmpy.native.wrap_function(
+                obj, func["_obj"]["param_clear"]
+            )
 
         mod_dict["funcs"][funcidx] = func["obj"]
 
@@ -218,10 +243,11 @@ def read_module(buffer: object) -> dict:
         except (IndexError, TypeError):
             raise ValueError("Invalid start symbol")
 
-    native.nativelib.flush_globals()
+    wasmpy.nativelib.flush_globals()
+    wasmpy.nativelib.destruct_standalone()
 
     for e in mod_dict["exports"]:
-        e["name"] = util.sanitize(e["name"])
+        e["name"] = wasmpy.util.sanitize(e["name"])
         if isinstance(e["idx"], sexpdata.Symbol):
             if e["type"] == "func":
                 e["idx"] = func_ids.index(e["idx"])
@@ -235,4 +261,4 @@ def read_module(buffer: object) -> dict:
         if e["type"] == "global":
             e["obj"] = mod_dict["globals"][e["idx"]]
 
-    return util.create_module(mod_dict)
+    return wasmpy.util.create_module(mod_dict)

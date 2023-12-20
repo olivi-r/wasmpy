@@ -1,4 +1,4 @@
 .globl _start
 _start:
-popq %rax
-orq %rax, (%rsp)
+pop %rax
+or %rax, (%rsp)

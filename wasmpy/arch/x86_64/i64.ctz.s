@@ -1,10 +1,10 @@
 .globl _start
 _start:
-popq %rax
+pop %rax
 cmp $0, %rax
 je zero
 bsf %rax, %rax
-pushq %rax
+push %rax
 jmp end
 zero:
 pushq $64

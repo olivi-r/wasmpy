@@ -1,5 +1,7 @@
-from . import module
-import os, sys
+import os
+import sys
+
+import wasmpy.text.module
 
 
 class WebAssemblyTextLoader:
@@ -20,7 +22,7 @@ class WebAssemblyTextLoader:
             return
 
         with open(self.fname, "r") as fp:
-            mod = module.read_module(fp)
+            mod = wasmpy.text.module.read_module(fp)
             mod.__file__ = self.fname
             mod.__name__ = fullname
             mod.__loader__ = self

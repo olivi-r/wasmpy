@@ -1,7 +1,7 @@
 .globl _start
 _start:
-popl %eax
-popl %ecx
+pop %eax
+pop %ecx
 popcnt %eax, %eax
 popcnt %ecx, %ecx
 add %ecx, %eax

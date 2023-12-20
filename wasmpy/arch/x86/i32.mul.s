@@ -2,5 +2,5 @@
 _start:
 pop %eax
 pop %ecx
-imul %ecx, %eax
+imul %ecx
 push %eax

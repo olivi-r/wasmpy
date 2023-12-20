@@ -53,12 +53,10 @@ python3 -m pip install .
 
 # Limitations
 Wasmpy is still in active development, and only supports x86/x86-64 Windows and Linux machines and lacks some key features:
-- most control and memory instructions
-- memories
+- most memory instructions
+- most control instructions
 - imports
 - tables
-
-The translated machine code is also naively generated and not the most optimized.
 
 Wasmpy is being developed in accordance with the [wasm-core-1](https://w3.org/TR/wasm-core-1) recommendation, which means it lacks support for features introduced in [WebAssembly 2.0](https://webassembly.github.io/spec/core) drafts.
 

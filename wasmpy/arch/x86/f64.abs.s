@@ -1,5 +1,3 @@
 .globl _start
 _start:
-fldl (%esp)
-fabs
-fstpl (%esp)
+andb $0x7f, 7(%esp)

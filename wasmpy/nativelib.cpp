@@ -2,14 +2,30 @@
 
 std::vector<void *> registeredPages = {};
 std::vector<size_t> registeredPageSizes = {};
-bytes globalTable = {};
-bytes globalTypes = {};
-std::vector<int> globalMut = {};
+
+std::vector<size_t> standaloneFuncs = {};
+
+std::vector<size_t> paramSizes = {};
+
+std::vector<size_t> functionAddrs = {};
+std::vector<size_t> functionCallPoints = {};
+
 bytes localTypes = {};
 std::vector<uint32_t> localOffsets = {};
-uint64_t globalTableAddr;
+
 uint64_t errorPageAddr;
+
 uint32_t page_size;
+
+struct operation_t
+{
+    uint8_t opcode;
+    std::vector<wchar_t *> arguments;
+    std::vector<wchar_t *> results;
+    long consumes;
+    uint32_t data;
+    bytes code;
+};
 
 bytes errorPage = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, // successful result struct
@@ -36,9 +52,9 @@ void *writePage(bytes data)
 {
     void *buf;
     size_t size = page_size * (1 + data.size() / page_size);
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     buf = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     buf = VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE);
 #endif
     memcpy(buf, data.data(), data.size());
@@ -49,11 +65,14 @@ void *writePage(bytes data)
 
 void freePages()
 {
+    for (size_t i = 0; i < memories.size(); i++)
+        closeMemory(memories.at(i));
+
     for (size_t i = 0; i < registeredPages.size(); i++)
     {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
         munmap(registeredPages.at(i), registeredPageSizes.at(i));
-#elif _WIN32
+#elif PLATFORM_WINDOWS
         VirtualFree(registeredPages.at(i), 0, MEM_RELEASE);
 #endif
     }
@@ -66,12 +85,12 @@ size_t writeFunction(bytes code)
     return offset;
 }
 
-static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
+PyObject *writeFunctionPage(PyObject *self, PyObject *args)
 {
     void *buf = writePage(text);
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     mprotect(buf, text.size(), PROT_READ | PROT_EXEC);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     DWORD dummy;
     VirtualProtect(buf, text.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
@@ -79,17 +98,7 @@ static PyObject *writeFunctionPage(PyObject *self, PyObject *args)
     return PyLong_FromVoidPtr(buf);
 }
 
-typedef struct operation
-{
-    uint8_t opcode;
-    std::vector<wchar_t *> arguments;
-    std::vector<wchar_t *> results;
-    long consumes;
-    uint32_t data;
-    bytes code;
-} operation;
-
-static PyObject *createFunction(PyObject *self, PyObject *args)
+PyObject *createFunction(PyObject *self, PyObject *args)
 {
     char ret, standalone;
     const char *codebuf, *argbuf, *localbuf;
@@ -100,6 +109,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
     // register parameters
     bytes loadLocals = regParam(argbuf, arglen);
+
+    size_t callOffset = initStack.size() + loadLocals.size();
 
     int32_t localOff = 0;
 
@@ -131,8 +142,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
 
     bytes code(codebuf, codelen + codebuf);
 
-    std::vector<operation *> stack = {};
-    operation *current_operation;
+    std::vector<operation_t *> stack = {};
+    operation_t *current_operation;
 
     std::vector<wchar_t *> validateStack = {};
     for (size_t i = 0; i < code.size(); i++)
@@ -142,7 +153,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         std::vector<wchar_t *> operandVector = {};
         std::vector<wchar_t *> resultVector = {};
 
-        current_operation = new operation();
+        current_operation = new operation_t();
 
         current_operation->opcode = op;
         current_operation->data = 0;
@@ -238,6 +249,8 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         else if (op == 0x23 || op == 0x24)
         {
             uint32_t globalidx = code.at(i + 4) << 24 | code.at(i + 3) << 16 | code.at(i + 2) << 8 | code.at(i + 1);
+
+            current_operation->data = globalidx;
 
             if (globalidx >= globalMut.size())
             {
@@ -418,7 +431,7 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     bytes funcBody = {};
     for (size_t i = 0; i < stack.size(); i++)
     {
-        operation *current = stack.at(i);
+        operation_t *current = stack.at(i);
 
         // drop
         if (current->opcode == 0x1A)
@@ -442,24 +455,99 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
         else if (current->opcode == 0x20)
         {
             if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
-            {
-                if (current->data < 256)
-                    current->code = local_get_32_small((uint8_t)current->data);
+                current->code = local_get_32(current->data);
 
-                else
-                    current->code = local_get_32(current->data);
-            }
             else
-            {
-                if (current->data < 256)
-                    current->code = local_get_64_small((uint8_t)current->data);
-
-                else
-                    current->code = local_get_64(current->data);
-            }
+                current->code = local_get_64(current->data);
         }
+        // local.set
+        else if (current->opcode == 0x21)
+        {
+            if (wcscmp(current->arguments.at(0), L"i32") == 0 || wcscmp(current->arguments.at(0), L"f32") == 0)
+                current->code = local_set_32(current->data);
+
+            else
+                current->code = local_set_64(current->data);
+        }
+        // local.tee
+        else if (current->opcode == 0x22)
+        {
+            if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
+                current->code = local_tee_32(current->data);
+
+            else
+                current->code = local_tee_64(current->data);
+        }
+        // global.get
+        else if (current->opcode == 0x23)
+        {
+            if (wcscmp(current->results.at(0), L"i32") == 0 || wcscmp(current->results.at(0), L"f32") == 0)
+                current->code = global_get_32(globalTableAddr, current->data);
+
+            else
+                current->code = global_get_64(globalTableAddr, current->data);
+        }
+        // global.set
+        else if (current->opcode == 0x24)
+        {
+            if (wcscmp(current->arguments.at(0), L"i32") == 0 || wcscmp(current->arguments.at(0), L"f32") == 0)
+                current->code = global_set_32(globalTableAddr, current->data);
+
+            else
+                current->code = global_set_64(globalTableAddr, current->data);
+        }
+        // memory.size
+        else if (current->opcode == 0x3F)
+        {
+            size_t idx = memories.size() - 1;
+            uint64_t addr = (uint64_t) * (memory_t **)((uint64_t)memories.data() + idx * sizeof(memory_t *));
+            addr += +sizeof(void *) + 4;
+            current->code = memory_size(addr);
+        }
+        // memory.grow
+        else if (current->opcode == 0x40)
+        {
+            size_t idx = memories.size() - 1;
+#ifdef ARCH_X86_64
+            uint64_t funcAddr = (uint64_t)&growMemory;
+            uint64_t memAddr = (uint64_t) * (memory_t **)((uint64_t)memories.data() + idx * sizeof(memory_t *));
+#ifdef PLATFORM_LINUX
+            current->code = memory_grow_linux(funcAddr, memAddr);
+#elif PLATFORM_WINDOWS
+            current->code = memory_grow_win(funcAddr, memAddr);
+#endif
+#elif ARCH_X86
+            uint32_t funcAddr = (uint32_t)&growMemory;
+            uint32_t memAddr = (uint32_t) * (memory_t **)((uint32_t)memories.data() + idx * sizeof(memory_t *));
+            current->code = memory_grow(funcAddr, memAddr);
+#endif
+        }
+#ifdef ARCH_X86
+        // i64.div_s
+        else if (current->opcode == 0x7F)
+            current->code = div64_s((uint32_t)&func_div64_s, errorPageAddr);
+
+        // i64.div_u
+        else if (current->opcode == 0x80)
+            current->code = div64_u((uint32_t)&func_div64_u, errorPageAddr);
+
+        // i64.rem_s
+        else if (current->opcode == 0x81)
+            current->code = rem64((uint32_t)&func_rem64_s, errorPageAddr);
+
+        // i64.rem_u
+        else if (current->opcode == 0x82)
+            current->code = rem64((uint32_t)&func_rem64_u, errorPageAddr);
+
+#endif
         else
-            current->code = decodeOperation(code, offset);
+        {
+            bytes insts;
+            if (!decodeOperation(code, offset, &insts))
+                return NULL;
+
+            current->code = insts;
+        }
 
         funcBody = concat(funcBody, {current->code});
         offset += current->consumes;
@@ -483,70 +571,49 @@ static PyObject *createFunction(PyObject *self, PyObject *args)
     {
         bytes code = concat(initStack, {loadLocals, funcBody, returnCode});
         void *buf = writePage(code);
-#ifdef __linux__
+        standaloneFuncs.push_back(registeredPages.size() - 1);
+#ifdef PLATFORM_LINUX
         mprotect(buf, code.size(), PROT_READ | PROT_EXEC);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
         DWORD dummy;
         VirtualProtect(buf, code.size(), PAGE_EXECUTE_READ, &dummy);
 #endif
         return PyLong_FromVoidPtr(buf);
     }
 
-    return PyLong_FromSize_t(writeFunction(concat(initStack, {loadLocals, funcBody, returnCode})));
+    // keep track of offset into function of actual code to allow use of cdecl on x86-64
+    size_t funcAddr = writeFunction(concat(initStack, {loadLocals, funcBody, returnCode}));
+    functionAddrs.push_back(funcAddr);
+    functionCallPoints.push_back(funcAddr + callOffset);
+
+    return PyLong_FromSize_t(funcAddr);
 }
 
-static PyObject *appendGlobal(PyObject *self, PyObject *args)
+PyObject *destructStandalones(PyObject *self, PyObject *args)
 {
-    unsigned long long global;
-    int mut;
-    char type;
-    if (!PyArg_ParseTuple(args, "Kpb", &global, &mut, &type))
-        return NULL;
-
-    size_t offset = globalTable.size();
-    globalMut.push_back(mut);
-
-    if (type == 0x7F || type == 0x7D)
-        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), 2, 0, 0, 0, 0}});
-
-    else if (type == 0x7E || type == 0x7C)
-        globalTable = concat(globalTable, {{(uint8_t)global, (uint8_t)(global >> 8), (uint8_t)(global >> 16), (uint8_t)(global >> 24), (uint8_t)(global >> 32), (uint8_t)(global >> 40), (uint8_t)(global >> 48), (uint8_t)(global >> 56), 4}});
-
-    else
+    for (size_t i = 0; i < standaloneFuncs.size(); i++)
     {
-        PyErr_SetString(PyExc_TypeError, "unrecognized global type");
-        return NULL;
+#ifdef PLATFORM_LINUX
+        munmap(registeredPages.at(standaloneFuncs.at(i)), registeredPageSizes.at(standaloneFuncs.at(i)));
+#elif PLATFORM_WINDOWS
+        VirtualFree(registeredPages.at(standaloneFuncs.at(i)), 0, MEM_RELEASE);
+#endif
     }
-
-    globalTypes.push_back(type);
-
-    return Py_BuildValue("O", PyLong_FromSize_t(offset));
-}
-
-static PyObject *writeGlobals(PyObject *self, PyObject *args)
-{
-    void *buf = writePage(globalTable);
-    globalTableAddr = (uint64_t)buf;
-    return Py_BuildValue("O", PyLong_FromVoidPtr(buf));
-}
-
-static PyObject *flushGlobals(PyObject *self, PyObject *args)
-{
-    globalTable = {};
-    globalTypes = {};
-    globalMut = {};
     Py_RETURN_NONE;
 }
 
-static PyMethodDef methods[] = {
-    {"append_global", appendGlobal, METH_VARARGS, NULL},
-    {"create_function", createFunction, METH_VARARGS, NULL},
-    {"flush_globals", flushGlobals, METH_NOARGS, NULL},
-    {"write_function_page", writeFunctionPage, METH_NOARGS, NULL},
-    {"write_globals", writeGlobals, METH_NOARGS, NULL},
+PyMethodDef methods[] = {
+    {"append_global", appendGlobal, METH_VARARGS, "append_global(value, mutable, global_type, /)\n--\n\nRegister new global variable."},
+    {"create_function", createFunction, METH_VARARGS, "create_function(ret_type, codebuf, argbuf, localbuf, op_con, op_sig, standalone, /)\n--\n\nGenerate a new function and add it to the function page."},
+    {"create_memory", createMemory, METH_VARARGS, "create_memory(fd, min_pages, max_pages, /)\n--\n\nRegister a new memory backed by fd."},
+    {"destruct_standalone", destructStandalones, METH_NOARGS, "destruct_standalone()\n--\n\nFree up temporary functions."},
+    {"flush_globals", flushGlobals, METH_NOARGS, "flush_globals()\n--\n\nClear generated globals ready for the next module."},
+    {"load_memory_page", loadMemoryPage, METH_VARARGS, "load_memory_page(index, page_no, /)\n--\n\nLoad page_no of the memory specified by index."},
+    {"write_function_page", writeFunctionPage, METH_NOARGS, "write_function_page()\n--\n\nCommit generated functions to memory."},
+    {"write_globals", writeGlobals, METH_NOARGS, "write_globals()\n--\n\nCommit generated globals to memory."},
     {NULL, NULL, 0, NULL}};
 
-static PyModuleDef module = {
+PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
     "nativelib",
     NULL,
@@ -555,9 +622,9 @@ static PyModuleDef module = {
 
 PyMODINIT_FUNC PyInit_nativelib()
 {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     page_size = sysconf(_SC_PAGE_SIZE);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     page_size = sysinfo.dwPageSize;

@@ -1,6 +1,6 @@
 .globl _start
 _start:
 flds (%esp)
-add $4, %esp
+pop %eax
 fdivrs (%esp)
 fsts (%esp)

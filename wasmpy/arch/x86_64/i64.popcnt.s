@@ -1,5 +1,5 @@
 .globl _start
 _start:
-popq %rax
+pop %rax
 popcnt %rax, %rax
-pushq %rax
+push %rax

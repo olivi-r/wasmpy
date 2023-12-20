@@ -1,5 +1,27 @@
-import json, os, re, types
+import json
+import os
+import re
+import types
 
+
+NONE = 0
+ALL = 0
+features = [
+    "MUTABLE_GLOBALS",
+    "SATURATING_FLOAT_TO_INT",
+    "SIGN_EXTENSION",
+    "MULTI_VALUE",
+    "REFERENCE_TYPES",
+    "BULK_MEMORY",
+    "SIMD",
+]
+
+for i, f in enumerate(features):
+    globals()[f] = 1 << i
+    ALL |= 1 << i
+
+__all__ = ["enable", "disable", "ALL", "NONE"] + features
+enabled_features = NONE
 
 opcodes = {}
 consumes = {}
@@ -11,10 +33,7 @@ with open(os.path.join(os.path.dirname(__file__), "opcodes.json")) as fp:
             dict(
                 zip(
                     (i[0] for i in group["instructions"]),
-                    (
-                        i + group["offset"]
-                        for i in range(len(group["instructions"]))
-                    ),
+                    (i + group["offset"] for i in range(len(group["instructions"]))),
                 )
             )
         )
@@ -75,6 +94,22 @@ def create_module(module: dict) -> object:
     return obj
 
 
+def enable(flag: int) -> None:
+    """Mark features as enabled."""
+    global enabled_features
+    if flag == NONE:
+        enabled_features = 0
+
+    else:
+        enabled_features |= flag
+
+
+def disable(flag: int) -> None:
+    """Mark features as disabled."""
+    global enabled_features
+    enabled_features = ~(~enabled_features | flag)
+
+
 def expand_bytes(n: int, bits: int = 32) -> list:
     """Convert integer to little endian byte representation."""
     r = []
@@ -87,10 +122,12 @@ def expand_bytes(n: int, bits: int = 32) -> list:
 
 def sanitize(name: str) -> str:
     """Convert name to valid Python identifier."""
+    name = name.strip()
     if name.isidentifier():
         return name
 
+    name = re.sub(r"\W+", "_", name)
     if not name[0].isidentifier():
         name = "_" + name
 
-    return name[0] + re.sub(r"\W+", "_", name[1:])
+    return name

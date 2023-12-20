@@ -1,3 +1,3 @@
 .globl _start
 _start:
-popl %eax
+pop %eax

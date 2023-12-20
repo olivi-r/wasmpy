@@ -1,12 +1,12 @@
 .globl _start
 _start:
-movl (%rsp), %eax
+mov (%rsp), %eax
 cmp $0, %eax
 je zero
 bsr %eax, %eax
-movl $31, %ecx
-subl %eax, %ecx
-movl %ecx, (%rsp)
+mov $31, %ecx
+sub %eax, %ecx
+mov %ecx, (%rsp)
 jmp end
 zero:
 movl $32, (%rsp)

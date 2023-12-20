@@ -1,5 +1,12 @@
-from . import nativelib, util
 import ctypes
+import tempfile
+
+import wasmpy
+import wasmpy.nativelib
+import wasmpy.util
+
+
+_memory_files = []
 
 
 class ResultVoid(ctypes.Structure):
@@ -27,6 +34,15 @@ class ResultF64(ctypes.Structure):
     _pack_ = 1
 
 
+def create_memory(min_pages, max_pages):
+    file = tempfile.TemporaryFile()
+    file.write(b"\0" * 65536 * min_pages)  # populate to initial size
+    return (
+        wasmpy.nativelib.create_memory(file.fileno(), min_pages, max_pages),
+        file,  # store the file with module so it isn't garbage collected
+    )
+
+
 def create_global(mut, globaltype, expr):
     assert len(expr), "Missing initializer"
     ret, address = create_function(globaltype, bytes(expr), standalone=True)
@@ -38,7 +54,7 @@ def create_global(mut, globaltype, expr):
     elif isinstance(value.contents, ResultF64):
         value = ctypes.cast(value, ctypes.POINTER(ResultI64))
 
-    return nativelib.append_global(value.contents.value, mut, globaltype)
+    return wasmpy.nativelib.append_global(value.contents.value, mut, globaltype)
 
 
 def get_global_object(offset, globaltype):
@@ -56,8 +72,14 @@ def get_global_object(offset, globaltype):
 
 
 def create_function(ret, code, arg=b"", local=b"", standalone=False):
-    address = nativelib.create_function(
-        ret, code, arg, local, util.consumes, util.signatures, standalone
+    address = wasmpy.nativelib.create_function(
+        ret,
+        code,
+        arg,
+        local,
+        wasmpy.util.consumes,
+        wasmpy.util.signatures,
+        standalone,
     )
 
     params, param_clear = gen_params(arg)
@@ -132,16 +154,19 @@ def ensure(result):
             return result.contents.value
 
     elif result.contents.errno == 1:
-        raise RuntimeError("unreachable")
+        raise wasmpy.Trap("unreachable")
 
     elif result.contents.errno == 2:
-        raise ZeroDivisionError("division by zero")
+        raise wasmpy.Trap("integer divide by zero")
 
     elif result.contents.errno == 3:
-        raise RuntimeError("division overflow")
+        raise wasmpy.Trap("integer overflow")
 
     elif result.contents.errno == 4:
-        raise ZeroDivisionError("integer modulo by zero")
+        raise wasmpy.Trap("integer modulo by zero")
 
     elif result.contents.errno == 5:
-        raise FloatingPointError("unrepresentable truncation result")
+        raise wasmpy.Trap("unrepresentable truncation result")
+
+    elif result.contents.errno == 6:
+        raise wasmpy.Trap("unimplemented instruction")

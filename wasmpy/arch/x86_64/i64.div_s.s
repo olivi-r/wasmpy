@@ -7,7 +7,7 @@ je zero
 mov $0x8000000000000000, %rdx
 cmp %rdx, %rax
 jne cont
-cmp $0xFFFFFFFFFFFFFFFF, %rcx
+cmp $0xffffffffffffffff, %rcx
 jne cont
 mov $0xff000000000000ff, %rax
 leave

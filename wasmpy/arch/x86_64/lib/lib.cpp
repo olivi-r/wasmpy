@@ -2,7 +2,7 @@
 
 bytes paramFloat32(Py_ssize_t i, uint8_t offset = 0)
 {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     if (i == 0)
         return reg_param_f32_linux_0(offset);
     if (i == 1)
@@ -19,7 +19,7 @@ bytes paramFloat32(Py_ssize_t i, uint8_t offset = 0)
         return reg_param_f32_linux_6(offset);
     if (i == 7)
         return reg_param_f32_linux_7(offset);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     if (i == 0)
         return reg_param_f32_win_0;
     if (i == 1)
@@ -34,7 +34,7 @@ bytes paramFloat32(Py_ssize_t i, uint8_t offset = 0)
 
 bytes paramFloat64(Py_ssize_t i, uint8_t offset = 0)
 {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     if (i == 0)
         return reg_param_f64_linux_0(offset);
     if (i == 1)
@@ -51,7 +51,7 @@ bytes paramFloat64(Py_ssize_t i, uint8_t offset = 0)
         return reg_param_f64_linux_6(offset);
     if (i == 7)
         return reg_param_f64_linux_7(offset);
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     if (i == 0)
         return reg_param_f64_win_0;
     if (i == 1)
@@ -66,7 +66,7 @@ bytes paramFloat64(Py_ssize_t i, uint8_t offset = 0)
 
 bytes paramInt(Py_ssize_t i, uint8_t offset = 0, int bits = 64)
 {
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     if (bits == 32)
     {
         if (i == 0)
@@ -97,7 +97,7 @@ bytes paramInt(Py_ssize_t i, uint8_t offset = 0, int bits = 64)
         if (i == 5)
             return reg_param_i64_linux_5(offset);
     }
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     if (i == 0)
         return reg_param_int_win_0;
     if (i == 1)
@@ -113,7 +113,7 @@ bytes paramInt(Py_ssize_t i, uint8_t offset = 0, int bits = 64)
 bytes regParam(const char *argbuf, Py_ssize_t arglen)
 {
     bytes code = {};
-#ifdef __linux__
+#ifdef PLATFORM_LINUX
     int32_t offset = 0;
     uint32_t rtl_offset = 8;
     int param_int = 0;
@@ -165,7 +165,7 @@ bytes regParam(const char *argbuf, Py_ssize_t arglen)
         }
     }
     code = concat(code, {sub_rsp((uint8_t)(-offset))});
-#elif _WIN32
+#elif PLATFORM_WINDOWS
     uint32_t offset = 8;
     for (Py_ssize_t i = 0; i < arglen; i++)
     {

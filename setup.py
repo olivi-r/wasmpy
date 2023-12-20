@@ -1,12 +1,16 @@
-import json, os, platform, setuptools.command.build_ext, struct, subprocess
+import glob
+import json
+import os
+import platform
+import struct
+import subprocess
+
+import setuptools.command.build_ext
 
 
 opcodes = {}
-with open(
-    os.path.join(os.path.dirname(__file__), "wasmpy", "opcodes.json")
-) as fp:
+with open(os.path.join(os.path.dirname(__file__), "wasmpy/opcodes.json")) as fp:
     data = json.load(fp)
-    prefixes = data["prefixes"]
     replacements = data["replacements"]
     functions = data["functions"]
     for group in data["opcodes"]:
@@ -21,10 +25,6 @@ with open(
                 )
             )
         )
-
-
-def listdir(path: str) -> list:
-    return [os.path.join(path, p) for p in os.listdir(path)]
 
 
 def is_x86() -> bool:
@@ -55,9 +55,7 @@ class assemble(setuptools.Command):
     def finalize_options(self):
         self.targets = self.targets.split(",")
         for target in self.targets:
-            if target not in os.listdir("wasmpy/arch") or os.path.isfile(
-                f"wasmpy/{target}"
-            ):
+            if target not in os.listdir("wasmpy/arch"):
                 raise ValueError(f"Unknown architecture: {target}")
 
     def log(self, out):
@@ -81,7 +79,7 @@ class assemble(setuptools.Command):
 
         for target in self.targets:
             arg = args[target]
-            for source in listdir(f"wasmpy/arch/{target}"):
+            for source in glob.glob(f"wasmpy/arch/{target}/*"):
                 if os.path.isdir(source):
                     continue
 
@@ -116,13 +114,10 @@ class tidy(setuptools.Command):
 
     def run(self):
         for machine in os.listdir("wasmpy/arch"):
-            if os.path.isfile("wasmpy/arch/" + machine):
-                continue
-
             if os.path.exists(f"wasmpy/arch/{machine}/lib/opcodes.cpp"):
                 os.remove(f"wasmpy/arch/{machine}/lib/opcodes.cpp")
 
-            for file in listdir(f"wasmpy/arch/{machine}"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -156,15 +151,12 @@ class gen_opcodes(setuptools.Command):
                 (
                     "// auto-generated\n\n",
                     '#include "opcodes.hpp"\n\n',
-                    "bytes decodeOperation(bytes buf, size_t offset)\n{\n\t",
-                    "bytes insts = {};\n\t",
-                    "int localidx;\n\t",
-                    "uint64_t hh, hl, lh, ll, bits;\n\t"
+                    "bool decodeOperation(bytes buf, size_t offset, bytes *insts)\n{\n\t",
                     "switch (buf.at(offset))\n\t{\n\t",
                 )
             )
 
-            for file in listdir(f"wasmpy/arch/{machine}"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -180,16 +172,16 @@ class gen_opcodes(setuptools.Command):
                             data = data.replace(*replacement)
 
                     out.write(f"case {opcodes[inst]}:\n\t\t")
-                    if inst in prefixes:
-                        out.write("".join(prefixes[inst]))
 
-                    out.write(f"insts = {{{data}}};\n\t\t")
+                    out.write(f"*insts = {{{data}}};\n\t\t")
 
                     out.write("break;\n\n\t")
 
-            out.write("default:\n\t\tbreak;\n\t}\n\treturn insts;\n}\n")
+            out.write(
+                'default:\n\t\tPyErr_SetString(PyExc_NotImplementedError, "unimplemented instruction");\n\t\treturn false;\n\t}\n\treturn true;\n}\n'
+            )
 
-            for file in listdir(f"wasmpy/arch/{machine}"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -219,42 +211,41 @@ class build_ext(setuptools.command.build_ext.build_ext):
         setuptools.command.build_ext.build_ext.run(self)
 
 
-ext = [
-    setuptools.Extension(
-        "wasmpy.wasi_unstable",
-        sources=["wasmpy/wasi.c"],
-        define_macros=[("WASI_UNSTABLE", None)],
-        py_limited_api=True,
-    ),
-    setuptools.Extension(
-        "wasmpy.wasi_snapshot_preview1",
-        sources=["wasmpy/wasi.c"],
-        py_limited_api=True,
-    ),
-]
+plat = []
+if platform.system() == "Linux":
+    plat = [("PLATFORM_LINUX", None)]
 
+elif platform.system() == "Windows":
+    plat = [("PLATFORM_WINDOWS", None)]
+
+arch = []
 if is_x86():
     if struct.calcsize("P") == 4:
         machine = "x86"
+        arch = [("ARCH_X86", None)]
 
     else:
         machine = "x86_64"
+        arch = [("ARCH_X86_64", None)]
 
-    ext.append(
-        setuptools.Extension(
-            "wasmpy.nativelib",
-            include_dirs=[
-                os.path.abspath("wasmpy"),
-                os.path.abspath(f"wasmpy/arch/{machine}/lib"),
-            ],
-            sources=[
-                "wasmpy/nativelib.cpp",
-                f"wasmpy/arch/{machine}/lib/lib.cpp",
-                f"wasmpy/arch/{machine}/lib/opcodes.cpp",
-            ],
-            py_limited_api=True,
-        )
+ext = [
+    setuptools.Extension(
+        "wasmpy.nativelib",
+        include_dirs=[
+            os.path.abspath("wasmpy/include"),
+            os.path.abspath(f"wasmpy/arch/{machine}/lib"),
+        ],
+        sources=[
+            f"wasmpy/arch/{machine}/lib/lib.cpp",
+            f"wasmpy/arch/{machine}/lib/opcodes.cpp",
+            "wasmpy/globals.cpp",
+            "wasmpy/memories.cpp",
+            "wasmpy/nativelib.cpp",
+        ],
+        define_macros=plat + arch,
+        py_limited_api=True,
     )
+]
 
 
 with open("README.md", "r") as fp:
@@ -262,10 +253,10 @@ with open("README.md", "r") as fp:
 
 setuptools.setup(
     name="wasmpy",
-    version="0.1.4",
+    version="0.2.1",
     author="Olivia Ryan",
     author_email="olivia.r.dev@gmail.com",
-    description="WebAssembly from Python.",
+    description="WebAssembly in Python.",
     long_description=description,
     long_description_content_type="text/markdown",
     url="https://github.com/olivi-r/wasmpy",

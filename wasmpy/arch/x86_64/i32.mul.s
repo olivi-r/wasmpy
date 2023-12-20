@@ -2,5 +2,5 @@
 _start:
 mov (%rsp), %eax
 add $4, %rsp
-imul (%rsp), %eax
+imull (%rsp)
 mov %eax, (%rsp)
