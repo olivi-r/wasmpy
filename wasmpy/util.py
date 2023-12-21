@@ -52,31 +52,56 @@ with open(os.path.join(os.path.dirname(__file__), "opcodes.json")) as fp:
         )
 
 
-def create_module(module: dict) -> object:
-    """Convert module outlined by dict into WebAssemblyModule object."""
-    WebAssemblyModule = type("WebAssemblyModule", (types.ModuleType,), {})
-    props = []
-    for e in module["exports"]:
-        if isinstance(e["obj"], list):
-
-            def get(self, e=e):
-                return e["obj"][1][0]
-
-            prop = property(get)
-
-            if e["obj"][0] == "mut":
-
-                def set(self, val, e=e):
-                    e["obj"][1][0] = val
-
-                prop = prop.setter(set)
-
-            setattr(WebAssemblyModule, e["name"], prop)
+def __getitem__(self, value):
+    if isinstance(value, str):
+        if value.isidentifier() and not value.startswith("_"):
+            return getattr(self, value)
 
         else:
-            setattr(WebAssemblyModule, e["name"], e["obj"])
+            return self._attrs[value]
 
-        props.append(e["name"])
+    return NotImplemented
+
+
+def create_module(module: dict) -> object:
+    """Convert module outlined by dict into WebAssemblyModule object."""
+    malformed = {}
+    WebAssemblyModule = type(
+        "WebAssemblyModule",
+        (types.ModuleType,),
+        dict(
+            _attrs={},
+            _internal=module,
+            __getitem__=__getitem__,
+        ),
+    )
+    props = []
+
+    for e in module["exports"]:
+        if e["name"].isidentifier() and not e["name"].startswith("_"):
+            if isinstance(e["obj"], list):
+
+                def get(self, e=e):
+                    return e["obj"][1][0]
+
+                prop = property(get)
+
+                if e["obj"][0] == "mut":
+
+                    def set(self, val, e=e):
+                        e["obj"][1][0] = val
+
+                    prop = prop.setter(set)
+
+                setattr(WebAssemblyModule, e["name"], prop)
+
+            else:
+                setattr(WebAssemblyModule, e["name"], e["obj"])
+
+            props.append(e["name"])
+
+        else:
+            malformed[e["name"]] = e["obj"]
 
     if module["start"] is not None:
         setattr(WebAssemblyModule, "__call__", module["start"])
@@ -89,7 +114,8 @@ def create_module(module: dict) -> object:
     for prop in props:
         obj.__dict__.update({prop: getattr(obj, prop)})
 
-    obj.__dict__.update({"_internal": module})
+    for e in malformed:
+        obj._attrs[e] = types.MethodType(malformed[e], obj)
 
     return obj
 
@@ -118,16 +144,3 @@ def expand_bytes(n: int, bits: int = 32) -> list:
         n >>= 8
 
     return r
-
-
-def sanitize(name: str) -> str:
-    """Convert name to valid Python identifier."""
-    name = name.strip()
-    if name.isidentifier():
-        return name
-
-    name = re.sub(r"\W+", "_", name)
-    if not name[0].isidentifier():
-        name = "_" + name
-
-    return name
