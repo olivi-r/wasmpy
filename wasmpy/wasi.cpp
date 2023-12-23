@@ -1,34 +1,78 @@
 #define PY_SSIZE_T_CLEAN
-#define Py_LIMITED_API 0x03060000
 #include <Python.h>
-#include <stdint.h>
+#include <cstdint>
+#include <string>
+
+uint32_t args_count;
+uint32_t args_size;
+std::string args_value;
+
+uint32_t env_count = 0;
+uint32_t env_size;
+std::string env_value = "";
+
+void *memory_base;
 
 static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}};
 
 static PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
-#ifdef WASI_UNSTABLE
+#if defined(WASI_UNSTABLE)
     "wasi_unstable",
-#else
+#elif defined(WASI_SNAPSHOT_PREVIEW1)
     "wasi_snapshot_preview1",
+#else
+#error no wasi module specified
 #endif
     NULL,
     -1,
     methods};
 
-#ifdef WASI_UNSTABLE
-PyMODINIT_FUNC PyInit_wasi_unstable(void)
-#else
-PyMODINIT_FUNC PyInit_wasi_snapshot_preview1(void)
+#if defined(WASI_UNSTABLE)
+PyMODINIT_FUNC PyInit_wasi_unstable()
+#elif defined(WASI_SNAPSHOT_PREVIEW1)
+PyMODINIT_FUNC PyInit_wasi_snapshot_preview1()
 #endif
 {
+    // extract args
+    PyObject *sys = PyImport_ImportModule("sys");
+    PyObject *args = PyObject_GetAttrString(sys, "argv");
+    Py_DECREF(sys);
+    args_count = (uint32_t)PyList_Size(args);
+    PyObject *null_string = PyUnicode_FromStringAndSize("\0", 1);
+    PyObject *argv_py = PyUnicode_Join(null_string, args);
+    Py_DECREF(args);
+    Py_DECREF(null_string);
+    args_size = (uint32_t)PyUnicode_GetLength(argv_py) + 1;
+    const char *argv_c = PyUnicode_AsUTF8(argv_py);
+    Py_DECREF(argv_py);
+    args_value.assign(argv_c, args_size);
+
+    // extract env vars
+    for (char **env = environ; *env; env++)
+    {
+        env_value.append(*env);
+        env_value.append("\0", 1);
+        env_count++;
+    }
+    env_size = (uint32_t)env_value.size();
+
     return PyModule_Create(&module);
 }
 
+typedef uint16_t wasi_siflags_t;
+typedef uint32_t wasi_dirnamlen_t;
+typedef uint32_t wasi_exitcode_t;
+typedef uint32_t wasi_fd_t;
 typedef uint32_t wasi_size_t;
+typedef int64_t wasi_filedelta_t;
+typedef uint64_t wasi_device_t;
+typedef uint64_t wasi_dircookie_t;
 typedef uint64_t wasi_filesize_t;
+typedef uint64_t wasi_inode_t;
 typedef uint64_t wasi_timestamp_t;
+typedef uint64_t wasi_userdata_t;
 
 typedef uint32_t wasi_clockid_t;
 const wasi_clockid_t wasi_clockid_realtime = 0;
@@ -145,42 +189,32 @@ const wasi_rights_t wasi_rights_path_remove_directory = 1 << 25;
 const wasi_rights_t wasi_rights_path_unlink_file = 1 << 26;
 const wasi_rights_t wasi_rights_poll_fd_readwrite = 1 << 27;
 const wasi_rights_t wasi_rights_sock_shutdown = 1 << 28;
-#ifndef WASI_UNSTABLE
+#ifdef WASI_SNAPSHOT_PREVIEW1
 const wasi_rights_t wasi_rights_sock_accept = 1 << 29;
 #endif
 
-typedef uint32_t wasi_fd_t;
-
-typedef struct
+typedef struct wasi_iovec_t
 {
     uint8_t *buf;
     wasi_size_t buf_len;
 } wasi_iovec_t;
 
-typedef struct
+typedef struct wasi_ciovec_t
 {
     const uint8_t *buf;
     wasi_size_t buf_len;
 } wasi_ciovec_t;
 
-typedef wasi_iovec_t *wasi_iovec_array_t;
-typedef wasi_ciovec_t *wasi_ciovec_array_t;
-typedef int64_t wasi_filedelta_t;
-
 typedef uint8_t wasi_whence_t;
-#ifdef WASI_UNSTABLE
+#if defined(WASI_UNSTABLE)
 const wasi_whence_t wasi_whence_cur = 0;
 const wasi_whence_t wasi_whence_end = 1;
 const wasi_whence_t wasi_whence_set = 2;
-#else
+#elif defined(WASI_SNAPSHOT_PREVIEW1)
 const wasi_whence_t wasi_whence_set = 0;
 const wasi_whence_t wasi_whence_cur = 1;
 const wasi_whence_t wasi_whence_end = 2;
 #endif
-
-typedef uint64_t wasi_dircookie_t;
-typedef uint32_t wasi_dirnamlen_t;
-typedef uint64_t wasi_inode_t;
 
 typedef uint8_t wasi_filetype_t;
 const wasi_filetype_t wasi_filetype_unknown = 0;
@@ -192,7 +226,7 @@ const wasi_filetype_t wasi_filetype_socket_dgram = 5;
 const wasi_filetype_t wasi_filetype_socket_stream = 6;
 const wasi_filetype_t wasi_filetype_symbolic_link = 7;
 
-typedef struct
+typedef struct wasi_dirent_t
 {
     wasi_dircookie_t d_next;
     wasi_inode_t d_ino;
@@ -215,15 +249,13 @@ const wasi_fdflags_t wasi_fdflags_nonblock = 1 << 2;
 const wasi_fdflags_t wasi_fdflags_rsync = 1 << 3;
 const wasi_fdflags_t wasi_fdflags_sync = 1 << 4;
 
-typedef struct
+typedef struct wasi_fdstat_t
 {
     wasi_filetype_t fs_filetype;
     wasi_fdflags_t fs_flags;
     wasi_rights_t fs_rights_base;
     wasi_rights_t fs_rights_inheriting;
 } wasi_fdstat_t;
-
-typedef uint64_t wasi_device_t;
 
 typedef uint16_t wasi_fstflags_t;
 const wasi_fstflags_t wasi_fstflags_atim = 1 << 0;
@@ -240,13 +272,13 @@ const wasi_oflags_t wasi_oflags_directory = 1 << 1;
 const wasi_oflags_t wasi_oflags_excl = 1 << 2;
 const wasi_oflags_t wasi_oflags_trunc = 1 << 3;
 
-#ifdef WASI_UNSTABLE
+#if defined(WASI_UNSTABLE)
 typedef uint32_t wasi_linkcount_t;
-#else
+#elif defined(WASI_SNAPSHOT_PREVIEW1)
 typedef uint64_t wasi_linkcount_t;
 #endif
 
-typedef struct
+typedef struct wasi_filestat_t
 {
     wasi_device_t dev;
     wasi_inode_t ino;
@@ -258,8 +290,6 @@ typedef struct
     wasi_timestamp_t ctim;
 } wasi_filestat_t;
 
-typedef uint64_t wasi_userdata_t;
-
 typedef uint8_t wasi_eventtype_t;
 const wasi_eventtype_t wasi_eventtype_clock = 0;
 const wasi_eventtype_t wasi_eventtype_fd_read = 1;
@@ -268,13 +298,13 @@ const wasi_eventtype_t wasi_eventtype_fd_write = 2;
 typedef uint16_t wasi_eventrwflags_t;
 const wasi_eventrwflags_t wasi_eventrwflags_fd_readwrite_hangup = 1 << 0;
 
-typedef struct
+typedef struct wasi_event_fd_readwrite_t
 {
     wasi_filesize_t nbytes;
     wasi_eventrwflags_t flags;
 } wasi_event_fd_readwrite_t;
 
-typedef struct
+typedef struct wasi_event_t
 {
     wasi_userdata_t userdata;
     wasi_errno_t error;
@@ -285,7 +315,7 @@ typedef struct
 typedef uint16_t wasi_subclockflags_t;
 const wasi_subclockflags_t wasi_subclockflags_subscription_clock_abstime = 1 << 0;
 
-typedef struct
+typedef struct wasi_subscription_clock_t
 {
 #ifdef WASI_UNSTABLE
     wasi_userdata_t identifier;
@@ -296,14 +326,14 @@ typedef struct
     wasi_subclockflags_t flags;
 } wasi_subscription_clock_t;
 
-typedef struct
+typedef struct wasi_subscription_fd_readwrite_t
 {
     wasi_fd_t file_descriptor;
 } wasi_subscription_fd_readwrite_t;
 
-typedef struct
+typedef struct wasi_subscription_u_t
 {
-    wasi_eventtype_t tag;
+    uint8_t tag;
     union
     {
         wasi_subscription_clock_t clock;
@@ -312,13 +342,11 @@ typedef struct
     } u;
 } wasi_subscription_u_t;
 
-typedef struct
+typedef struct wasi_subscription_t
 {
     wasi_userdata_t userdata;
     wasi_subscription_u_t u;
 } wasi_subscription_t;
-
-typedef uint32_t wasi_exitcode_t;
 
 typedef uint8_t wasi_signal_t;
 const wasi_signal_t wasi_signal_none = 0;
@@ -360,8 +388,6 @@ const wasi_riflags_t wasi_riflags_recv_waitall = 1 << 1;
 typedef uint16_t wasi_roflags_t;
 const wasi_roflags_t wasi_roflags_recv_data_truncated = 1 << 0;
 
-typedef uint16_t wasi_siflags_t;
-
 typedef uint8_t wasi_sdflags_t;
 const wasi_sdflags_t wasi_sdflags_rd = 1 << 0;
 const wasi_sdflags_t wasi_sdflags_wr = 1 << 1;
@@ -369,21 +395,21 @@ const wasi_sdflags_t wasi_sdflags_wr = 1 << 1;
 typedef uint8_t wasi_preopentype_t;
 const wasi_preopentype_t wasi_preopentype_dir = 0;
 
-typedef struct
+typedef struct wasi_prestat_dir_t
 {
     wasi_size_t pr_name_len;
 } wasi_prestat_dir_t;
 
-typedef struct
+typedef struct wasi_prestat_t
 {
-    wasi_preopentype_t tag;
+    uint8_t tag;
     union
     {
         wasi_prestat_dir_t dir;
     } u;
 } wasi_prestat_t;
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
 #define API __declspec(dllexport)
 #else
 #define API __attribute__((visibility("default")))
@@ -391,14 +417,12 @@ typedef struct
 
 API wasi_errno_t wasi_args_get(uint8_t **argv, uint8_t *argv_buf)
 {
-    return wasi_errno_success;
+    return wasi_errno_nosys;
 }
 
 API wasi_errno_t wasi_args_sizes_get(wasi_size_t *argc, wasi_size_t *argv_buf_size)
 {
-    *argc = 0;
-    *argv_buf_size = 0;
-    return wasi_errno_success;
+    return wasi_errno_nosys;
 }
 
 API wasi_errno_t wasi_environ_get(uint8_t **environ, uint8_t *envrion_buf)
@@ -471,7 +495,7 @@ API wasi_errno_t wasi_fd_filestat_set_times(wasi_fd_t fd, wasi_timestamp_t atim,
     return wasi_errno_nosys;
 }
 
-API wasi_errno_t wasi_fd_pread(wasi_fd_t fd, wasi_iovec_array_t iovs, wasi_filesize_t offset, wasi_size_t *nread)
+API wasi_errno_t wasi_fd_pread(wasi_fd_t fd, wasi_iovec_t *iovs, wasi_size_t iovs_len, wasi_filesize_t offset, wasi_size_t *nread)
 {
     return wasi_errno_nosys;
 }
@@ -486,12 +510,12 @@ API wasi_errno_t wasi_fd_prestat_dir_name(wasi_fd_t fd, uint8_t *path, wasi_size
     return wasi_errno_nosys;
 }
 
-API wasi_errno_t wasi_fd_pwrite(wasi_fd_t fd, wasi_ciovec_array_t iovs, wasi_filesize_t offset, wasi_size_t *nwritten)
+API wasi_errno_t wasi_fd_pwrite(wasi_fd_t fd, wasi_ciovec_t *iovs, wasi_size_t iovs_len, wasi_filesize_t offset, wasi_size_t *nwritten)
 {
     return wasi_errno_nosys;
 }
 
-API wasi_errno_t wasi_fd_read(wasi_fd_t fd, wasi_iovec_array_t iovs, wasi_size_t *nread)
+API wasi_errno_t wasi_fd_read(wasi_fd_t fd, wasi_iovec_t *iovs, wasi_size_t iovs_len, wasi_size_t *nread)
 {
     return wasi_errno_nosys;
 }
@@ -521,7 +545,7 @@ API wasi_errno_t wasi_fd_tell(wasi_fd_t fd, wasi_filesize_t *offset)
     return wasi_errno_nosys;
 }
 
-API wasi_errno_t wasi_fd_write(wasi_fd_t fd, wasi_ciovec_array_t iovs, wasi_size_t *nwritten)
+API wasi_errno_t wasi_fd_write(wasi_fd_t fd, wasi_ciovec_t *iovs, wasi_size_t iovs_len, wasi_size_t *nwritten)
 {
     return wasi_errno_nosys;
 }
@@ -598,19 +622,19 @@ API wasi_errno_t wasi_random_get(uint8_t *buf, wasi_size_t buf_len)
     return wasi_errno_nosys;
 }
 
-#ifndef WASI_UNSTABLE
+#ifdef WASI_SNAPSHOT_PREVIEW1
 API wasi_errno_t wasi_sock_accept(wasi_fd_t fd, wasi_fdflags_t flags, wasi_fd_t *ok)
 {
     return wasi_errno_nosys;
 }
 #endif
 
-API wasi_errno_t wasi_sock_recv(wasi_fd_t fd, wasi_iovec_array_t ri_data, wasi_riflags_t ri_flags, wasi_size_t *ro_datalen, wasi_roflags_t *ro_flags)
+API wasi_errno_t wasi_sock_recv(wasi_fd_t fd, wasi_iovec_t *ri_data, wasi_size_t ri_data_len, wasi_riflags_t ri_flags, wasi_size_t *ro_datalen, wasi_roflags_t *ro_flags)
 {
     return wasi_errno_nosys;
 }
 
-API wasi_errno_t wasi_sock_send(wasi_fd_t fd, wasi_ciovec_array_t si_data, wasi_siflags_t si_flags, wasi_size_t *so_datalen)
+API wasi_errno_t wasi_sock_send(wasi_fd_t fd, wasi_ciovec_t *si_data, wasi_size_t si_data_len, wasi_siflags_t si_flags, wasi_size_t *so_datalen)
 {
     return wasi_errno_nosys;
 }
