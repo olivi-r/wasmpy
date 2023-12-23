@@ -66,7 +66,4 @@
 	(func $print_f64 (export "print_f64") (param f64))
 	(func (export "print_i32_f32") (param i32 f32))
 	(func (export "print_f64_f64") (param f64 f64))
-	(func (export "_start")
-		(call $print_i64 (i64.const 400))
-	)
 )
