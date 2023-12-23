@@ -18,10 +18,7 @@ with open(os.path.join(os.path.dirname(__file__), "wasmpy/opcodes.json")) as fp:
             dict(
                 zip(
                     (i[0] for i in group["instructions"]),
-                    (
-                        i + group["offset"]
-                        for i in range(len(group["instructions"]))
-                    ),
+                    (i + group["offset"] for i in range(len(group["instructions"]))),
                 )
             )
         )
@@ -211,19 +208,7 @@ class build_ext(setuptools.command.build_ext.build_ext):
         setuptools.command.build_ext.build_ext.run(self)
 
 
-ext = [
-    setuptools.Extension(
-        "wasmpy.wasi_unstable",
-        sources=["wasmpy/wasi.c"],
-        define_macros=[("WASI_UNSTABLE", None)],
-        py_limited_api=True,
-    ),
-    setuptools.Extension(
-        "wasmpy.wasi_snapshot_preview1",
-        sources=["wasmpy/wasi.c"],
-        py_limited_api=True,
-    ),
-]
+ext = []
 
 if is_x86():
     plat = []
@@ -242,7 +227,19 @@ if is_x86():
         machine = "x86_64"
         arch = [("ARCH_X86_64", None)]
 
-    ext.append(
+    ext += [
+        setuptools.Extension(
+            "wasmpy.wasi_unstable",
+            sources=["wasmpy/wasi.cpp"],
+            define_macros=[("WASI_UNSTABLE", None)] + plat,
+            py_limited_api=True,
+        ),
+        setuptools.Extension(
+            "wasmpy.wasi_snapshot_preview1",
+            sources=["wasmpy/wasi.cpp"],
+            define_macros=[("WASI_SNAPSHOT_PREVIEW1", None)] + plat,
+            py_limited_api=True,
+        ),
         setuptools.Extension(
             "wasmpy.nativelib",
             include_dirs=[
@@ -258,8 +255,8 @@ if is_x86():
             ],
             define_macros=plat + arch,
             py_limited_api=True,
-        )
-    )
+        ),
+    ]
 
 
 with open("README.md", "r") as fp:
