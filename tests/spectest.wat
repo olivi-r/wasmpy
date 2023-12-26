@@ -1,9 +1,9 @@
 (module
 	(import "wasi_snapshot_preview1" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
-	(global (export "global_i32") i32 (i32.const 666))
-	(global (export "global_i64") i64 (i64.const 666))
-	(global (export "global_f32") f32 (f32.const 666.6))
-	(global (export "global_f64") f64 (f64.const 666.6))
+	(global $global_i32 (export "global_i32") i32 (i32.const 666))
+	(global $global_i64 (export "global_i64") i64 (i64.const 666))
+	(global $global_f32 (export "global_f32") f32 (f32.const 666))
+	(global $global_f64 (export "global_f64") f64 (f64.const 666))
 	(table (export "table") 10 20 funcref)
 	(memory (export "memory") 1 2)
 	(func $print_int (param $num i64)
@@ -61,14 +61,20 @@
 			)
 		)
 
-		;; write "." to stdout
-		(i32.store (i32.const 8) (i32.const 0x2E))
-		(i64.store (i32.const 0) (i64.const 0x100000008))
-		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
-		drop
+		;; dont print fractional component if is 0
+		(if
+			(f64.ne (local.get $float) (f64.const 0))
+			(then
+				;; write "." to stdout
+				(i32.store (i32.const 8) (i32.const 0x2E))
+				(i64.store (i32.const 0) (i64.const 0x100000008))
+				(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
+				drop
 
-		;; print fractional component
-		(call $print_int (i64.trunc_f64_u (local.get $float)))
+				;; print fractional component
+				(call $print_int (i64.trunc_f64_u (local.get $float)))
+			)
+		)
 	)
 	(func (export "print"))
 	(func $print_i32 (export "print_i32") (param $i i32)
@@ -114,8 +120,5 @@
 	(func $print_f64_f64 (export "print_f64_f64") (param $f0 f64) (param $f1 f64)
 		(call $print_f64 (local.get $f0))
 		(call $print_f64 (local.get $f1))
-	)
-	(func (export "_start")
-		(call $print_f64_f64 (f64.const 69) (f64.const -28.7))
 	)
 )
