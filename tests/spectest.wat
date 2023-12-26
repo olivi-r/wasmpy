@@ -43,9 +43,36 @@
 		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8))
 		drop
 	)
+	(func $print_float (param $float f64)
+		(local $num f64)
+
+		;; print integer component
+		(call $print_int (i64.trunc_f64_s (local.tee $num (f64.trunc (local.get $float)))))
+
+		;; move fraction in front of point
+		(local.set $float (f64.abs (f64.sub (local.get $float) (local.get $num))))
+		(loop $frac
+			(if
+				(f64.gt (f64.sub (local.get $float) (f64.trunc (local.get $float))) (f64.const 0))
+				(then
+					(local.set $float (f64.mul (local.get $float) (f64.const 10)))
+					(br $frac)
+				)
+			)
+		)
+
+		;; write "." to stdout
+		(i32.store (i32.const 8) (i32.const 0x2E))
+		(i64.store (i32.const 0) (i64.const 0x100000008))
+		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
+		drop
+
+		;; print fractional component
+		(call $print_int (i64.trunc_f64_u (local.get $float)))
+	)
 	(func (export "print"))
-	(func $print_i32 (export "print_i32") (param i32)
-		(call $print_int (i64.extend_i32_s (local.get 0)))
+	(func $print_i32 (export "print_i32") (param $i i32)
+		(call $print_int (i64.extend_i32_s (local.get $i)))
 
 		;; write ": i32\n" to stdout
 		(i64.store (i32.const 8) (i64.const 0xA323369203A))
@@ -53,8 +80,8 @@
 		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
 		drop
 	)
-	(func $print_i64 (export "print_i64") (param i64)
-		(call $print_int (local.get 0))
+	(func $print_i64 (export "print_i64") (param $i i64)
+		(call $print_int (local.get $i))
 
 		;; write ": i64\n" to stdout
 		(i64.store (i32.const 8) (i64.const 0xA343669203A))
@@ -62,8 +89,33 @@
 		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
 		drop
 	)
-	(func $print_f32 (export "print_f32") (param f32))
-	(func $print_f64 (export "print_f64") (param f64))
-	(func (export "print_i32_f32") (param i32 f32))
-	(func (export "print_f64_f64") (param f64 f64))
+	(func $print_f32 (export "print_f32") (param $f f32)
+		(call $print_float (f64.promote_f32 (local.get $f)))
+
+		;; write ": f32\n" to stdout
+		(i64.store (i32.const 8) (i64.const 0xA323366203A))
+		(i64.store (i32.const 0) (i64.const 0x600000008))
+		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
+		drop
+	)
+	(func $print_f64 (export "print_f64") (param $f f64)
+		(call $print_float (local.get $f))
+
+		;; write ": f64\n" to stdout
+		(i64.store (i32.const 8) (i64.const 0xA343666203A))
+		(i64.store (i32.const 0) (i64.const 0x600000008))
+		(call $fd_write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 0))
+		drop
+	)
+	(func $print_i32_f32 (export "print_i32_f32") (param $i i32) (param $f f32)
+		(call $print_i32 (local.get $i))
+		(call $print_f32 (local.get $f))
+	)
+	(func $print_f64_f64 (export "print_f64_f64") (param $f0 f64) (param $f1 f64)
+		(call $print_f64 (local.get $f0))
+		(call $print_f64 (local.get $f1))
+	)
+	(func (export "_start")
+		(call $print_f64_f64 (f64.const 69) (f64.const -28.7))
+	)
 )
