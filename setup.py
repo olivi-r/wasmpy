@@ -18,10 +18,7 @@ with open(os.path.join(os.path.dirname(__file__), "wasmpy/opcodes.json")) as fp:
             dict(
                 zip(
                     (i[0] for i in group["instructions"]),
-                    (
-                        i + group["offset"]
-                        for i in range(len(group["instructions"]))
-                    ),
+                    (i + group["offset"] for i in range(len(group["instructions"]))),
                 )
             )
         )
@@ -244,7 +241,12 @@ ext = [
         ],
         define_macros=plat + arch,
         py_limited_api=True,
-    )
+    ),
+    setuptools.Extension(
+        "wasmpy.wast.spectest",
+        sources=["wasmpy/wast/spectest.cpp"],
+        py_limited_api=True,
+    ),
 ]
 
 
