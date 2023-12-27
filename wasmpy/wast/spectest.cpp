@@ -9,6 +9,8 @@ const int64_t global_i64 = 666;
 const float global_f32 = 666;
 const double global_f64 = 666;
 
+void print() {}
+
 void print_i32(int32_t val)
 {
     std::cout << val << ": i32" << std::endl;
@@ -58,6 +60,7 @@ PyMODINIT_FUNC PyInit_spectest()
     PyObject_SetAttrString(m, "global_i64", PyLong_FromVoidPtr((void *)&global_i64));
     PyObject_SetAttrString(m, "global_f32", PyLong_FromVoidPtr((void *)&global_f32));
     PyObject_SetAttrString(m, "global_f64", PyLong_FromVoidPtr((void *)&global_f64));
+    PyObject_SetAttrString(m, "print", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print)));
     PyObject_SetAttrString(m, "print_i32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i32)));
     PyObject_SetAttrString(m, "print_i64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i64)));
     PyObject_SetAttrString(m, "print_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f32)));
