@@ -49,11 +49,11 @@ PyModuleDef module = {
 PyMODINIT_FUNC PyInit_spectest()
 {
     PyObject *m = PyModule_Create(&module);
-    PyObject_SetAttrString(m, "print_i32", PyLong_FromVoidPtr(&print_i32));
-    PyObject_SetAttrString(m, "print_i64", PyLong_FromVoidPtr(&print_i64));
-    PyObject_SetAttrString(m, "print_f32", PyLong_FromVoidPtr(&print_f32));
-    PyObject_SetAttrString(m, "print_f64", PyLong_FromVoidPtr(&print_f64));
-    PyObject_SetAttrString(m, "print_i32_f32", PyLong_FromVoidPtr(&print_i32_f32));
-    PyObject_SetAttrString(m, "print_f64_f64", PyLong_FromVoidPtr(&print_f64_f64));
+    PyObject_SetAttrString(m, "print_i32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i32)));
+    PyObject_SetAttrString(m, "print_i64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i64)));
+    PyObject_SetAttrString(m, "print_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f32)));
+    PyObject_SetAttrString(m, "print_f64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f64)));
+    PyObject_SetAttrString(m, "print_i32_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i32_f32)));
+    PyObject_SetAttrString(m, "print_f64_f64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f64_f64)));
     return m;
 }
