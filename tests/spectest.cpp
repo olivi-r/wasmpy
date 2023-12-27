@@ -1,5 +1,5 @@
 #define PY_SSIZE_T_CLEAN
-#define Py_LIMITED_API 0x03060000
+#define Py_LIMITED_API 3
 #include <Python.h>
 #include <iostream>
 #include <cstdint>

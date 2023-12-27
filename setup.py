@@ -243,8 +243,8 @@ ext = [
         py_limited_api=True,
     ),
     setuptools.Extension(
-        "wasmpy.wast.spectest",
-        sources=["wasmpy/wast/spectest.cpp"],
+        "tests.spectest",
+        sources=["tests/spectest.cpp"],
         py_limited_api=True,
     ),
 ]
