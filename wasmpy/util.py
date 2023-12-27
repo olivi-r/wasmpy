@@ -96,7 +96,7 @@ def create_module(module: dict) -> object:
                 setattr(WebAssemblyModule, e["name"], prop)
 
             else:
-                setattr(WebAssemblyModule, e["name"], e["obj"])
+                setattr(WebAssemblyModule, e["name"], staticmethod(e["obj"]))
 
             props.append(e["name"])
 
@@ -115,7 +115,7 @@ def create_module(module: dict) -> object:
         obj.__dict__.update({prop: getattr(obj, prop)})
 
     for e in malformed:
-        obj._attrs[e] = types.MethodType(malformed[e], obj)
+        obj._attrs[e] = malformed[e]
 
     return obj
 
