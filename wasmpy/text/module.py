@@ -100,9 +100,7 @@ def read_module(buffer: object) -> dict:
                 mod_dict["mem"] = memory
 
             elif expr[0].value() == "global":
-                globalidx, export, global_ = wasmpy.text.sections.read_global(
-                    expr
-                )
+                globalidx, export, global_ = wasmpy.text.sections.read_global(expr)
                 mod_dict["globals"].append(global_)
                 global_ids.append(globalidx)
                 if export is not None:
@@ -115,9 +113,7 @@ def read_module(buffer: object) -> dict:
                     )
 
             elif expr[0].value() == "export":
-                mod_dict["exports"].append(
-                    wasmpy.text.sections.read_export(expr)
-                )
+                mod_dict["exports"].append(wasmpy.text.sections.read_export(expr))
 
             elif expr[0].value() == "start":
                 if mod_dict["start"] is not None:
@@ -221,21 +217,17 @@ def read_module(buffer: object) -> dict:
     function_base_addr = wasmpy.nativelib.write_function_page()
     for funcidx, func in enumerate(mod_dict["funcs"]):
         if "_obj" in func:
-            obj = ctypes.CFUNCTYPE(
-                func["_obj"]["ret"], *func["_obj"]["params"]
-            )(function_base_addr + func["_obj"]["address"])
-            func["obj"] = wasmpy.native.wrap_function(
-                obj, func["_obj"]["param_clear"]
+            obj = ctypes.CFUNCTYPE(func["_obj"]["ret"], *func["_obj"]["params"])(
+                function_base_addr + func["_obj"]["address"]
             )
+            func["obj"] = wasmpy.native.wrap_function(obj, func["_obj"]["param_clear"])
 
         mod_dict["funcs"][funcidx] = func["obj"]
 
     if mod_dict["start"] is not None:
         try:
             if mod_dict["start"] in type_ids:
-                mod_dict["start"] = mod_dict["funcs"][
-                    type_ids.index(mod_dict["start"])
-                ]
+                mod_dict["start"] = mod_dict["funcs"][type_ids.index(mod_dict["start"])]
 
             else:
                 mod_dict["start"] = mod_dict["funcs"][mod_dict["start"]]
