@@ -3,44 +3,35 @@
 #include <Python.h>
 #include <iostream>
 #include <cstdint>
+#include <type_traits>
 
 const int32_t global_i32 = 666;
 const int64_t global_i64 = 666;
 const float global_f32 = 666;
 const double global_f64 = 666;
 
-void print() {}
+void print0() {}
 
-void print_i32(int32_t val)
+template <typename T>
+void print1(T val)
 {
-    std::cout << val << ": i32" << std::endl;
+    std::cout << val;
+    if (std::is_same<T, int32_t>::value)
+        std::cout << ": i32";
+    else if (std::is_same<T, int64_t>::value)
+        std::cout << ": i64";
+    else if (std::is_same<T, float>::value)
+        std::cout << ": f32";
+    else if (std::is_same<T, double>::value)
+        std::cout << ": f64";
+    std::cout << std::endl;
 }
 
-void print_i64(int64_t val)
+template <typename T0, typename T1>
+void print2(T0 val0, T1 val1)
 {
-    std::cout << val << ": i64" << std::endl;
-}
-
-void print_f32(float val)
-{
-    std::cout << val << ": f32" << std::endl;
-}
-
-void print_f64(double val)
-{
-    std::cout << val << ": f64" << std::endl;
-}
-
-void print_i32_f32(int32_t val0, float val1)
-{
-    print_i32(val0);
-    print_f32(val1);
-}
-
-void print_f64_f64(double val0, double val1)
-{
-    print_f64(val0);
-    print_f64(val1);
+    print1<T0>(val0);
+    print1<T1>(val1);
 }
 
 PyMethodDef methods[] = {
@@ -60,12 +51,12 @@ PyMODINIT_FUNC PyInit_spectest()
     PyObject_SetAttrString(m, "global_i64", PyLong_FromVoidPtr((void *)&global_i64));
     PyObject_SetAttrString(m, "global_f32", PyLong_FromVoidPtr((void *)&global_f32));
     PyObject_SetAttrString(m, "global_f64", PyLong_FromVoidPtr((void *)&global_f64));
-    PyObject_SetAttrString(m, "print", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print)));
-    PyObject_SetAttrString(m, "print_i32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i32)));
-    PyObject_SetAttrString(m, "print_i64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i64)));
-    PyObject_SetAttrString(m, "print_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f32)));
-    PyObject_SetAttrString(m, "print_f64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f64)));
-    PyObject_SetAttrString(m, "print_i32_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_i32_f32)));
-    PyObject_SetAttrString(m, "print_f64_f64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print_f64_f64)));
+    PyObject_SetAttrString(m, "print", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print0)));
+    PyObject_SetAttrString(m, "print_i32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print1<int32_t>)));
+    PyObject_SetAttrString(m, "print_i64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print1<int64_t>)));
+    PyObject_SetAttrString(m, "print_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print1<float>)));
+    PyObject_SetAttrString(m, "print_f64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print1<double>)));
+    PyObject_SetAttrString(m, "print_i32_f32", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print2<int32_t, float>)));
+    PyObject_SetAttrString(m, "print_f64_f64", PyLong_FromVoidPtr(reinterpret_cast<void *>(&print2<double, double>)));
     return m;
 }
