@@ -251,6 +251,7 @@ ext = [
 
 
 setuptools.setup(
+    name="wasmpy",
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={
