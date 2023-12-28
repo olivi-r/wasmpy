@@ -4,6 +4,7 @@ graft wasmpy/arch
 include wasmpy/globals.cpp
 include wasmpy/memories.cpp
 include wasmpy/nativelib.cpp
+include wasmpy/builtin/spectest.cpp
 recursive-include wasmpy *.hpp
 recursive-exclude wasmpy/arch *.o
 recursive-exclude wasmpy/arch *.cpp
