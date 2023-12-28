@@ -43,5 +43,5 @@ wasmpy = ["opcodes.json"]
 [tool.setuptools_scm]
 
 [tool.cibuildwheel]
-build-frontend = "build"
+build-frontend = "build; args: --no-build-isolation"
 build = "cp36-*"
