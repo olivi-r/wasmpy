@@ -4,14 +4,14 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      BUILD_SCRIPT: python -m build --sdist
+      BUILD_SCRIPT: python setup.py sdist
 
 stack: python 3.7
 
 init:
   - cmd: set PATH=C:\Python37;C:\Python37\Scripts;C:\msys64\mingw64\bin;%PATH%
 
-install: python -m pip install build cibuildwheel setuptools-scm && python setup.py assemble -q --targets=x86,x86_64
+install: python -m pip install build cibuildwheel && python setup.py assemble -q --targets=x86,x86_64
 
 build_script:
   - ps: Invoke-Expression $env:BUILD_SCRIPT

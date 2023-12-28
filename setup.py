@@ -250,8 +250,19 @@ ext = [
 ]
 
 
+with open("README.md", "r") as fp:
+    description = fp.read()
+
 setuptools.setup(
     name="wasmpy",
+    author="Olivia Ryan",
+    author_email="olivia.r.dev@gmail.com",
+    description="WebAssembly in Python.",
+    long_description=description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/olivi-r/wasmpy",
+    packages=["wasmpy", "wasmpy.binary", "wasmpy.text"],
+    package_data={"wasmpy": ["opcodes.json"]},
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={
@@ -260,4 +271,21 @@ setuptools.setup(
         "gen_opcodes": gen_opcodes,
         "tidy": tidy,
     },
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "Environment :: WebAssembly",
+        "Programming Language :: C++",
+        "Programming Language :: Assembly",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "License :: OSI Approved :: MIT License",
+    ],
+    license="MIT",
+    python_requires=">=3.6",
+    install_requires=["sexpdata"],
 )

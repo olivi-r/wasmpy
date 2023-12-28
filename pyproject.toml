@@ -2,44 +2,6 @@
 requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "wasmpy"
-authors = [
-	{name = "Olivia Ryan", email = "olivia.r.dev@gmail.com"},
-]
-description = "WebAssembly in Python."
-readme = "README.md"
-requires-python = ">=3.6"
-license = {text = "MIT"}
-classifiers = [
-	"Development Status :: 3 - Alpha",
-	"Intended Audience :: Developers",
-	"Environment :: WebAssembly",
-	"Programming Language :: C++",
-	"Programming Language :: Assembly",
-	"Programming Language :: Python :: 3.6",
-	"Programming Language :: Python :: 3.7",
-	"Programming Language :: Python :: 3.8",
-	"Programming Language :: Python :: 3.9",
-	"Programming Language :: Python :: 3.10",
-	"Programming Language :: Python :: 3.11",
-	"License :: OSI Approved :: MIT License",
-]
-dependencies = [
-	"sexpdata"
-]
-dynamic = ["version"]
-
-[project.urls]
-Homepage = "https://github.com/olivi-r/wasmpy"
-Issues = "https://github.com/olivi-r/wasmpy/issues"
-
-[tool.setuptools]
-packages = ["wasmpy", "wasmpy.binary", "wasmpy.text"]
-
-[tool.setuptools.package-data]
-wasmpy = ["opcodes.json"]
-
 [tool.setuptools_scm]
 
 [tool.cibuildwheel]
