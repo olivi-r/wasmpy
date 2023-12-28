@@ -41,3 +41,7 @@ packages = ["wasmpy", "wasmpy.binary", "wasmpy.text"]
 wasmpy = ["opcodes.json"]
 
 [tool.setuptools_scm]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+build = "cp36-*"

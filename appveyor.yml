@@ -1,13 +1,10 @@
 environment:
+  BUILD_SCRIPT: python -m cibuildwheel --output-dir dist
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      BUILD_SCRIPT: python -m build --sdist && python -m cibuildwheel --output-dir dist
-      CIBW_BUILD_FRONTEND: build
-      CIBW_BUILD: cp36-*
+      BUILD_SCRIPT: python -m build --sdist
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      BUILD_SCRIPT: python -m cibuildwheel --output-dir dist
-      CIBW_BUILD_FRONTEND: build
-      CIBW_BUILD: cp36-*
 
 stack: python 3.7
 
