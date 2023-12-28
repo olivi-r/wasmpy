@@ -1,10 +1,10 @@
 environment:
   BUILD_SCRIPT: python -m cibuildwheel --output-dir dist
   matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      BUILD_SCRIPT: python -m build --sdist
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      BUILD_SCRIPT: python setup.py sdist
 
 stack: python 3.7
 
