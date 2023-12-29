@@ -24,7 +24,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: atWS2pKyihyRyTzMopS3FzlG+VT/r3fx5pk+7E2BwvyxdAGiSmH/pDXPBIPArdW0
-  artifact: dist\\*
+  artifact: /.*\.(whl|tar\.gz)/
   draft: true
   on:
     branch: main
