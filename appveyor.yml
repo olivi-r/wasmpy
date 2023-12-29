@@ -18,3 +18,13 @@ build_script:
 
 artifacts:
   - path: "dist\\*"
+
+deploy:
+  description: ""
+  provider: GitHub
+  auth_token:
+    secure: atWS2pKyihyRyTzMopS3FzlG+VT/r3fx5pk+7E2BwvyxdAGiSmH/pDXPBIPArdW0
+  artifact: dist\\*
+  draft: true
+  on:
+    branch: main
