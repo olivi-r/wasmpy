@@ -22,17 +22,17 @@ artifacts:
   - path: "dist\\*"
 
 deploy:
-  - provider: GitHub
-    description: ""
-    auth_token:
-      secure: atWS2pKyihyRyTzMopS3FzlG+VT/r3fx5pk+7E2BwvyxdAGiSmH/pDXPBIPArdW0
-    artifact: /.*\.(whl|tar\.gz)/
-    draft: true
-    on:
-      branch: main
-      APPVEYOR_REPO_TAG: true
+  description: ""
+  provider: GitHub
+  auth_token:
+    secure: atWS2pKyihyRyTzMopS3FzlG+VT/r3fx5pk+7E2BwvyxdAGiSmH/pDXPBIPArdW0
+  artifact: /.*\.(whl|tar\.gz)/
+  draft: true
+  on:
+    branch: main
+    APPVEYOR_REPO_TAG: true
 
-deploy_script:
+after_deploy:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq 'true')
       {
