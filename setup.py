@@ -243,8 +243,8 @@ ext = [
         py_limited_api=True,
     ),
     setuptools.Extension(
-        "wasmpy.builtin.spectest",
-        sources=["wasmpy/builtin/spectest.cpp"],
+        "wasmpy.spectest",
+        sources=["wasmpy/spectest.cpp"],
         py_limited_api=True,
     ),
 ]
@@ -287,5 +287,8 @@ setuptools.setup(
     ],
     license="MIT",
     python_requires=">=3.6",
-    install_requires=["sexpdata"],
+    install_requires=[
+        "sexpdata>=1.0.1;python_version>=3.7",
+        "sexpdata==1.0.0;python_version==3.6",
+    ],
 )
