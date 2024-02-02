@@ -43,7 +43,7 @@ define X86_BIN_FROM_SRC
 $(1): $(patsubst %,%.s,$(1))
 	$(AS) $(X86_ASFLAGS) -o $(patsubst %,%.o,$(1)) $(patsubst %,%.s,$(1))
 	$(LD) $(X86_LDFLAGS) -o $(patsubst %,%.tmp,$(1)) $(patsubst %,%.o,$(1))
-	objcopy -O binary -j .text $(patsubst %,%.tmp,$(1)) $(1)
+	$(OBJCOPY) -O binary -j .text $(patsubst %,%.tmp,$(1)) $(1)
 
 endef
 
@@ -52,7 +52,7 @@ $(1): $(patsubst %,%.s,$(1))
 	$(AS) $(X86_64_ASFLAGS) -o $(patsubst %,%.o,$(1)) $(patsubst %,%.s,$(1))
 	$(LD) $(X86_64_LDFLAGS) -o $(1) $(patsubst %,%.o,$(1))
 	$(LD) $(X86_64_LDFLAGS) -o $(patsubst %,%.tmp,$(1)) $(patsubst %,%.o,$(1))
-	objcopy -O binary -j .text $(patsubst %,%.tmp,$(1)) $(1)
+	$(OBJCOPY) -O binary -j .text $(patsubst %,%.tmp,$(1)) $(1)
 
 endef
 

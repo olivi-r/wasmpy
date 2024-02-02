@@ -31,7 +31,7 @@ for:
       only:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
 
-    install: python -m pip install build cibuildwheel && C:\MinGW\bin\mingw32-make -f windows.mk
+    install: python -m pip install build cibuildwheel && C:\MinGW\bin\mingw32-make -f windows.mk AS=C:\msys64\mingw64\bin\as LD=C:\msys64\mingw64\bin\ld OBJCOPY=C:\msys64\mingw64\bin\objcopy
     build_script: python -m cibuildwheel --output-dir dist
 
 artifacts:
