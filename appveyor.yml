@@ -31,7 +31,7 @@ for:
       only:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
 
-    install: python -m pip install build cibuildwheel && cmake all
+    install: python -m pip install build cibuildwheel && C:\MinGW\bin\mingw32-make all
     build_script: python -m cibuildwheel --output-dir dist
 
 artifacts:
