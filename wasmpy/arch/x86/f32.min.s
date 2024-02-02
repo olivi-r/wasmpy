@@ -1,5 +1,3 @@
-.globl _start
-_start:
 movss (%esp), %xmm0
 pop %eax
 movss (%esp), %xmm1

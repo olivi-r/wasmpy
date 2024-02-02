@@ -1,5 +1,3 @@
-.globl _start
-_start:
 flds (%rsp)
 sub $2, %rsp
 fstcw (%rsp)

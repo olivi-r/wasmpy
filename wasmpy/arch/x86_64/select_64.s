@@ -1,5 +1,3 @@
-.globl _start
-_start:
 cmpl $0, (%rsp)
 je zero
 add $12, %rsp

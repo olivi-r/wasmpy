@@ -1,5 +1,3 @@
-.globl _start
-_start:
 pop %rcx
 pop %rax
 cmp $0, %rcx

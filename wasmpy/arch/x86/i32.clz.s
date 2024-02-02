@@ -1,5 +1,3 @@
-.globl _start
-_start:
 pop %eax
 cmp $0, %eax
 je zero

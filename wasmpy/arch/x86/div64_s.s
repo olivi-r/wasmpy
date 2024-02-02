@@ -1,5 +1,3 @@
-.globl _start
-_start:
 cmpl $0, (%esp)
 jne continue1
 cmpl $0, 4(%esp)

@@ -1,5 +1,3 @@
-.globl _start
-_start:
 fldl (%esp)
 sub $2, %esp
 fstcw (%esp)

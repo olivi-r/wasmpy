@@ -1,5 +1,3 @@
-.globl _start
-_start:
 mov 4(%rsp), %eax
 cmpl $0, (%rsp)
 jne continue

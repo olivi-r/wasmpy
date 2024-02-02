@@ -1,5 +1,3 @@
-.globl _start
-_start:
 movq (%rsp), %rax
 add $4, %rsp
 test %rax, %rax

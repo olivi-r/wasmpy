@@ -1,5 +1,3 @@
-.globl _start
-_start:
 mov $0x80, %al
 and 3(%esp), %al
 cmp $0, %al

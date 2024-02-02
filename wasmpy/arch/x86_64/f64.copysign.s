@@ -1,5 +1,3 @@
-.globl _start
-_start:
 mov 7(%rsp), %al
 and $0x80, %al
 add $8, %rsp

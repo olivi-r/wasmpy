@@ -1,5 +1,3 @@
-.globl _start
-_start:
 mov 3(%rsp), %al
 and $0x80, %al
 add $4, %rsp

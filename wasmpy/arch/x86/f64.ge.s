@@ -1,5 +1,3 @@
-.globl _start
-_start:
 fldl (%esp)
 fldl 8(%esp)
 add $16, %esp

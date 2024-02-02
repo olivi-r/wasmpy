@@ -1,5 +1,3 @@
-.globl _start
-_start:
 testb $0x80, 3(%esp)
 fildl (%esp)
 je end

@@ -1,5 +1,3 @@
-.globl _start
-_start:
 mov (%rsp), %rax
 test %rax, %rax
 js negative
