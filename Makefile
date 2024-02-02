@@ -1,5 +1,6 @@
 # get assemblies
 dirs=_internal control parametric variable memory numeric
+opcodes_paths=wasmpy/arch/x86/lib/opcodes.cpp wasmpy/arch/x86_64/lib/opcodes.cpp
 x86_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86/$(i)/*.s),$(patsubst %.s,%,$(j))))
 x86_64_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86_64/$(i)/*.s),$(patsubst %.s,%,$(j))))
 binaries=$(x86_binaries) $(x86_64_binaries)
@@ -31,7 +32,7 @@ endif
 all: $(binaries)
 
 clean:
-	rm -f $(binaries) $(foreach i,$(binaries),$(patsubst %,%.o,$(i)))
+	rm -f $(binaries) $(foreach i,$(binaries),$(patsubst %,%.o,$(i))) $(opcodes_paths)
 
 x86: $(x86_binaries)
 
