@@ -16,7 +16,7 @@ for:
       only:
         - BUILD_TYPE: sdist
 
-    install: python -m pip install build && make all
+    install: python -m pip install build && make -f linux.mk
     build_script: python -m build --sdist
 
   - matrix:
@@ -24,14 +24,14 @@ for:
         - BUILD_TYPE: wheel
           APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
 
-    install: python -m pip install build cibuildwheel && make all
+    install: python -m pip install build cibuildwheel && make -f linux.mk
     build_script: python -m cibuildwheel --output-dir dist
 
   - matrix:
       only:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
 
-    install: python -m pip install build cibuildwheel && C:\MinGW\bin\mingw32-make all
+    install: python -m pip install build cibuildwheel && C:\MinGW\bin\mingw32-make -f windows.mk
     build_script: python -m cibuildwheel --output-dir dist
 
 artifacts:
