@@ -3,7 +3,6 @@ import json
 import os
 import platform
 import struct
-import subprocess
 
 import setuptools.command.build_ext
 
@@ -26,100 +25,6 @@ with open(os.path.join(os.path.dirname(__file__), "wasmpy/opcodes.json")) as fp:
 
 def is_x86() -> bool:
     return platform.machine() in ("x86", "i386", "i686", "AMD64", "x86_64")
-
-
-class assemble(setuptools.Command):
-    user_options = [
-        (
-            "targets=",
-            "T",
-            "comma separated list of targets to assemble, defaults to current "
-            "Python's architecture, e.g. --targets=x86_64,...",
-        )
-    ]
-
-    def initialize_options(self):
-        if is_x86():
-            if struct.calcsize("P") == 4:
-                self.targets = "x86"
-
-            else:
-                self.targets = "x86_64"
-
-        else:
-            raise ValueError("Unknown architecture")
-
-    def finalize_options(self):
-        self.targets = self.targets.split(",")
-        for target in self.targets:
-            if target not in os.listdir("wasmpy/arch"):
-                raise ValueError(f"Unknown architecture: {target}")
-
-    def log(self, out):
-        if self.verbose:
-            print(" ".join(out))
-
-    def run(self):
-        args = {
-            "x86_64": [
-                ["as", "-o"],
-                ["ld", "--oformat", "binary", "-o"],
-                ["ld", "-T", "NUL", "--image-base", "0", "-o"],
-                ["objcopy", "-O", "binary", "-j", ".text"],
-            ]
-        }
-
-        args["x86"] = [i.copy() for i in args["x86_64"]]
-        args["x86"][0].insert(1, "--32")
-        args["x86"][1].insert(1, "-melf_i386")
-        args["x86"][2].insert(1, "-mi386pe")
-
-        for target in self.targets:
-            arg = args[target]
-            for source in glob.glob(f"wasmpy/arch/{target}/*"):
-                if os.path.isdir(source):
-                    continue
-
-                if os.path.splitext(source)[1].lower() == ".s":
-                    name = os.path.splitext(source)[0]
-                    cmd = arg[0] + [name + ".o", source]
-                    self.log(cmd)
-                    subprocess.call(cmd)
-
-                    if platform.system() == "Linux":
-                        cmd = arg[1] + [name, name + ".o"]
-                        self.log(cmd)
-                        subprocess.call(cmd)
-
-                    elif platform.system() == "Windows":
-                        cmd = arg[2] + [name + ".tmp", name + ".o"]
-                        self.log(cmd)
-                        subprocess.call(cmd)
-                        cmd = arg[3] + [name + ".tmp", name]
-                        self.log(cmd)
-                        subprocess.call(cmd)
-
-
-class tidy(setuptools.Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        for machine in os.listdir("wasmpy/arch"):
-            if os.path.exists(f"wasmpy/arch/{machine}/lib/opcodes.cpp"):
-                os.remove(f"wasmpy/arch/{machine}/lib/opcodes.cpp")
-
-            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
-                if os.path.isdir(file):
-                    continue
-
-                if os.path.splitext(file)[1] != ".s":
-                    os.remove(file)
 
 
 class gen_opcodes(setuptools.Command):
@@ -153,7 +58,7 @@ class gen_opcodes(setuptools.Command):
                 )
             )
 
-            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/**/*"):
                 if os.path.isdir(file):
                     continue
 
@@ -266,10 +171,8 @@ setuptools.setup(
     ext_modules=ext,
     options={"bdist_wheel": {"py_limited_api": "cp36"}},
     cmdclass={
-        "assemble": assemble,
         "build_ext": build_ext,
         "gen_opcodes": gen_opcodes,
-        "tidy": tidy,
     },
     classifiers=[
         "Development Status :: 3 - Alpha",
