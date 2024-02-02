@@ -50,7 +50,6 @@ endef
 define X86_64_BIN_FROM_SRC
 $(1): $(patsubst %,%.s,$(1))
 	$(AS) $(X86_64_ASFLAGS) -o $(patsubst %,%.o,$(1)) $(patsubst %,%.s,$(1))
-	$(LD) $(X86_64_LDFLAGS) -o $(1) $(patsubst %,%.o,$(1))
 	$(LD) $(X86_64_LDFLAGS) -o $(patsubst %,%.tmp,$(1)) $(patsubst %,%.o,$(1))
 	$(OBJCOPY) -O binary -j .text $(patsubst %,%.tmp,$(1)) $(1)
 
