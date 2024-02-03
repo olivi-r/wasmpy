@@ -52,9 +52,7 @@ def read_importsec(buffer: object) -> tuple:
             elif flag == 3:
                 import_["desc"] = (
                     "global",
-                    wasmpy.binary.types.wasmpy.binary.types.read_globaltype(
-                        buffer
-                    ),
+                    wasmpy.binary.types.wasmpy.binary.types.read_globaltype(buffer),
                 )
 
             im += (import_,)
@@ -108,9 +106,7 @@ def read_exportsec(buffer: object) -> tuple:
     """Read an export section from buffer."""
     ex = ()
     for _ in range(wasmpy.binary.values.get_vec_len(buffer)):
-        export = {
-            "name": wasmpy.util.sanitize(wasmpy.binary.values.read_name(buffer))
-        }
+        export = {"name": wasmpy.binary.values.read_name(buffer)}
         desc = buffer.read(1)[0]
         assert desc in range(4)
         if not desc:
@@ -123,9 +119,7 @@ def read_exportsec(buffer: object) -> tuple:
             export["desc"] = "mem", wasmpy.binary.values.read_uint(buffer, 32)
 
         if desc == 3:
-            export["desc"] = "global", wasmpy.binary.values.read_uint(
-                buffer, 32
-            )
+            export["desc"] = "global", wasmpy.binary.values.read_uint(buffer, 32)
 
         ex += (export,)
 
@@ -173,9 +167,7 @@ def read_codesec(buffer: object) -> tuple:
             for locals in t:
                 concat_t += locals
 
-            code += (
-                (concat_t, wasmpy.binary.instructions.read_expr_binary(buffer)),
-            )
+            code += ((concat_t, wasmpy.binary.instructions.read_expr_binary(buffer)),)
             end = buffer.tell()
             assert size == end - start
 
