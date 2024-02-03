@@ -83,7 +83,7 @@ class gen_opcodes(setuptools.Command):
                 'default:\n\t\tPyErr_SetString(PyExc_NotImplementedError, "unimplemented instruction");\n\t\treturn false;\n\t}\n\treturn true;\n}\n'
             )
 
-            for file in glob.glob(f"wasmpy/arch/{machine}/*"):
+            for file in glob.glob(f"wasmpy/arch/{machine}/**/*"):
                 if os.path.isdir(file):
                     continue
 
