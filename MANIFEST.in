@@ -1,10 +1,9 @@
 exclude *.cpp
 include LICENSE
+graft tests
+include wasmpy/*.cpp
+include wasmpy/include/*.hpp
 graft wasmpy/arch
-include wasmpy/globals.cpp
-include wasmpy/memories.cpp
-include wasmpy/nativelib.cpp
-recursive-include wasmpy *.hpp
 recursive-exclude wasmpy/arch *.o
 recursive-exclude wasmpy/arch *.cpp
 recursive-exclude wasmpy/arch *.tmp
