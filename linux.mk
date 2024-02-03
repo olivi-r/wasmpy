@@ -1,8 +1,8 @@
 # get assemblies
 dirs=_internal control parametric variable memory numeric
 opcodes_paths=wasmpy/arch/x86/lib/opcodes.cpp wasmpy/arch/x86_64/lib/opcodes.cpp
-x86_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86/$(i)/*.s),$(patsubst %.s,%,$(j))))
-x86_64_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86_64/$(i)/*.s),$(patsubst %.s,%,$(j))))
+x86_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86/$(i)/*.s),$(patsubst %.s,%.bin,$(j))))
+x86_64_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86_64/$(i)/*.s),$(patsubst %.s,%.bin,$(j))))
 binaries=$(x86_binaries) $(x86_64_binaries)
 
 # set defaults
@@ -32,7 +32,7 @@ endif
 all: $(binaries)
 
 clean:
-	rm -f $(binaries) $(foreach i,$(binaries),$(patsubst %,%.o,$(i))) $(opcodes_paths)
+	rm -f wasmpy/arch/*/*/*.bin wasmpy/arch/*/*/*.o wasmpy/arch/*/lib/opcodes.cpp
 
 x86: $(x86_binaries)
 
@@ -40,16 +40,16 @@ x86_64: $(x86_64_binaries)
 
 # generate rules for assembly sources
 define X86_BIN_FROM_SRC
-$(1): $(patsubst %,%.s,$(1))
-	$(AS) $(X86_ASFLAGS) -o $(patsubst %,%.o,$(1)) $(patsubst %,%.s,$(1))
-	$(LD) $(X86_LDFLAGS) -o $(1) $(patsubst %,%.o,$(1))
+$(1): $(patsubst %.bin,%.s,$(1))
+	$(AS) $(X86_ASFLAGS) -o $(patsubst %.bin,%.o,$(1)) $(patsubst %.bin,%.s,$(1))
+	$(LD) $(X86_LDFLAGS) -o $(1) $(patsubst %.bin,%.o,$(1))
 
 endef
 
 define X86_64_BIN_FROM_SRC
-$(1): $(patsubst %,%.s,$(1))
-	$(AS) $(X86_64_ASFLAGS) -o $(patsubst %,%.o,$(1)) $(patsubst %,%.s,$(1))
-	$(LD) $(X86_64_LDFLAGS) -o $(1) $(patsubst %,%.o,$(1))
+$(1): $(patsubst %.bin,%.s,$(1))
+	$(AS) $(X86_64_ASFLAGS) -o $(patsubst %.bin,%.o,$(1)) $(patsubst %.bin,%.s,$(1))
+	$(LD) $(X86_64_LDFLAGS) -o $(1) $(patsubst %.bin,%.o,$(1))
 
 endef
 

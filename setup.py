@@ -58,11 +58,8 @@ class gen_opcodes(setuptools.Command):
                 )
             )
 
-            for file in glob.glob(f"wasmpy/arch/{machine}/**/*"):
-                if os.path.isdir(file):
-                    continue
-
-                inst = os.path.basename(file)
+            for file in glob.glob(f"wasmpy/arch/{machine}/**/*.bin"):
+                inst = os.path.splitext(os.path.basename(file))[0]
 
                 if inst in opcodes:
                     with open(file, "rb") as fp:
@@ -83,11 +80,9 @@ class gen_opcodes(setuptools.Command):
                 'default:\n\t\tPyErr_SetString(PyExc_NotImplementedError, "unimplemented instruction");\n\t\treturn false;\n\t}\n\treturn true;\n}\n'
             )
 
-            for file in glob.glob(f"wasmpy/arch/{machine}/**/*"):
-                if os.path.isdir(file):
-                    continue
+            for file in glob.glob(f"wasmpy/arch/{machine}/**/*.bin"):
+                name = os.path.splitext(os.path.basename(file))[0]
 
-                name = os.path.basename(file)
                 if name not in opcodes:
                     with open(file, "rb") as fp:
                         data = ", ".join(str(i) for i in fp.read() if i != 0x90)
