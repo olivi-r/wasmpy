@@ -1,3 +1,5 @@
+import itertools
+
 import sexpdata
 
 
@@ -45,9 +47,7 @@ def unfold(expr: list) -> list:
 
 
 def read_id(expr: list, off: int) -> tuple:
-    if isinstance(expr[off], sexpdata.Symbol) and expr[off].value().startswith(
-        "$"
-    ):
+    if isinstance(expr[off], sexpdata.Symbol) and expr[off].value().startswith("$"):
         return expr[0], off + 1
 
     return None, off
@@ -150,9 +150,7 @@ def read_import(expr: list) -> tuple:
     off = 1
 
     importidx = None
-    if isinstance(expr[3][1], sexpdata.Symbol) and expr[3][
-        1
-    ].value().startswith("$"):
+    if isinstance(expr[3][1], sexpdata.Symbol) and expr[3][1].value().startswith("$"):
         importidx = expr[3][1]
 
     if expr[3][0].value() == "func":
@@ -227,11 +225,11 @@ def read_func(expr: list) -> tuple:
         body.append(flatten(sub_expr))
 
     if body:
-        body = unfold(body)
-
-    # occurs with single instruction without immediates i.e. unreachable, nop
-    if not isinstance(body, list):
-        body = [body]
+        body = list(
+            itertools.chain.from_iterable(
+                [unfold(expr) if isinstance(expr, list) else [expr] for expr in body]
+            )
+        )
 
     for i, term in enumerate(body):
         if term in param_ids:
@@ -267,9 +265,7 @@ def read_global(expr: list) -> tuple:
     globaltype = None
     mutable = "const"
     off = 1
-    if isinstance(expr[off], sexpdata.Symbol) and expr[off].value().startswith(
-        "$"
-    ):
+    if isinstance(expr[off], sexpdata.Symbol) and expr[off].value().startswith("$"):
         globalidx = expr[off]
         off += 1
 

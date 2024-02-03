@@ -1,6 +1,7 @@
 import ctypes
 import tempfile
 
+import wasmpy
 import wasmpy.nativelib
 import wasmpy.util
 
@@ -132,14 +133,14 @@ def gen_params(arg):
 def wrap_function(func, param_clear, raw=False):
     if raw:
         wrapper = eval(
-            f"lambda {', '.join(['self'] + param_clear)}: func({', '.join(param_clear)})",
+            f"lambda {', '.join(param_clear)}: func({', '.join(param_clear)})",
             {"func": func},
         )
 
     else:
         # ensure result structs
         wrapper = eval(
-            f"lambda {', '.join(['self'] + param_clear)}: ensure(func({', '.join(param_clear)}))",
+            f"lambda {', '.join(param_clear)}: ensure(func({', '.join(param_clear)}))",
             {"ensure": ensure, "func": func},
         )
 
@@ -153,19 +154,19 @@ def ensure(result):
             return result.contents.value
 
     elif result.contents.errno == 1:
-        raise RuntimeError("unreachable")
+        raise wasmpy.Trap("unreachable")
 
     elif result.contents.errno == 2:
-        raise ZeroDivisionError("division by zero")
+        raise wasmpy.Trap("integer divide by zero")
 
     elif result.contents.errno == 3:
-        raise RuntimeError("division overflow")
+        raise wasmpy.Trap("integer overflow")
 
     elif result.contents.errno == 4:
-        raise ZeroDivisionError("integer modulo by zero")
+        raise wasmpy.Trap("integer modulo by zero")
 
     elif result.contents.errno == 5:
-        raise FloatingPointError("unrepresentable truncation result")
+        raise wasmpy.Trap("unrepresentable truncation result")
 
     elif result.contents.errno == 6:
-        raise NotImplementedError("unimplemented instruction")
+        raise wasmpy.Trap("unimplemented instruction")

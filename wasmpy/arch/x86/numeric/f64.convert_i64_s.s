@@ -1,0 +1,2 @@
+fildq (%esp)
+fstpl (%esp)

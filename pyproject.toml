@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+build = "cp36-*"
