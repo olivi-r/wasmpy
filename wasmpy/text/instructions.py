@@ -71,17 +71,11 @@ def read_instruction_text(source, offset: int) -> list:
 
                     immediate_value |= int(nan.group("n"), 16)
                     if op == 0x43:
-                        return (
-                            [op]
-                            + wasmpy.util.expand_bytes(immediate_value)
-                            + [1]
-                        )
+                        return [op] + wasmpy.util.expand_bytes(immediate_value) + [1]
 
                     else:
                         return (
-                            [op]
-                            + wasmpy.util.expand_bytes(immediate_value, 64)
-                            + [1]
+                            [op] + wasmpy.util.expand_bytes(immediate_value, 64) + [1]
                         )
 
                 else:
@@ -95,9 +89,7 @@ def read_instruction_text(source, offset: int) -> list:
                             sign = -1
 
                         value = int(hexfloat.group("p"), 16)
-                        for i, digit in enumerate(
-                            hexfloat.group("q").replace("_", "")
-                        ):
+                        for i, digit in enumerate(hexfloat.group("q").replace("_", "")):
                             value += int(digit, 16) / (16**i)
 
                         if hexfloat.group("e"):
@@ -126,8 +118,6 @@ def read_instruction_text(source, offset: int) -> list:
 
             return (
                 [op]
-                + wasmpy.util.expand_bytes(
-                    immediate, wasmpy.util.consumes[op] * 8
-                )
+                + wasmpy.util.expand_bytes(immediate, wasmpy.util.consumes[op] * 8)
                 + [1]
             )
