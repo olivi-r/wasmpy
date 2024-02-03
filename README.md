@@ -76,12 +76,12 @@ For exported names that aren't valid Python identifiers or which start with a `_
 
 # Building From Source
 
-On Windows this requires the [mingw-w64](https://www.mingw-w64.org/downloads/) `as` tool to be on PATH.
+On Windows this requires [mingw-w64](https://www.mingw-w64.org/downloads/)
 
 ```sh
 git clone https://github.com/olivi-r/wasmpy.git
 cd wasmpy
-python3 setup.py assemble
+make -f <linux/windows>.mk
 python3 -m pip install .
 ```
 
