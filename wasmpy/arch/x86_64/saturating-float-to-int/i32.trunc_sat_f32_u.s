@@ -1,5 +1,3 @@
-.globl _start
-_start:
 mov 2(%rsp), %ax
 and $0x7f80, %ax
 cmp $0x7f80, %ax

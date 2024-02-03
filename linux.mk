@@ -1,5 +1,5 @@
 # get assemblies
-dirs=_internal control parametric variable memory numeric
+dirs=_internal control parametric variable memory numeric saturating-float-to-int
 opcodes_paths=wasmpy/arch/x86/lib/opcodes.cpp wasmpy/arch/x86_64/lib/opcodes.cpp
 x86_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86/$(i)/*.s),$(patsubst %.s,%,$(j))))
 x86_64_binaries=$(foreach i,$(dirs),$(foreach j,$(wildcard wasmpy/arch/x86_64/$(i)/*.s),$(patsubst %.s,%,$(j))))
