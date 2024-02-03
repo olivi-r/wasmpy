@@ -1,0 +1,2 @@
+fldl (%esp)
+fisttpq (%esp)
