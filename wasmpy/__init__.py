@@ -6,10 +6,12 @@ class Trap(Exception):
 
 
 import wasmpy.binary
+import wasmpy.script
 import wasmpy.text
 from wasmpy.util import *
 
 
 sys.meta_path.insert(0, wasmpy.text.WebAssemblyTextLoader())
+sys.meta_path.insert(0, wasmpy.script.WebAssemblyScriptLoader())
 sys.meta_path.insert(0, wasmpy.binary.WebAssemblyBinaryLoader())
 __all__ = wasmpy.util.__all__
