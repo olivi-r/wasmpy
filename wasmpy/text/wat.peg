@@ -259,3 +259,14 @@ modulefield <-
     / elem
     / data;
 text_module <- module / modulefield*;
+
+failure <- ws string;
+script <- cmd*;
+cmd <- text_module / lparen "register" ws string id? rparen / action / assertion / meta;
+script_module <- module / lparen "module" id? ("binary" / "quote") ws string* rparen;
+action <- lparen ("invoke" id? ws string const* / "get" id? ws string) rparen;
+const <- lparen r"[if](32|64)\.const" (floating / signed) rparen;
+assertion <- lparen ("assert_return" action script_result* / r"assert_(trap|exhaustion)" action failure / r"assert_(malformed|invalid|unlinkable|trap)" script_module failure) rparen;
+script_result <- const;
+num_pat <- (floating / signed) / ws r"nan:(canonical|arithmetic)";
+meta <- lparen ("script" id? script / "input" id? ws string / "output" id? (ws string)?) rparen;
