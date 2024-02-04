@@ -1,0 +1,270 @@
+lparen <- ws? "(" ws?;
+rparen <- ws? ")";
+ws <- (r"[ \t\n\r]" / comment)+;
+comment <- linecomment / blockcomment;
+linecomment <- ";;" r"[\u0000-\u0009\u000B-\uD7FF\uE000-\U0010FFFF]*" ("\n" / EOF);
+blockcomment <- "(;" (blockcomment / r"([\u0000-\u0027\u0029-\u003A\u003C-\uD7FF\uE000-\U0010FFFF]|;(?!\))|\((?!;))+")* ";)";
+sign <- ("+" / "-")?;
+digit <- r"[0-9]";
+hexdigit <- digit / r"[A-Fa-f]";
+num <- digit ("_"? digit)*;
+hexnum <- hexdigit ("_"? hexdigit)*;
+stripped_unsigned <- ("0x" hexnum / num);
+unsigned <- ws stripped_unsigned;
+signed <- ws sign stripped_unsigned;
+frac <- num?;
+hexfrac <- hexnum?;
+float <- num (("." frac)? ("E" / "e") sign num / "." frac);
+hexfloat <- "0x" hexnum (("." hexfrac)? ("P" / "p") sign num / "." hexfrac);
+floating <- ws sign fmag;
+fmag <- hexfloat / float / "inf" / "nan" (":0x" hexnum)?;
+string <- '"' r"([ !\u0023-\u005B\u005D-\u007E\u0080-\uD7FF\uE000-\U0010FFFF]|\\t|\\n|\\r|\\\"|\\'|\\\\|\\u[0-9A-Fa-f]{2})+" '"';
+name <- ws string;
+id <- ws r"\$[0-9A-Za-z!#$%&'*+-./:<=>?@\\^_`|~]+";
+valtype <- ws ("i32" / "i64" / "f32" / "f64");
+resulttype <- result?;
+functype <- lparen "func" vec_param vec_result rparen;
+vec_param <- param*;
+vec_result <- result*;
+param <- lparen "param" (id valtype / valtype*) rparen;
+result <- lparen "result" valtype* rparen;
+limits <- unsigned unsigned?;
+memtype <- limits;
+tabletype <- limits elemtype;
+elemtype <- ws "funcref";
+globaltype <-
+      valtype
+    / lparen "mut" valtype rparen;
+instr <- ws (foldedinstr / blockinstr);
+label <- id?;
+blockinstr <-
+      "block" label resulttype instr* ws "end" id?
+    / "loop" label resulttype instr* ws "end" id?
+    / "if" label resulttype instr* (ws "else" id? instr*)? ws "end" id?;
+plaininstr <-
+      "unreachable"
+    / "nop"
+    / "br_if" labelidx
+    / "br_table" labelidx*
+    / "br" labelidx
+    / "return"
+    / "call_indirect" typeuse
+    / "call" funcidx
+    / "drop"
+    / "select"
+    / "local.get" localidx
+    / "local.set" localidx
+    / "local.tee" localidx
+    / "global.get" globalidx
+    / "global.set" globalidx
+    / "i32.load8_s" memarg
+    / "i32.load8_u" memarg
+    / "i32.load16_s" memarg
+    / "i32.load16_u" memarg
+    / "i64.load8_s" memarg
+    / "i64.load8_u" memarg
+    / "i64.load16_s" memarg
+    / "i64.load16_u" memarg
+    / "i64.load32_s" memarg
+    / "i64.load32_u" memarg
+    / "i32.load" memarg
+    / "i64.load" memarg
+    / "f32.load" memarg
+    / "f64.load" memarg
+    / "i32.store8" memarg
+    / "i32.store16" memarg
+    / "i64.store8" memarg
+    / "i64.store16" memarg
+    / "i64.store32" memarg
+    / "i32.store" memarg
+    / "i64.store" memarg
+    / "f32.store" memarg
+    / "f64.store" memarg
+    / "memory.size"
+    / "memory.grow"
+    / "i32.const" signed
+    / "i64.const" signed
+    / "f32.const" floating
+    / "f64.const" floating
+    / "i32.clz"
+    / "i32.ctz"
+    / "i32.popcnt"
+    / "i32.add"
+    / "i32.sub"
+    / "i32.mul"
+    / "i32.div_s"
+    / "i32.div_u"
+    / "i32.rem_s"
+    / "i32.rem_u"
+    / "i32.and"
+    / "i32.or"
+    / "i32.xor"
+    / "i32.shl"
+    / "i32.shr_s"
+    / "i32.shr_u"
+    / "i32.rotl"
+    / "i32.rotr"
+    / "i64.clz"
+    / "i64.ctz"
+    / "i64.popcnt"
+    / "i64.add"
+    / "i64.sub"
+    / "i64.mul"
+    / "i64.div_s"
+    / "i64.div_u"
+    / "i64.rem_s"
+    / "i64.rem_u"
+    / "i64.and"
+    / "i64.or"
+    / "i64.xor"
+    / "i64.shl"
+    / "i64.shr_s"
+    / "i64.shr_u"
+    / "i64.rotl"
+    / "i64.rotr"
+    / "f32.abs"
+    / "f32.neg"
+    / "f32.ceil"
+    / "f32.floor"
+    / "f32.trunc"
+    / "f32.nearest"
+    / "f32.sqrt"
+    / "f32.add"
+    / "f32.sub"
+    / "f32.mul"
+    / "f32.div"
+    / "f32.min"
+    / "f32.max"
+    / "f32.copysign"
+    / "f64.abs"
+    / "f64.neg"
+    / "f64.ceil"
+    / "f64.floor"
+    / "f64.trunc"
+    / "f64.nearest"
+    / "f64.sqrt"
+    / "f64.add"
+    / "f64.sub"
+    / "f64.mul"
+    / "f64.div"
+    / "f64.min"
+    / "f64.max"
+    / "f64.copysign"
+    / "i32.eqz"
+    / "i32.eq"
+    / "i32.ne"
+    / "i32.lt_s"
+    / "i32.lt_u"
+    / "i32.gt_s"
+    / "i32.gt_u"
+    / "i32.le_s"
+    / "i32.le_u"
+    / "i32.ge_s"
+    / "i32.ge_u"
+    / "i64.eqz"
+    / "i64.eq"
+    / "i64.ne"
+    / "i64.lt_s"
+    / "i64.lt_u"
+    / "i64.gt_s"
+    / "i64.gt_u"
+    / "i64.le_s"
+    / "i64.le_u"
+    / "i64.ge_s"
+    / "i64.ge_u"
+    / "f32.eq"
+    / "f32.ne"
+    / "f32.lt"
+    / "f32.gt"
+    / "f32.le"
+    / "f32.ge"
+    / "f64.eq"
+    / "f64.ne"
+    / "f64.lt"
+    / "f64.gt"
+    / "f64.le"
+    / "f64.ge"
+    / "i32.wrap_i64"
+    / "i32.trunc_f32_s"
+    / "i32.trunc_f32_u"
+    / "i32.trunc_f64_s"
+    / "i32.trunc_f64_u"
+    / "i64.extend_i32_s"
+    / "i64.extend_i32_u"
+    / "i64.trunc_f32_s"
+    / "i64.trunc_f32_u"
+    / "i64.trunc_f64_s"
+    / "i64.trunc_f64_u"
+    / "f32.convert_i32_s"
+    / "f32.convert_i32_u"
+    / "f32.convert_i64_s"
+    / "f32.convert_i64_u"
+    / "f32.demote_f64"
+    / "f64.convert_i32_s"
+    / "f64.convert_i32_u"
+    / "f64.convert_i64_s"
+    / "f64.convert_i64_u"
+    / "f64.promote_f32"
+    / "i32.reinterpret_f32"
+    / "i64.reinterpret_f64"
+    / "f32.reinterpret_i32"
+    / "f64.reinterpret_i64";
+memarg <- offset align;
+offset <- (ws "offset=" stripped_unsigned)?;
+align <- (ws "align=" stripped_unsigned)?;
+foldedinstr <-
+      lparen plaininstr foldedinstr* rparen
+    / lparen "block" label resulttype instr* rparen
+    / lparen "loop" label resulttype instr* rparen
+    / lparen "if" label resulttype foldedinstr* lparen "then" instr* rparen (lparen "else" instr* rparen)? rparen
+    / plaininstr;
+expr <- instr*;
+typeidx <-
+      id
+    / unsigned;
+funcidx <-
+      id
+    / unsigned;
+tableidx <-
+      id
+    / unsigned;
+memidx <-
+      id
+    / unsigned;
+globalidx <-
+      id
+    / unsigned;
+localidx <-
+      id
+    / unsigned;
+labelidx <-
+      id
+    / unsigned;
+type <- lparen "type" id? functype rparen;
+typeuse <- (lparen "type" typeidx rparen)? param* result*;
+import <- lparen "import" name name importdesc rparen;
+importdesc <- lparen ("func" id? typeuse / "table" id? tabletype / "memory" id? memtype / "global" id? globaltype) rparen;
+func <- lparen "func" id? (lparen "export" name rparen)* (lparen "import" name name rparen typeuse / typeuse local* instr*) rparen;
+local <- lparen "local" (id valtype / valtype*) rparen;
+table <- lparen "table" id? ((lparen "export" name rparen)* (lparen "import" name name rparen)? tabletype / elemtype lparen "elem" funcidx* rparen) rparen;
+mem <- lparen "memory" id? ((lparen "export" name rparen)* (lparen "import" name name rparen)? memtype / lparen "data" datastring rparen) rparen;
+global <- lparen "global" id? (lparen "export" name rparen)* (lparen "import" name name rparen globaltype / globaltype expr) rparen;
+export <- lparen "export" name exportdesc rparen;
+exportdesc <- lparen ("func" funcidx / "table" tableidx / "memory" memidx / "global" globalidx) rparen;
+start <- lparen "start" funcidx rparen;
+elem <- lparen "elem" tableidx (lparen "offset" expr rparen / instr) funcidx* rparen;
+data <- lparen "data" memidx? (lparen "offset" expr rparen ws? / instr ws) datastring rparen;
+datastring <- string;
+module <- lparen "module" id? modulefield* rparen;
+modulefield <-
+      type
+    / import
+    / func
+    / table
+    / mem
+    / global
+    / export
+    / start
+    / elem
+    / data;
+text_module <- module / modulefield*;
