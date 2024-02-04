@@ -1,23 +1,13 @@
 lparen <- ws? "(" ws?;
 rparen <- ws? ")";
-ws <- (r"[ \t\n\r]" / comment)+;
-comment <- linecomment / blockcomment;
+ws <- (r"[ \t\n\r]" / linecomment / blockcomment)+;
 linecomment <- ";;" r"[\u0000-\u0009\u000B-\uD7FF\uE000-\U0010FFFF]*" ("\n" / EOF);
 blockcomment <- "(;" (blockcomment / r"([\u0000-\u0027\u0029-\u003A\u003C-\uD7FF\uE000-\U0010FFFF]|;(?!\))|\((?!;))+")* ";)";
-sign <- ("+" / "-")?;
-digit <- r"[0-9]";
-hexdigit <- digit / r"[A-Fa-f]";
-num <- digit ("_"? digit)*;
-hexnum <- hexdigit ("_"? hexdigit)*;
-stripped_unsigned <- ("0x" hexnum / num);
-unsigned <- ws stripped_unsigned;
-signed <- ws sign stripped_unsigned;
-frac <- num?;
-hexfrac <- hexnum?;
-float <- num (("." frac)? ("E" / "e") sign num / "." frac);
-hexfloat <- "0x" hexnum (("." hexfrac)? ("P" / "p") sign num / "." hexfrac);
-floating <- ws sign fmag;
-fmag <- hexfloat / float / "inf" / "nan" (":0x" hexnum)?;
+unsigned <- ws r"0x[0-9A-Fa-f](_?[0-9A-Fa-f])*|[0-9](_?[0-9])*";
+signed <- ws r"[+-]?0x[0-9A-Fa-f](_?[0-9A-Fa-f])*|[0-9](_?[0-9])*";
+float <- r"[+-]?[0-9](_?[0-9])*" (("." r"[0-9](_?[0-9])*"?)? ("E" / "e") r"[+-]?[0-9](_?[0-9])*" / "." r"[0-9](_?[0-9])*"?);
+hexfloat <- r"[+-]?0x[0-9A-Fa-f](_?[0-9A-Fa-f])*" (("." r"[0-9A-Fa-f](_?[0-9A-Fa-f])*"?)? ("P" / "p") r"[+-]?[0-9](_?[0-9])*" / "." r"[0-9A-Fa-f](_?[0-9A-Fa-f])*"?);
+floating <- ws (hexfloat / float / r"[+-]?(inf|nan(:0x[0-9A-Fa-f](_?[0-9A-Fa-f])*)?)");
 string <- '"' r"([ !\u0023-\u005B\u005D-\u007E\u0080-\uD7FF\uE000-\U0010FFFF]|\\t|\\n|\\r|\\\"|\\'|\\\\|\\u[0-9A-Fa-f]{2})+" '"';
 name <- ws string;
 id <- ws r"\$[0-9A-Za-z!#$%&'*+-./:<=>?@\\^_`|~]+";
@@ -210,8 +200,8 @@ plaininstr <-
     / "f32.reinterpret_i32"
     / "f64.reinterpret_i64";
 memarg <- offset align;
-offset <- (ws "offset=" stripped_unsigned)?;
-align <- (ws "align=" stripped_unsigned)?;
+offset <- (ws r"offset=(0x[0-9A-Fa-f](_?[0-9A-Fa-f])*|[0-9](_?[0-9])*)")?;
+align <- (ws r"align=(0x[0-9A-Fa-f](_?[0-9A-Fa-f])*|[0-9](_?[0-9]))*")?;
 foldedinstr <-
       lparen plaininstr foldedinstr* rparen
     / lparen "block" label resulttype instr* rparen
