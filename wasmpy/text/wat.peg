@@ -231,17 +231,18 @@ labelidx <-
       id
     / unsigned;
 type <- lparen "type" id? functype rparen;
-typeuse <- (lparen "type" typeidx rparen)? param* result*;
+typeuse <- (lparen "type" typeidx rparen)? vec_param vec_result;
 import <- lparen "import" name name importdesc rparen;
 importdesc <- lparen ("func" id? typeuse / "table" id? tabletype / "memory" id? memtype / "global" id? globaltype) rparen;
-func <- lparen "func" id? (lparen "export" name rparen)* (lparen "import" name name rparen typeuse / typeuse local* func_body) rparen;
-func_body <- instr*;
+inline_import <- lparen "import" name name rparen;
+func <- lparen "func" id? inline_export* (inline_import typeuse / typeuse local* expr) rparen;
 local <- lparen "local" (id valtype / valtype*) rparen;
-table <- lparen "table" id? ((lparen "export" name rparen)* (lparen "import" name name rparen)? tabletype / elemtype lparen "elem" funcidx* rparen) rparen;
-mem <- lparen "memory" id? ((lparen "export" name rparen)* (lparen "import" name name rparen)? memtype / lparen "data" datastring rparen) rparen;
-global <- lparen "global" id? (lparen "export" name rparen)* (lparen "import" name name rparen globaltype / globaltype expr) rparen;
+table <- lparen "table" id? inline_export* (inline_import? tabletype / elemtype lparen "elem" funcidx* rparen) rparen;
+mem <- lparen "memory" id? inline_export* (inline_import? memtype / lparen "data" datastring rparen) rparen;
+global <- lparen "global" id? inline_export* (inline_import globaltype / globaltype expr) rparen;
 export <- lparen "export" name exportdesc rparen;
 exportdesc <- lparen ("func" funcidx / "table" tableidx / "memory" memidx / "global" globalidx) rparen;
+inline_export <- lparen "export" name rparen;
 start <- lparen "start" funcidx rparen;
 elem <- lparen "elem" tableidx (lparen "offset" expr rparen / instr) funcidx* rparen;
 data <- lparen "data" memidx? (lparen "offset" expr rparen ws? / instr ws) datastring rparen;
