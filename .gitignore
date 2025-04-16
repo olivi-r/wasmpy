@@ -1,13 +1,11 @@
 wasmpy.egg-info
-wasmpy/arch/*/*/*
-!wasmpy/arch/*
-!wasmpy/arch/*/*/*.asm
-!wasmpy/arch/*/lib/
 **/opcodes.cpp
 __pycache__
 .vscode
-*.pyd
 build
 dist
 .env
+
+*.bin
+*.pyd
 *.so
