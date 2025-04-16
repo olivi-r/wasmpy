@@ -1,2 +1,0 @@
-flds (%esp)
-fisttpl (%esp)

@@ -1,0 +1,5 @@
+[BITS 32]
+fld dword [esp]
+fisttp dword [esp]
+fild word [esp]
+fstp dword [esp]
