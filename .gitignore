@@ -1,7 +1,7 @@
 wasmpy.egg-info
-wasmpy/arch/*/*
+wasmpy/arch/*/*/*
 !wasmpy/arch/*
-!wasmpy/arch/*/*.s
+!wasmpy/arch/*/*/*.asm
 !wasmpy/arch/*/lib/
 **/opcodes.cpp
 __pycache__
