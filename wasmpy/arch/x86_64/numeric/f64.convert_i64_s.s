@@ -1,2 +1,0 @@
-fildq (%rsp)
-fstpl (%rsp)

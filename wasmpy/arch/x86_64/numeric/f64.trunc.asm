@@ -1,0 +1,5 @@
+[BITS 64]
+fld qword [rsp]
+fisttp qword [rsp]
+fild dword [rsp]
+fstp qword [rsp]
