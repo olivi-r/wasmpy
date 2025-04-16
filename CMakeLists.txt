@@ -1,11 +1,22 @@
 cmake_minimum_required(VERSION 3.10)
 project(wasmpy)
 
-file(GLOB_RECURSE SOURCES wasmpy/arch/*.asm)
-string(REPLACE ".asm" ".bin" BINARIES "${SOURCES}")
-
-add_custom_target(assemblies DEPENDS ${BINARIES})
-foreach(source ${SOURCES})
+file(GLOB_RECURSE X86_SOURCES "wasmpy/arch/x86/*.asm")
+string(REPLACE ".asm" ".bin" X86_BINARIES "${X86_SOURCES}")
+add_custom_target(x86 DEPENDS ${X86_BINARIES})
+foreach(source ${X86_SOURCES})
     string(REPLACE ".asm" ".bin" binary "${source}")
     add_custom_command(OUTPUT ${binary} COMMAND nasm -f bin ${source} -o ${binary})
 endforeach()
+
+file(GLOB_RECURSE X86_64_SOURCES "wasmpy/arch/x86_64/*.asm")
+string(REPLACE ".asm" ".bin" X86_64_BINARIES "${X86_64_SOURCES}")
+add_custom_target(x86-64 DEPENDS ${X86_64_BINARIES})
+foreach(source ${X86_64_SOURCES})
+    string(REPLACE ".asm" ".bin" binary "${source}")
+    add_custom_command(OUTPUT ${binary} COMMAND nasm -f bin ${source} -o ${binary})
+endforeach()
+
+file(GLOB_RECURSE ALL_SOURCES "wasmpy/arch/*.asm")
+string(REPLACE ".asm" ".bin" ALL_BINARIES "${ALL_SOURCES}")
+add_custom_target(clean-bin COMMAND ${CMAKE_COMMAND} -E remove ${ALL_BINARIES})
